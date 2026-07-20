@@ -1,0 +1,79 @@
+# --- OS / editor ---
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+*~
+
+# --- Environment / config ---
+.claude/
+.codex/
+.agents/
+.cursor/
+.mcp.json
+CLAUDE.md
+AGENTS.md
+AI_NOTES.md
+AI_LOG.md
+prompt-history/
+session-logs/
+agent-logs/
+scratchpad/
+.env
+*.env
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+credentials*.json
+service-account*.json
+secrets/
+private/
+logs/
+*.log
+uploads/
+exports/
+backups/
+dumps/
+*.sql
+*.dump
+*.bak
+*.db
+*.sqlite
+*.sqlite3
+
+# --- Node / frontend ---
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+dist/
+build/
+.next/
+.turbo/
+coverage/
+
+# --- Python / backend ---
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+venv/
+.venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# --- Tooling / temp ---
+tmp/
+temp/
+.tmp/
+
+# --- Local infra / secrets ---
+
+# --- Project specific ---
+coverage/
+!.github/workflows/
