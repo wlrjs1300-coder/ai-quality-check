@@ -170,6 +170,25 @@ class TargetService:
             raise ErrorCodeError("TARGET_VERSION_NOT_FOUND", "Target version not found.", 404)
         return target_version
 
+    async def execute_version(self, version_id, input_payload: dict) -> tuple[TargetVersion, dict]:
+        _ = input_payload
+        version = await self.get_version_by_id(version_id)
+        if version.response_strategy != "FIXED":
+            raise ErrorCodeError("UNSUPPORTED_RESPONSE_STRATEGY", "Only FIXED strategy is supported.", 409)
+
+        if not isinstance(version.config_snapshot, dict):
+            raise ErrorCodeError("INVALID_TARGET_CONFIGURATION", "Target version snapshot must be an object.", 409)
+
+        fixed_response = version.config_snapshot.get("fixed_response")
+        if not isinstance(fixed_response, dict):
+            raise ErrorCodeError(
+                "INVALID_TARGET_CONFIGURATION",
+                "fixed_response must be an object in target version snapshot.",
+                409,
+            )
+
+        return version, fixed_response
+
     async def create_version(self, target_id) -> TargetVersion:
         async with self.db.begin():
             target = await self.db.execute(

@@ -10,6 +10,8 @@ from src.application.schemas.project import ProjectCreateRequest, ProjectRespons
 from src.application.schemas.target import (
     TargetCreateRequest,
     TargetResponse,
+    TargetVersionExecuteRequest,
+    TargetVersionExecuteResponse,
     TargetUpdateRequest,
     TargetVersionResponse,
 )
@@ -34,6 +36,8 @@ __all__ = [
     "DatasetVersionResponse",
     "TargetCreateRequest",
     "TargetResponse",
+    "TargetVersionExecuteRequest",
+    "TargetVersionExecuteResponse",
     "TargetUpdateRequest",
     "TargetVersionResponse",
 ]
