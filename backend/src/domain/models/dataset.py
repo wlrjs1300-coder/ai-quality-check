@@ -29,3 +29,7 @@ class Dataset(Base, TimestampMixin):
         back_populates="dataset",
         cascade="all, delete-orphan",
     )
+    dataset_versions = relationship(  # type: ignore[valid-type]
+        "DatasetVersion",
+        back_populates="dataset",
+    )
