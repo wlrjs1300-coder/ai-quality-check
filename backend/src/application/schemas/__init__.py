@@ -5,6 +5,7 @@ from src.application.schemas.evaluation_case import (
     EvaluationCaseResponse,
     EvaluationCaseUpdateRequest,
 )
+from src.application.schemas.dataset_version import DatasetVersionCaseResponse, DatasetVersionListItem, DatasetVersionResponse
 from src.application.schemas.project import ProjectCreateRequest, ProjectResponse, ProjectUpdateRequest
 
 __all__ = [
@@ -22,4 +23,7 @@ __all__ = [
     "EvaluationCaseCreateRequest",
     "EvaluationCaseResponse",
     "EvaluationCaseUpdateRequest",
+    "DatasetVersionCaseResponse",
+    "DatasetVersionListItem",
+    "DatasetVersionResponse",
 ]
