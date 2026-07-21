@@ -96,7 +96,9 @@ def test_postgresql_alembic_upgrade_downgrade_and_constraints():
                         'datasets'::regclass,
                         'evaluation_cases'::regclass,
                         'dataset_versions'::regclass,
-                        'dataset_version_cases'::regclass
+                        'dataset_version_cases'::regclass,
+                        'evaluators'::regclass,
+                        'evaluator_versions'::regclass
                     )
                       AND contype = 'u'
                     """
@@ -109,6 +111,9 @@ def test_postgresql_alembic_upgrade_downgrade_and_constraints():
         assert "uq_dataset_versions_dataset_version" in unique_constraints
         assert "uq_dataset_versions_dataset_content_hash" in unique_constraints
         assert "uq_dataset_version_cases_version_case_key" in unique_constraints
+        assert "uq_evaluators_project_name" in unique_constraints
+        assert "uq_evaluator_versions_evaluator_version" in unique_constraints
+        assert "uq_evaluator_versions_evaluator_content_hash" in unique_constraints
 
         check_constraints = set(
             connection.execute(
@@ -119,7 +124,9 @@ def test_postgresql_alembic_upgrade_downgrade_and_constraints():
                     WHERE conrelid IN (
                         'dataset_versions'::regclass,
                         'dataset_version_cases'::regclass,
-                        'evaluation_cases'::regclass
+                        'evaluation_cases'::regclass,
+                        'evaluators'::regclass,
+                        'evaluator_versions'::regclass
                     )
                       AND contype = 'c'
                     """
@@ -130,6 +137,14 @@ def test_postgresql_alembic_upgrade_downgrade_and_constraints():
         assert any("severity" in c and "CRITICAL" in c for _, c in check_constraints)
         assert any("version >= 1" in c for _, c in check_constraints)
         assert any("case_count >= 1" in c for _, c in check_constraints)
+        assert any(
+            "evaluator_type" in c and "CONTAINS" in c and "NOT_CONTAINS" in c and "REGEX" in c
+            for _, c in check_constraints
+        )
+        assert any(
+            "evaluator_type_snapshot" in c and "CONTAINS" in c and "NOT_CONTAINS" in c and "REGEX" in c
+            for _, c in check_constraints
+        )
 
         fk_deltypes = connection.execute(
             text(
@@ -150,6 +165,16 @@ def test_postgresql_alembic_upgrade_downgrade_and_constraints():
                 FROM pg_constraint
                 WHERE conrelid = 'dataset_version_cases'::regclass
                   AND confrelid IN ('dataset_versions'::regclass, 'evaluation_cases'::regclass)
+                UNION ALL
+                SELECT confrelid::regclass::text, confdeltype
+                FROM pg_constraint
+                WHERE conrelid = 'evaluators'::regclass
+                  AND confrelid = 'projects'::regclass
+                UNION ALL
+                SELECT confrelid::regclass::text, confdeltype
+                FROM pg_constraint
+                WHERE conrelid = 'evaluator_versions'::regclass
+                  AND confrelid = 'evaluators'::regclass
                 """
             )
         ).all()
@@ -385,5 +410,67 @@ def test_postgresql_dataset_version_sequential_increase():
 
     try:
         asyncio.run(_run_test())
+    finally:
+        asyncio.run(engine.dispose())
+
+
+def test_postgresql_api_flow_evaluator_version():
+    url = _get_postgres_url()
+    if not url or not url.startswith("postgresql"):
+        pytest.skip("TEST_DATABASE_URL is not set for PostgreSQL integration test.")
+    _ensure_test_database_name(url)
+
+    engine = create_async_engine(url, future=True)
+    session_factory = async_sessionmaker(engine, expire_on_commit=False)
+
+    async def _get_db() -> AsyncGenerator[AsyncSession, None]:
+        async with session_factory() as session:
+            yield session
+
+    async def _run_flow() -> None:
+        app.dependency_overrides[get_db_session] = _get_db
+        try:
+            with TestClient(app) as test_client:
+                project = test_client.post(
+                    "/api/v1/projects",
+                    json={"slug": f"pg-eval-{uuid4()}", "name": "PG Eval", "description": "integration"},
+                ).json()["data"]
+
+                evaluator = test_client.post(
+                    f"/api/v1/projects/{project['id']}/evaluators",
+                    json={
+                        "name": "contains-eval",
+                        "evaluator_type": "CONTAINS",
+                        "config": {"expected": "7", "case_sensitive": False},
+                    },
+                ).json()["data"]
+
+                version_1 = test_client.post(f"/api/v1/evaluators/{evaluator['id']}/versions")
+                assert version_1.status_code == 201
+                assert version_1.json()["data"]["version"] == 1
+
+                same = test_client.post(f"/api/v1/evaluators/{evaluator['id']}/versions")
+                assert same.status_code == 409
+                assert same.json()["error"]["code"] == "DUPLICATE_EVALUATOR_VERSION"
+
+                updated = test_client.patch(
+                    f"/api/v1/evaluators/{evaluator['id']}",
+                    json={"config": {"case_sensitive": False, "expected": "8"}},
+                )
+                assert updated.status_code == 200
+
+                version_2 = test_client.post(f"/api/v1/evaluators/{evaluator['id']}/versions")
+                assert version_2.status_code == 201
+                assert version_2.json()["data"]["version"] == 2
+
+                detail = test_client.get(f"/api/v1/evaluators/{evaluator['id']}/versions/2")
+                assert detail.status_code == 200
+                assert detail.json()["data"]["version"] == 2
+                assert detail.json()["data"]["evaluator_type_snapshot"] == "CONTAINS"
+        finally:
+            app.dependency_overrides.pop(get_db_session, None)
+
+    try:
+        asyncio.run(_run_flow())
     finally:
         asyncio.run(engine.dispose())

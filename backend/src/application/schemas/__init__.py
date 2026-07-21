@@ -7,6 +7,12 @@ from src.application.schemas.evaluation_case import (
 )
 from src.application.schemas.dataset_version import DatasetVersionCaseResponse, DatasetVersionListItem, DatasetVersionResponse
 from src.application.schemas.project import ProjectCreateRequest, ProjectResponse, ProjectUpdateRequest
+from src.application.schemas.evaluator import (
+    EvaluatorCreateRequest,
+    EvaluatorResponse,
+    EvaluatorUpdateRequest,
+    EvaluatorVersionResponse,
+)
 from src.application.schemas.target import (
     TargetCreateRequest,
     TargetResponse,
@@ -34,6 +40,10 @@ __all__ = [
     "DatasetVersionCaseResponse",
     "DatasetVersionListItem",
     "DatasetVersionResponse",
+    "EvaluatorCreateRequest",
+    "EvaluatorResponse",
+    "EvaluatorUpdateRequest",
+    "EvaluatorVersionResponse",
     "TargetCreateRequest",
     "TargetResponse",
     "TargetVersionExecuteRequest",
