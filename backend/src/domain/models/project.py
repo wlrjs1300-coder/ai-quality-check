@@ -28,3 +28,7 @@ class Project(Base, TimestampMixin):
         "Target",
         back_populates="project",
     )
+    evaluators = relationship(  # type: ignore[valid-type]
+        "Evaluator",
+        back_populates="project",
+    )
