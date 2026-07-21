@@ -23,3 +23,27 @@
 cd apps/web
 npm.cmd install
 npm.cmd run dev
+```
+
+## CI Quality Checks (Repository Quality Checks)
+
+GitHub Actions는 `Repository Quality Checks` 워크플로우에서 다음 검증을 실행합니다.
+
+- Repository policy check
+- Git author policy check
+- Frontend dependency install (`npm ci`)
+- Frontend typecheck
+- Frontend build
+- Backend dependency sync (`uv sync --all-groups`)
+- Backend ruff check
+- Backend pytest
+- Docker Compose config validation
+
+실행 방법:
+
+```powershell
+git checkout feat/v0.1.1-quality-checks
+git pull
+
+# PR 또는 develop 브랜치 push 시 자동 실행
+```
