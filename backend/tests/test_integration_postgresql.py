@@ -18,16 +18,19 @@ from src.api.main import app
 
 
 def _get_postgres_url() -> str | None:
-    return os.environ.get("TEST_DATABASE_URL") or os.environ.get("DATABASE_URL")
+    return os.environ.get("TEST_DATABASE_URL")
 
 
 def _postgres_url_for_sync(url: str) -> str:
     return url.replace("postgresql+asyncpg://", "postgresql+psycopg://")
 
 
-def _is_connection_error(message: str) -> bool:
-    lowered = message.lower()
-    return any(token in lowered for token in ["connection refused", "could not connect", "no route to host", "name or service not known"])
+def _ensure_test_database_name(url: str) -> None:
+    # Safety gate: never run destructive migration operations on non-test databases.
+    database_name = url.rsplit("/", 1)[-1].split("?")[0]
+    assert (
+        "test" in database_name.lower()
+    ), f"Refusing PostgreSQL integration tests for database '{database_name}' because it does not contain 'test'."
 
 
 def _run_alembic(args: list[str], env: dict[str, str], label: str) -> None:
@@ -40,8 +43,6 @@ def _run_alembic(args: list[str], env: dict[str, str], label: str) -> None:
     )
     if completed.returncode != 0:
         stderr = completed.stderr or ""
-        if _is_connection_error(stderr):
-            pytest.skip(f"{label}: environment connection issue: {stderr.strip()}")
         assert completed.returncode == 0, stderr
 
 
@@ -52,7 +53,8 @@ def _db_connection(url: str):
 def test_postgresql_alembic_upgrade_downgrade_and_constraints():
     url = _get_postgres_url()
     if not url or not url.startswith("postgresql"):
-        pytest.skip("TEST_DATABASE_URL/DATABASE_URL is not set for PostgreSQL integration test.")
+        pytest.skip("TEST_DATABASE_URL is not set for PostgreSQL integration test.")
+    _ensure_test_database_name(url)
 
     env = os.environ.copy()
     env["DATABASE_URL"] = url
@@ -129,7 +131,8 @@ def test_postgresql_alembic_upgrade_downgrade_and_constraints():
 def test_postgresql_api_flow_dataset_and_case_mutations():
     url = _get_postgres_url()
     if not url or not url.startswith("postgresql"):
-        pytest.skip("TEST_DATABASE_URL/DATABASE_URL is not set for PostgreSQL integration test.")
+        pytest.skip("TEST_DATABASE_URL is not set for PostgreSQL integration test.")
+    _ensure_test_database_name(url)
 
     engine = create_async_engine(url, future=True)
     session_factory = async_sessionmaker(engine, expire_on_commit=False)
@@ -180,10 +183,5 @@ def test_postgresql_api_flow_dataset_and_case_mutations():
 
     try:
         asyncio.run(_run_flow())
-    except Exception as exc:
-        message = str(exc).lower()
-        if _is_connection_error(message):
-            pytest.skip(f"PostgreSQL unavailable for API flow test: {exc}")
-        raise
     finally:
         asyncio.run(engine.dispose())
