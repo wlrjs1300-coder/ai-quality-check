@@ -38,3 +38,13 @@ class TargetVersionResponse(BaseModel):
     response_strategy: Literal["FIXED", "CASE_BASED", "SCENARIO_BASED"] = "FIXED"
     latency_ms: int = Field(default=0, ge=0)
     failure_rate: float = Field(default=0.0, ge=0.0, le=1.0)
+
+
+class TargetVersionExecuteRequest(BaseModel):
+    input: dict = Field(...)
+
+
+class TargetVersionExecuteResponse(BaseModel):
+    target_version_id: UUID
+    response_strategy: Literal["FIXED"]
+    output: dict

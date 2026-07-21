@@ -1,16 +1,24 @@
 from __future__ import annotations
 
-from uuid import uuid4
+import asyncio
+import os
+from uuid import UUID, uuid4
+
+from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
+
+from src.domain.models import TargetVersion
 
 
-def _create_project_dataset_flow(client):
+def _create_project_dataset_flow(client, target_config=None):
+    if target_config is None:
+        target_config = {"name": "mock"}
     project = client.post(
         "/api/v1/projects",
         json={"slug": f"project-{uuid4()}", "name": "TargetFlow", "description": "x"},
     ).json()["data"]
     target = client.post(
         f"/api/v1/projects/{project['id']}/targets",
-        json={"name": "mock-target", "target_type": "MOCK", "config": {"name": "mock"}},
+        json={"name": "mock-target", "target_type": "MOCK", "config": target_config},
     ).json()["data"]
     return project["id"], target["id"]
 
@@ -20,6 +28,30 @@ def _create_project(client):
         "/api/v1/projects",
         json={"slug": f"project-{uuid4()}", "name": "TargetProject", "description": "x"},
     ).json()["data"]
+
+
+def _update_target_version_field(version_id, field, value):
+    db_url = os.environ.get("DATABASE_URL")
+    if not db_url:
+        raise AssertionError("DATABASE_URL is required for this test")
+
+    engine = create_async_engine(db_url, future=True)
+    session_factory = async_sessionmaker(engine, expire_on_commit=False)
+    resolved_version_id = version_id if isinstance(version_id, UUID) else UUID(str(version_id))
+
+    async def _update() -> None:
+        try:
+            async with session_factory() as session:
+                target_version = await session.get(TargetVersion, resolved_version_id)
+                assert target_version is not None
+                if field in ("version", "id", "target_id"):
+                    raise AssertionError("Unexpected field for helper update.")
+                setattr(target_version, field, value)
+                await session.commit()
+        finally:
+            await engine.dispose()
+
+    asyncio.run(_update())
 
 
 def test_target_crud_and_unique_name(client):
@@ -237,3 +269,80 @@ def test_target_update_duplicate_name_collision_handled_in_service_error(client)
     patch = client.patch(f"/api/v1/targets/{target_b}", json={"name": "mock-target"})
     assert patch.status_code == 409
     assert patch.json()["error"]["code"] == "DUPLICATE_TARGET_NAME_IN_PROJECT"
+
+
+def test_target_execute_fixed_version_returns_fixed_output(client):
+    _, target_id = _create_project_dataset_flow(
+        client,
+        target_config={"fixed_response": {"text": "Fixed output"}},
+    )
+    version = client.post(f"/api/v1/targets/{target_id}/versions")
+    assert version.status_code == 201
+    version_id = version.json()["data"]["id"]
+
+    executed = client.post(
+        f"/api/v1/target-versions/{version_id}/execute",
+        json={"input": {"question": "안녕하세요?"}},
+    )
+    assert executed.status_code == 200
+    body = executed.json()
+    assert body["data"]["target_version_id"] == version_id
+    assert body["data"]["response_strategy"] == "FIXED"
+    assert body["data"]["output"] == {"text": "Fixed output"}
+
+
+def test_target_execute_validates_input_object(client):
+    _, target_id = _create_project_dataset_flow(client)
+    version = client.post(f"/api/v1/targets/{target_id}/versions")
+    assert version.status_code == 201
+    version_id = version.json()["data"]["id"]
+
+    not_object = client.post(
+        f"/api/v1/target-versions/{version_id}/execute",
+        json={"input": "wrong"},
+    )
+    assert not_object.status_code == 422
+
+
+def test_target_execute_rejects_non_fixed_response_strategy(client):
+    _, target_id = _create_project_dataset_flow(
+        client,
+        target_config={"fixed_response": {"text": "Fixed output"}},
+    )
+    version = client.post(f"/api/v1/targets/{target_id}/versions")
+    assert version.status_code == 201
+    version_id = version.json()["data"]["id"]
+
+    _update_target_version_field(version_id, "response_strategy", "CASE_BASED")
+    rejected = client.post(
+        f"/api/v1/target-versions/{version_id}/execute",
+        json={"input": {"question": "질문"}},
+    )
+    assert rejected.status_code == 409
+    assert rejected.json()["error"]["code"] == "UNSUPPORTED_RESPONSE_STRATEGY"
+
+
+def test_target_execute_rejects_invalid_fixed_response_config(client):
+    _, target_id = _create_project_dataset_flow(
+        client,
+        target_config={"fixed_response": "broken"},
+    )
+    version = client.post(f"/api/v1/targets/{target_id}/versions")
+    assert version.status_code == 201
+    version_id = version.json()["data"]["id"]
+
+    rejected = client.post(
+        f"/api/v1/target-versions/{version_id}/execute",
+        json={"input": {"question": "질문"}},
+    )
+    assert rejected.status_code == 409
+    assert rejected.json()["error"]["code"] == "INVALID_TARGET_CONFIGURATION"
+
+
+def test_target_execute_not_found(client):
+    not_found = client.post(
+        "/api/v1/target-versions/00000000-0000-0000-0000-000000000000/execute",
+        json={"input": {"question": "질문"}},
+    )
+    assert not_found.status_code == 404
+    assert not_found.json()["error"]["code"] == "TARGET_VERSION_NOT_FOUND"

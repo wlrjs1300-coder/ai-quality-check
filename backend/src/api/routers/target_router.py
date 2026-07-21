@@ -13,6 +13,8 @@ from src.application.schemas import (
     TargetCreateRequest,
     TargetResponse,
     TargetUpdateRequest,
+    TargetVersionExecuteRequest,
+    TargetVersionExecuteResponse,
     TargetVersionResponse,
 )
 from src.application.services import TargetService
@@ -168,5 +170,25 @@ async def get_target_version_by_id(
     target_version = await service.get_version_by_id(version_id)
     return {
         "data": TargetVersionResponse(**_version_to_dict(target_version)).model_dump(),
+        "meta": {"request_id": _request_id(request)},
+    }
+
+
+@router.post("/target-versions/{version_id}/execute")
+async def execute_target_version(
+    request: Request,
+    version_id: UUID,
+    payload: TargetVersionExecuteRequest,
+    db: AsyncSession = Depends(get_db_session),
+) -> dict:
+    service = TargetService(db)
+    version, output = await service.execute_version(version_id, payload.input)
+    response = TargetVersionExecuteResponse(
+        target_version_id=version.id,
+        response_strategy=version.response_strategy,
+        output=output,
+    )
+    return {
+        "data": response.model_dump(),
         "meta": {"request_id": _request_id(request)},
     }
