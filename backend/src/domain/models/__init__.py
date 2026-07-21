@@ -5,6 +5,7 @@ from src.domain.models.evaluation_case import EvaluationCase
 from src.domain.models.project import Project
 from src.domain.models.dataset_version import DatasetVersion
 from src.domain.models.dataset_version_case import DatasetVersionCase
+from src.domain.models.target import Target, TargetVersion
 
 __all__ = [
     "Base",
@@ -14,6 +15,8 @@ __all__ = [
     "EvaluationCase",
     "DatasetVersion",
     "DatasetVersionCase",
+    "Target",
+    "TargetVersion",
     "CaseStatus",
     "CaseSeverity",
 ]

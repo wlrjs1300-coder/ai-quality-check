@@ -24,3 +24,7 @@ class Project(Base, TimestampMixin):
         back_populates="project",
         cascade="all, delete-orphan",
     )
+    targets = relationship(  # type: ignore[valid-type]
+        "Target",
+        back_populates="project",
+    )
