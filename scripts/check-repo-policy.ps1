@@ -23,7 +23,14 @@ $forbiddenStrings = @(
   "generated with ai",
   "assisted by ai"
 )
-$stringExcludeFiles = @(
+$forbiddenStringExcludeFiles = @(
+  ".github/PULL_REQUEST_TEMPLATE.md",
+  "scripts/README.md",
+  "04-development-git-rules.md",
+  "scripts/check-git-author.ps1",
+  "scripts/check-repo-policy.ps1"
+)
+$secretExcludeFiles = @(
   ".github/PULL_REQUEST_TEMPLATE.md",
   "scripts/README.md",
   "04-development-git-rules.md",
@@ -97,7 +104,7 @@ function Get-TrackedAndStaged() {
 
 function ContainsForbiddenString([string]$path, [string]$content) {
   $normalizedPath = $path -replace "\\", "/"
-  if ($stringExcludeFiles -contains $normalizedPath) {
+  if ($forbiddenStringExcludeFiles -contains $normalizedPath) {
     return $null
   }
   foreach ($needle in $forbiddenStrings) {
@@ -110,7 +117,7 @@ function ContainsForbiddenString([string]$path, [string]$content) {
 
 function DetectSecret([string]$path, [string]$content) {
   $normalizedPath = $path -replace "\\", "/"
-  if ($stringExcludeFiles -contains $normalizedPath) {
+  if ($secretExcludeFiles -contains $normalizedPath) {
     return $null
   }
   foreach ($entry in $secretPatterns) {
