@@ -23,6 +23,7 @@ from src.application.errors import ErrorCodeError
 from src.application.schemas import BaselineComparisonCreateRequest
 from src.application.services import (
     BaselineComparisonService,
+    DemoSeedService,
     DatasetService,
     DatasetVersionService,
     EvaluationCaseService,
@@ -761,6 +762,67 @@ def test_postgresql_api_flow_experiment():
                 rerun = test_client.post(f"/api/v1/experiments/{experiment_id}/run")
                 assert rerun.status_code == 409
                 assert rerun.json()["error"]["code"] == "INVALID_STATE_TRANSITION"
+        finally:
+            app.dependency_overrides.pop(get_db_session, None)
+
+    try:
+        asyncio.run(_run_flow())
+    finally:
+        asyncio.run(engine.dispose())
+
+
+def test_postgresql_demo_seed_and_dashboard_flow():
+    url = _get_postgres_url()
+    if not url or not url.startswith("postgresql"):
+        pytest.skip("TEST_DATABASE_URL is not set for PostgreSQL integration test.")
+    _ensure_test_database_name(url)
+
+    engine = create_async_engine(url, future=True, poolclass=NullPool)
+    session_factory = async_sessionmaker(engine, expire_on_commit=False)
+
+    async def _get_db() -> AsyncGenerator[AsyncSession, None]:
+        async with session_factory() as session:
+            yield session
+
+    async def _run_flow() -> None:
+        async with session_factory() as first_session:
+            first = await DemoSeedService(first_session).seed()
+        assert first.status in {"created", "already_seeded"}
+
+        async with session_factory() as second_session:
+            second = await DemoSeedService(second_session).seed()
+        assert second.status == "already_seeded"
+        assert second.project_id == first.project_id
+
+        app.dependency_overrides[get_db_session] = _get_db
+        try:
+            with TestClient(app) as test_client:
+                dashboard = test_client.get(
+                    f"/api/v1/projects/{first.project_id}/dashboard-overview"
+                )
+                assert dashboard.status_code == 200
+                dashboard_payload = dashboard.json()["data"]
+                assert dashboard_payload["readiness"]["status"] == "NOT_READY"
+                assert dashboard_payload["latest_quality_gate_result"]["status"] == "BLOCK"
+                assert dashboard_payload["latest_baseline_comparison"]["status"] == "REGRESSED"
+                assert dashboard_payload["trend"]["direction"] == "DECLINING"
+
+                summary = test_client.get(
+                    f"/api/v1/projects/{first.project_id}/summary-report"
+                )
+                assert summary.status_code == 200
+                assert summary.json()["data"]["metrics"]["experiment_count"] == 4
+
+                history = test_client.get(
+                    f"/api/v1/projects/{first.project_id}/experiment-history?sort=created_at_asc"
+                )
+                assert history.status_code == 200
+                assert [item["pass_rate"] for item in history.json()["data"]] == [
+                    "0.6",
+                    "0.8",
+                    "0.8",
+                    "0.4",
+                ]
         finally:
             app.dependency_overrides.pop(get_db_session, None)
 
