@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
 import unicodedata
 
 from sqlalchemy import func, select
@@ -216,3 +217,167 @@ class EvaluatorService:
                 ) from exc
 
             return row
+
+    async def execute_version(self, version_id, payload: dict) -> dict:
+        version = await self.get_version_by_id(version_id)
+
+        if version.evaluator_type_snapshot not in {"CONTAINS", "NOT_CONTAINS", "REGEX"}:
+            raise ErrorCodeError(
+                "UNSUPPORTED_EVALUATOR_TYPE",
+                "Unsupported evaluator type snapshot.",
+                409,
+            )
+
+        snapshot_config = version.config_snapshot
+        if not isinstance(snapshot_config, dict):
+            raise ErrorCodeError(
+                "INVALID_EVALUATOR_CONFIGURATION",
+                "Evaluator version snapshot config must be an object.",
+                409,
+            )
+        output_text = payload.get("text") if isinstance(payload, dict) else None
+        if not isinstance(output_text, str):
+            raise ErrorCodeError(
+                "INVALID_EVALUATOR_CONFIGURATION",
+                "Output payload must include text as string.",
+                409,
+            )
+
+        status, reason_code, reason = self._evaluate(version.evaluator_type_snapshot, snapshot_config, output_text)
+
+        return {
+            "evaluator_version_id": version.id,
+            "evaluator_type": version.evaluator_type_snapshot,
+            "status": status,
+            "reason_code": reason_code,
+            "reason": reason,
+        }
+
+    @staticmethod
+    def _evaluate_contains(expected: str, actual: str, case_sensitive: bool = False) -> tuple[str, str | None, str | None]:
+        expected_text = expected
+        actual_text = actual
+        if not case_sensitive:
+            expected_text = unicodedata.normalize("NFC", expected_text).casefold()
+            actual_text = unicodedata.normalize("NFC", actual_text).casefold()
+        if expected_text in actual_text:
+            return "PASS", None, None
+        return "FAIL", "EXPECTED_TEXT_NOT_FOUND", "Expected text not found in output."
+
+    @staticmethod
+    def _evaluate_not_contains(forbidden: str, actual: str, case_sensitive: bool = False) -> tuple[str, str | None, str | None]:
+        forbidden_text = forbidden
+        actual_text = actual
+        if not case_sensitive:
+            forbidden_text = unicodedata.normalize("NFC", forbidden_text).casefold()
+            actual_text = unicodedata.normalize("NFC", actual_text).casefold()
+        if forbidden_text in actual_text:
+            return "FAIL", "FORBIDDEN_TEXT_FOUND", "Forbidden text found in output."
+        return "PASS", None, None
+
+    @staticmethod
+    def _evaluate_regex(pattern: str, actual: str, flags: list[str] | None = None) -> tuple[str, str | None, str | None]:
+        if flags is None:
+            flags = []
+
+        flags_map = {"IGNORECASE": re.IGNORECASE, "MULTILINE": re.MULTILINE, "DOTALL": re.DOTALL}
+        re_flags = 0
+        for flag in flags:
+            if not isinstance(flag, str) or flag not in flags_map:
+                raise ErrorCodeError(
+                    "INVALID_EVALUATOR_CONFIGURATION",
+                    "Unsupported regex flag.",
+                    409,
+                )
+            re_flags |= flags_map[flag]
+
+        try:
+            compiled = re.compile(pattern, flags=re_flags)
+        except re.error as exc:
+            raise ErrorCodeError(
+                "INVALID_EVALUATOR_CONFIGURATION",
+                "Invalid regex pattern.",
+                409,
+            ) from exc
+
+        if compiled.search(actual):
+            return "PASS", None, None
+        return "FAIL", "REGEX_NOT_MATCHED", "Regex pattern not matched."
+
+    @staticmethod
+    def _validate_config(evaluator_type: str, config: dict) -> None:
+        if evaluator_type == "CONTAINS":
+            expected = config.get("expected")
+            if not isinstance(expected, str) or not expected:
+                raise ErrorCodeError(
+                    "INVALID_EVALUATOR_CONFIGURATION",
+                    "expected must be a non-empty string.",
+                    409,
+                )
+            case_sensitive = config.get("case_sensitive", False)
+            if not isinstance(case_sensitive, bool):
+                raise ErrorCodeError(
+                    "INVALID_EVALUATOR_CONFIGURATION",
+                    "case_sensitive must be a boolean.",
+                    409,
+                )
+        elif evaluator_type == "NOT_CONTAINS":
+            forbidden = config.get("forbidden")
+            if not isinstance(forbidden, str) or not forbidden:
+                raise ErrorCodeError(
+                    "INVALID_EVALUATOR_CONFIGURATION",
+                    "forbidden must be a non-empty string.",
+                    409,
+                )
+            case_sensitive = config.get("case_sensitive", False)
+            if not isinstance(case_sensitive, bool):
+                raise ErrorCodeError(
+                    "INVALID_EVALUATOR_CONFIGURATION",
+                    "case_sensitive must be a boolean.",
+                    409,
+                )
+        elif evaluator_type == "REGEX":
+            pattern = config.get("pattern")
+            if not isinstance(pattern, str) or not pattern:
+                raise ErrorCodeError(
+                    "INVALID_EVALUATOR_CONFIGURATION",
+                    "pattern must be a non-empty string.",
+                    409,
+                )
+            flags = config.get("flags", [])
+            if not isinstance(flags, list):
+                raise ErrorCodeError("INVALID_EVALUATOR_CONFIGURATION", "flags must be a list.", 409)
+            for flag in flags:
+                if not isinstance(flag, str):
+                    raise ErrorCodeError("INVALID_EVALUATOR_CONFIGURATION", "flags must contain strings.", 409)
+
+    def _evaluate(self, evaluator_type: str, config_snapshot: dict, text: str) -> tuple[str, str | None, str | None]:
+        self._validate_config(evaluator_type, config_snapshot)
+        if evaluator_type == "CONTAINS":
+            config = self._eval_contains_config(config_snapshot)
+            return self._evaluate_contains(config["expected"], text, config["case_sensitive"])
+        if evaluator_type == "NOT_CONTAINS":
+            config = self._eval_not_contains_config(config_snapshot)
+            return self._evaluate_not_contains(config["forbidden"], text, config["case_sensitive"])
+        if evaluator_type == "REGEX":
+            config = self._eval_regex_config(config_snapshot)
+            return self._evaluate_regex(config["pattern"], text, config["flags"])
+        raise ErrorCodeError("UNSUPPORTED_EVALUATOR_TYPE", "Unsupported evaluator type.", 409)
+
+    @staticmethod
+    def _eval_contains_config(config: dict) -> dict[str, bool | str]:
+        return {"expected": unicodedata.normalize("NFC", str(config["expected"])), "case_sensitive": bool(config.get("case_sensitive", False))}
+
+    @staticmethod
+    def _eval_not_contains_config(config: dict) -> dict[str, bool | str]:
+        return {
+            "forbidden": unicodedata.normalize("NFC", str(config["forbidden"])),
+            "case_sensitive": bool(config.get("case_sensitive", False)),
+        }
+
+    @staticmethod
+    def _eval_regex_config(config: dict) -> dict[str, str | list[str]]:
+        return {
+            "pattern": unicodedata.normalize("NFC", str(config["pattern"])),
+            "flags": config.get("flags", []),
+        }
