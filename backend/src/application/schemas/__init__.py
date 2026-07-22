@@ -54,6 +54,12 @@ from src.application.schemas.project_summary import (
     ProjectSummaryReadinessItem,
     ProjectSummaryReportResponse,
 )
+from src.application.schemas.dashboard import (
+    DashboardRecentExperimentItem,
+    ProjectDashboardKpiItem,
+    ProjectDashboardOverviewResponse,
+    ProjectDashboardTrendItem,
+)
 
 __all__ = [
     "BaseListResponse",
@@ -106,4 +112,8 @@ __all__ = [
     "ProjectSummaryProjectItem",
     "ProjectSummaryReadinessItem",
     "ProjectSummaryReportResponse",
+    "DashboardRecentExperimentItem",
+    "ProjectDashboardKpiItem",
+    "ProjectDashboardOverviewResponse",
+    "ProjectDashboardTrendItem",
 ]

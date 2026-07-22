@@ -10,6 +10,7 @@ from src.application.services.baseline_comparison_service import BaselineCompari
 from src.application.services.history_service import HistoryService
 from src.application.services.history_csv_export_service import HistoryCsvExportService
 from src.application.services.project_summary_service import ProjectSummaryReportService
+from src.application.services.dashboard_service import ProjectDashboardOverviewService
 
 __all__ = [
     "ProjectService",
@@ -24,4 +25,5 @@ __all__ = [
     "HistoryService",
     "HistoryCsvExportService",
     "ProjectSummaryReportService",
+    "ProjectDashboardOverviewService",
 ]
