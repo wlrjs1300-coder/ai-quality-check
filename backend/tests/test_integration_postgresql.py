@@ -474,3 +474,109 @@ def test_postgresql_api_flow_evaluator_version():
         asyncio.run(_run_flow())
     finally:
         asyncio.run(engine.dispose())
+
+
+def test_postgresql_api_flow_experiment():
+    url = _get_postgres_url()
+    if not url or not url.startswith("postgresql"):
+        pytest.skip("TEST_DATABASE_URL is not set for PostgreSQL integration test.")
+    _ensure_test_database_name(url)
+
+    engine = create_async_engine(url, future=True)
+    session_factory = async_sessionmaker(engine, expire_on_commit=False)
+
+    async def _get_db() -> AsyncGenerator[AsyncSession, None]:
+        async with session_factory() as session:
+            yield session
+
+    async def _run_flow() -> None:
+        app.dependency_overrides[get_db_session] = _get_db
+        try:
+            with TestClient(app) as test_client:
+                project = test_client.post(
+                    "/api/v1/projects",
+                    json={"slug": f"pg-exp-{uuid4()}", "name": "PG Exp", "description": "integration"},
+                ).json()["data"]
+
+                dataset = test_client.post(
+                    f"/api/v1/projects/{project['id']}/datasets",
+                    json={"name": "dataset", "description": "pg"},
+                ).json()["data"]
+
+                created_case = test_client.post(
+                    f"/api/v1/datasets/{dataset['id']}/evaluation-cases",
+                    json={
+                        "case_key": "case-1",
+                        "question": "7일 이내 안내문",
+                        "expected_summary": "응답해야 함",
+                        "evidence": [],
+                        "required_elements": [],
+                        "forbidden_elements": [],
+                        "tags": [],
+                        "severity": "MEDIUM",
+                        "required_for_release": False,
+                    },
+                ).json()["data"]
+                approve = test_client.post(f"/api/v1/evaluation-cases/{created_case['id']}/approve")
+                assert approve.status_code == 200
+
+                snapshot = test_client.post(f"/api/v1/datasets/{dataset['id']}/versions")
+                assert snapshot.status_code == 201
+                dataset_version_id = snapshot.json()["data"]["id"]
+
+                target = test_client.post(
+                    f"/api/v1/projects/{project['id']}/targets",
+                    json={
+                        "name": "mock-target",
+                        "target_type": "MOCK",
+                        "config": {"fixed_response": {"text": "7일"}},
+                    },
+                ).json()["data"]
+                target_version = test_client.post(f"/api/v1/targets/{target['id']}/versions")
+                assert target_version.status_code == 201
+                target_version_id = target_version.json()["data"]["id"]
+
+                evaluator = test_client.post(
+                    f"/api/v1/projects/{project['id']}/evaluators",
+                    json={
+                        "name": "contains",
+                        "evaluator_type": "CONTAINS",
+                        "config": {"expected": "7일", "case_sensitive": False},
+                    },
+                ).json()["data"]
+                evaluator_version = test_client.post(f"/api/v1/evaluators/{evaluator['id']}/versions")
+                assert evaluator_version.status_code == 201
+                evaluator_version_id = evaluator_version.json()["data"]["id"]
+
+                experiment = test_client.post(
+                    "/api/v1/experiments",
+                    json={
+                        "dataset_version_id": dataset_version_id,
+                        "target_version_id": target_version_id,
+                        "evaluator_version_id": evaluator_version_id,
+                    },
+                )
+                assert experiment.status_code == 201
+                experiment_id = experiment.json()["data"]["id"]
+
+                run = test_client.post(f"/api/v1/experiments/{experiment_id}/run")
+                assert run.status_code == 200
+                assert run.json()["data"]["status"] == "COMPLETED"
+
+                results = test_client.get(f"/api/v1/experiments/{experiment_id}/results")
+                assert results.status_code == 200
+                payload = results.json()
+                assert payload["meta"]["pagination"]["total"] == 1
+                assert len(payload["data"]) == 1
+                assert payload["data"][0]["status"] == "PASS"
+
+                rerun = test_client.post(f"/api/v1/experiments/{experiment_id}/run")
+                assert rerun.status_code == 409
+                assert rerun.json()["error"]["code"] == "INVALID_STATE_TRANSITION"
+        finally:
+            app.dependency_overrides.pop(get_db_session, None)
+
+    try:
+        asyncio.run(_run_flow())
+    finally:
+        asyncio.run(engine.dispose())

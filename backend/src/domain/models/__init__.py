@@ -3,6 +3,7 @@ from src.domain.models.dataset import Dataset
 from src.domain.models.enums import CaseSeverity, CaseStatus
 from src.domain.models.evaluation_case import EvaluationCase
 from src.domain.models.evaluator import Evaluator, EvaluatorVersion
+from src.domain.models.experiment import Experiment, EvaluationResult
 from src.domain.models.project import Project
 from src.domain.models.dataset_version import DatasetVersion
 from src.domain.models.dataset_version_case import DatasetVersionCase
@@ -20,6 +21,8 @@ __all__ = [
     "TargetVersion",
     "CaseStatus",
     "CaseSeverity",
+    "Experiment",
+    "EvaluationResult",
     "Evaluator",
     "EvaluatorVersion",
 ]

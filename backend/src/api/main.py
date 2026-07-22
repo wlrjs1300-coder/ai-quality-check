@@ -11,6 +11,7 @@ from src.api.routers.evaluation_case_router import router as evaluation_case_rou
 from src.api.routers.project_router import router as project_router
 from src.api.routers.dataset_version_router import router as dataset_version_router
 from src.api.routers.evaluator_router import router as evaluator_router
+from src.api.routers.experiment_router import router as experiment_router
 from src.api.routers.target_router import router as target_router
 
 app = FastAPI(title="EvalOps Backend")
@@ -21,6 +22,7 @@ app.include_router(evaluation_case_router, prefix="/api/v1")
 app.include_router(dataset_version_router, prefix="/api/v1")
 app.include_router(evaluator_router, prefix="/api/v1")
 app.include_router(target_router, prefix="/api/v1")
+app.include_router(experiment_router, prefix="/api/v1")
 
 
 @app.exception_handler(ErrorCodeError)
