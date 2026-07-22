@@ -47,6 +47,13 @@ from src.application.schemas.history import (
     QualityGateHistoryItemResponse,
     TrendSummaryResponse,
 )
+from src.application.schemas.project_summary import (
+    ProjectSummaryMetricsItem,
+    ProjectSummaryPeriodItem,
+    ProjectSummaryProjectItem,
+    ProjectSummaryReadinessItem,
+    ProjectSummaryReportResponse,
+)
 
 __all__ = [
     "BaseListResponse",
@@ -94,4 +101,9 @@ __all__ = [
     "ExperimentHistoryListResponse",
     "QualityGateHistoryItemResponse",
     "TrendSummaryResponse",
+    "ProjectSummaryMetricsItem",
+    "ProjectSummaryPeriodItem",
+    "ProjectSummaryProjectItem",
+    "ProjectSummaryReadinessItem",
+    "ProjectSummaryReportResponse",
 ]

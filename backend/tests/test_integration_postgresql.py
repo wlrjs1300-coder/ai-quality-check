@@ -724,6 +724,22 @@ def test_postgresql_api_flow_experiment():
                 assert trend_payload["comparison_unchanged_count"] == 1
                 assert trend_payload["comparison_missing_count"] == 1
 
+                summary_report = test_client.get(
+                    f"/api/v1/projects/{project['id']}/summary-report"
+                )
+                assert summary_report.status_code == 200
+                summary_payload = summary_report.json()["data"]
+                assert summary_payload["project"]["project_id"] == project["id"]
+                assert summary_payload["metrics"]["experiment_count"] == 2
+                assert summary_payload["metrics"]["completed_experiment_count"] == 2
+                assert summary_payload["latest_experiment"]["experiment_id"] == current_experiment_id
+                assert summary_payload["latest_quality_gate_result"]["result_id"] == gate_payload["id"]
+                assert summary_payload["latest_baseline_comparison"]["comparison_id"] == str(
+                    successful[0].id
+                )
+                assert summary_payload["readiness"]["status"] == "UNKNOWN"
+                assert summary_payload["readiness"]["reason_codes"] == ["QUALITY_GATE_MISSING"]
+
                 rerun = test_client.post(f"/api/v1/experiments/{experiment_id}/run")
                 assert rerun.status_code == 409
                 assert rerun.json()["error"]["code"] == "INVALID_STATE_TRANSITION"
