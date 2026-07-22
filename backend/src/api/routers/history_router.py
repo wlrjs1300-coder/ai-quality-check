@@ -5,6 +5,7 @@ from typing import Literal
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query, Request
+from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.api.deps import get_db_session
@@ -15,13 +16,41 @@ from src.application.schemas import (
     PaginationMeta,
     TrendSummaryResponse,
 )
-from src.application.services import HistoryService
+from src.application.services import HistoryCsvExportService, HistoryService
+from src.application.services.history_csv_export_service import content_disposition
 
 router = APIRouter(prefix="/projects", tags=["history"])
 
 
 def _request_id(request: Request) -> str:
     return request.headers.get("x-request-id", "local-request")
+
+
+@router.get("/{project_id}/experiment-history.csv")
+async def export_experiment_history_csv(
+    project_id: UUID,
+    experiment_status: Literal["CREATED", "RUNNING", "COMPLETED", "FAILED"] | None = None,
+    gate_status: Literal["PASS", "BLOCK"] | None = None,
+    comparison_status: Literal["IMPROVED", "UNCHANGED", "REGRESSED"] | None = None,
+    created_from: datetime | None = None,
+    created_to: datetime | None = None,
+    sort: Literal["created_at_desc", "created_at_asc"] = "created_at_desc",
+    db: AsyncSession = Depends(get_db_session),
+) -> StreamingResponse:
+    filename, chunks, _ = await HistoryCsvExportService(HistoryService(db)).export(
+        project_id=project_id,
+        experiment_status=experiment_status,
+        gate_status=gate_status,
+        comparison_status=comparison_status,
+        created_from=created_from,
+        created_to=created_to,
+        sort=sort,
+    )
+    return StreamingResponse(
+        chunks,
+        media_type="text/csv; charset=utf-8",
+        headers={"Content-Disposition": content_disposition(filename)},
+    )
 
 
 @router.get("/{project_id}/experiment-history")
