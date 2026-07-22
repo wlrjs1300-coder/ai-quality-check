@@ -29,6 +29,12 @@ from src.application.schemas.target import (
     TargetUpdateRequest,
     TargetVersionResponse,
 )
+from src.application.schemas.quality_gate import (
+    QualityGateEvaluateRequest,
+    QualityGatePolicyCreateRequest,
+    QualityGatePolicyResponse,
+    QualityGateResultResponse,
+)
 
 __all__ = [
     "BaseListResponse",
@@ -64,4 +70,8 @@ __all__ = [
     "TargetVersionExecuteResponse",
     "TargetUpdateRequest",
     "TargetVersionResponse",
+    "QualityGateEvaluateRequest",
+    "QualityGatePolicyCreateRequest",
+    "QualityGatePolicyResponse",
+    "QualityGateResultResponse",
 ]

@@ -98,7 +98,9 @@ def test_postgresql_alembic_upgrade_downgrade_and_constraints():
                         'dataset_versions'::regclass,
                         'dataset_version_cases'::regclass,
                         'evaluators'::regclass,
-                        'evaluator_versions'::regclass
+                        'evaluator_versions'::regclass,
+                        'quality_gate_policies'::regclass,
+                        'quality_gate_results'::regclass
                     )
                       AND contype = 'u'
                     """
@@ -114,6 +116,8 @@ def test_postgresql_alembic_upgrade_downgrade_and_constraints():
         assert "uq_evaluators_project_name" in unique_constraints
         assert "uq_evaluator_versions_evaluator_version" in unique_constraints
         assert "uq_evaluator_versions_evaluator_content_hash" in unique_constraints
+        assert "uq_quality_gate_policies_project_name" in unique_constraints
+        assert "uq_quality_gate_results_policy_experiment" in unique_constraints
 
         check_constraints = set(
             connection.execute(
@@ -126,7 +130,9 @@ def test_postgresql_alembic_upgrade_downgrade_and_constraints():
                         'dataset_version_cases'::regclass,
                         'evaluation_cases'::regclass,
                         'evaluators'::regclass,
-                        'evaluator_versions'::regclass
+                        'evaluator_versions'::regclass,
+                        'quality_gate_policies'::regclass,
+                        'quality_gate_results'::regclass
                     )
                       AND contype = 'c'
                     """
@@ -145,6 +151,17 @@ def test_postgresql_alembic_upgrade_downgrade_and_constraints():
             "evaluator_type_snapshot" in c and "CONTAINS" in c and "NOT_CONTAINS" in c and "REGEX" in c
             for _, c in check_constraints
         )
+        minimum_pass_rate_constraints = [
+            c for _, c in check_constraints if _.startswith("ck_quality_gate_policies_minimum_pass_rate")
+        ]
+        assert len(minimum_pass_rate_constraints) == 1
+        minimum_pass_rate_constraint = minimum_pass_rate_constraints[0]
+        assert "minimum_pass_rate" in minimum_pass_rate_constraint
+        assert ">=" in minimum_pass_rate_constraint
+        assert "<=" in minimum_pass_rate_constraint
+        assert "0" in minimum_pass_rate_constraint
+        assert "1" in minimum_pass_rate_constraint
+        assert any("passed_case_count" in c and "total_case_count" in c for _, c in check_constraints)
 
         fk_deltypes = connection.execute(
             text(
@@ -175,6 +192,16 @@ def test_postgresql_alembic_upgrade_downgrade_and_constraints():
                 FROM pg_constraint
                 WHERE conrelid = 'evaluator_versions'::regclass
                   AND confrelid = 'evaluators'::regclass
+                UNION ALL
+                SELECT confrelid::regclass::text, confdeltype
+                FROM pg_constraint
+                WHERE conrelid = 'quality_gate_policies'::regclass
+                  AND confrelid = 'projects'::regclass
+                UNION ALL
+                SELECT confrelid::regclass::text, confdeltype
+                FROM pg_constraint
+                WHERE conrelid = 'quality_gate_results'::regclass
+                  AND confrelid IN ('quality_gate_policies'::regclass, 'experiments'::regclass)
                 """
             )
         ).all()
@@ -569,6 +596,25 @@ def test_postgresql_api_flow_experiment():
                 assert payload["meta"]["pagination"]["total"] == 1
                 assert len(payload["data"]) == 1
                 assert payload["data"][0]["status"] == "PASS"
+
+                policy = test_client.post(
+                    f"/api/v1/projects/{project['id']}/quality-gate-policies",
+                    json={"name": "release", "minimum_pass_rate": 1.0},
+                )
+                assert policy.status_code == 201
+                policy_id = policy.json()["data"]["id"]
+
+                gate = test_client.post(
+                    f"/api/v1/quality-gate-policies/{policy_id}/evaluate",
+                    json={"experiment_id": experiment_id},
+                )
+                assert gate.status_code == 200
+                gate_payload = gate.json()["data"]
+                assert gate_payload["status"] == "PASS"
+                assert gate_payload["reason_codes"] == []
+                gate_result = test_client.get(f"/api/v1/quality-gate-results/{gate_payload['id']}")
+                assert gate_result.status_code == 200
+                assert gate_result.json()["data"]["id"] == gate_payload["id"]
 
                 rerun = test_client.post(f"/api/v1/experiments/{experiment_id}/run")
                 assert rerun.status_code == 409
