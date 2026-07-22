@@ -689,6 +689,26 @@ def test_postgresql_api_flow_experiment():
                 assert gate_result.status_code == 200
                 assert gate_result.json()["data"]["id"] == gate_payload["id"]
 
+                history = test_client.get(f"/api/v1/projects/{project['id']}/experiment-history")
+                assert history.status_code == 200
+                history_payload = history.json()
+                assert history_payload["meta"]["pagination"]["total"] == 2
+                history_by_id = {item["experiment_id"]: item for item in history_payload["data"]}
+                assert history_by_id[experiment_id]["quality_gate_result"]["result_id"] == gate_payload["id"]
+                assert history_by_id[current_experiment_id]["baseline_comparison"]["comparison_id"] == str(
+                    successful[0].id
+                )
+
+                trend = test_client.get(f"/api/v1/projects/{project['id']}/trend-summary")
+                assert trend.status_code == 200
+                trend_payload = trend.json()["data"]
+                assert trend_payload["experiment_count"] == 2
+                assert trend_payload["completed_experiment_count"] == 2
+                assert trend_payload["gate_pass_count"] == 1
+                assert trend_payload["gate_missing_count"] == 1
+                assert trend_payload["comparison_unchanged_count"] == 1
+                assert trend_payload["comparison_missing_count"] == 1
+
                 rerun = test_client.post(f"/api/v1/experiments/{experiment_id}/run")
                 assert rerun.status_code == 409
                 assert rerun.json()["error"]["code"] == "INVALID_STATE_TRANSITION"

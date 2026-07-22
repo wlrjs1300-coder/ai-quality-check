@@ -40,6 +40,13 @@ from src.application.schemas.baseline_comparison import (
     BaselineComparisonCreateRequest,
     BaselineComparisonResponse,
 )
+from src.application.schemas.history import (
+    BaselineComparisonHistoryItemResponse,
+    ExperimentHistoryItemResponse,
+    ExperimentHistoryListResponse,
+    QualityGateHistoryItemResponse,
+    TrendSummaryResponse,
+)
 
 __all__ = [
     "BaseListResponse",
@@ -82,4 +89,9 @@ __all__ = [
     "BaselineComparisonCaseResponse",
     "BaselineComparisonCreateRequest",
     "BaselineComparisonResponse",
+    "BaselineComparisonHistoryItemResponse",
+    "ExperimentHistoryItemResponse",
+    "ExperimentHistoryListResponse",
+    "QualityGateHistoryItemResponse",
+    "TrendSummaryResponse",
 ]
