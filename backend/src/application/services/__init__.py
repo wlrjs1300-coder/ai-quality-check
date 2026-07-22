@@ -5,6 +5,7 @@ from src.application.services.dataset_version_service import DatasetVersionServi
 from src.application.services.experiment_service import ExperimentService
 from src.application.services.target_service import TargetService
 from src.application.services.evaluator_service import EvaluatorService
+from src.application.services.quality_gate_service import QualityGateService
 
 __all__ = [
     "ProjectService",
@@ -14,4 +15,5 @@ __all__ = [
     "ExperimentService",
     "EvaluatorService",
     "TargetService",
+    "QualityGateService",
 ]

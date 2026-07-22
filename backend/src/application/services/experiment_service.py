@@ -219,7 +219,7 @@ class ExperimentService:
                 )
                 self.db.add(result)
 
-            if experiment_error is not None or experiment.fail_count > 0:
+            if experiment_error is not None:
                 experiment.status = "FAILED"
             else:
                 experiment.status = "COMPLETED"

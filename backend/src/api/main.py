@@ -13,6 +13,7 @@ from src.api.routers.dataset_version_router import router as dataset_version_rou
 from src.api.routers.evaluator_router import router as evaluator_router
 from src.api.routers.experiment_router import router as experiment_router
 from src.api.routers.target_router import router as target_router
+from src.api.routers.quality_gate_router import router as quality_gate_router
 
 app = FastAPI(title="EvalOps Backend")
 app.include_router(health_router)
@@ -23,6 +24,7 @@ app.include_router(dataset_version_router, prefix="/api/v1")
 app.include_router(evaluator_router, prefix="/api/v1")
 app.include_router(target_router, prefix="/api/v1")
 app.include_router(experiment_router, prefix="/api/v1")
+app.include_router(quality_gate_router, prefix="/api/v1")
 
 
 @app.exception_handler(ErrorCodeError)
