@@ -7,6 +7,7 @@ from src.application.services.target_service import TargetService
 from src.application.services.evaluator_service import EvaluatorService
 from src.application.services.quality_gate_service import QualityGateService
 from src.application.services.baseline_comparison_service import BaselineComparisonService
+from src.application.services.history_service import HistoryService
 
 __all__ = [
     "ProjectService",
@@ -18,4 +19,5 @@ __all__ = [
     "TargetService",
     "QualityGateService",
     "BaselineComparisonService",
+    "HistoryService",
 ]
