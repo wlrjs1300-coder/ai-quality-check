@@ -13,11 +13,19 @@ import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine, text
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+from sqlalchemy.pool import NullPool
 
 from src.api.deps import get_db_session
 from src.api.main import app
 from src.application.errors import ErrorCodeError
-from src.application.services import DatasetService, DatasetVersionService, EvaluationCaseService, ProjectService
+from src.application.schemas import BaselineComparisonCreateRequest
+from src.application.services import (
+    BaselineComparisonService,
+    DatasetService,
+    DatasetVersionService,
+    EvaluationCaseService,
+    ProjectService,
+)
 from src.domain.models import CaseSeverity
 
 
@@ -100,7 +108,9 @@ def test_postgresql_alembic_upgrade_downgrade_and_constraints():
                         'evaluators'::regclass,
                         'evaluator_versions'::regclass,
                         'quality_gate_policies'::regclass,
-                        'quality_gate_results'::regclass
+                        'quality_gate_results'::regclass,
+                        'baseline_comparisons'::regclass,
+                        'baseline_comparison_cases'::regclass
                     )
                       AND contype = 'u'
                     """
@@ -118,6 +128,8 @@ def test_postgresql_alembic_upgrade_downgrade_and_constraints():
         assert "uq_evaluator_versions_evaluator_content_hash" in unique_constraints
         assert "uq_quality_gate_policies_project_name" in unique_constraints
         assert "uq_quality_gate_results_policy_experiment" in unique_constraints
+        assert "uq_baseline_comparisons_experiment_pair" in unique_constraints
+        assert "uq_baseline_comparison_cases_comparison_case" in unique_constraints
 
         check_constraints = set(
             connection.execute(
@@ -132,7 +144,9 @@ def test_postgresql_alembic_upgrade_downgrade_and_constraints():
                         'evaluators'::regclass,
                         'evaluator_versions'::regclass,
                         'quality_gate_policies'::regclass,
-                        'quality_gate_results'::regclass
+                        'quality_gate_results'::regclass,
+                        'baseline_comparisons'::regclass,
+                        'baseline_comparison_cases'::regclass
                     )
                       AND contype = 'c'
                     """
@@ -162,6 +176,9 @@ def test_postgresql_alembic_upgrade_downgrade_and_constraints():
         assert "0" in minimum_pass_rate_constraint
         assert "1" in minimum_pass_rate_constraint
         assert any("passed_case_count" in c and "total_case_count" in c for _, c in check_constraints)
+        assert any("pass_rate_delta" in c and ">=" in c and "<=" in c for _, c in check_constraints)
+        assert any("improved_case_count" in c and "total_case_count" in c for _, c in check_constraints)
+        assert any("change_status" in c and "IMPROVED" in c and "REGRESSED" in c for _, c in check_constraints)
 
         fk_deltypes = connection.execute(
             text(
@@ -202,6 +219,16 @@ def test_postgresql_alembic_upgrade_downgrade_and_constraints():
                 FROM pg_constraint
                 WHERE conrelid = 'quality_gate_results'::regclass
                   AND confrelid IN ('quality_gate_policies'::regclass, 'experiments'::regclass)
+                UNION ALL
+                SELECT confrelid::regclass::text, confdeltype
+                FROM pg_constraint
+                WHERE conrelid = 'baseline_comparisons'::regclass
+                  AND confrelid IN ('projects'::regclass, 'experiments'::regclass)
+                UNION ALL
+                SELECT confrelid::regclass::text, confdeltype
+                FROM pg_constraint
+                WHERE conrelid = 'baseline_comparison_cases'::regclass
+                  AND confrelid IN ('baseline_comparisons'::regclass, 'dataset_version_cases'::regclass)
                 """
             )
         ).all()
@@ -509,7 +536,11 @@ def test_postgresql_api_flow_experiment():
         pytest.skip("TEST_DATABASE_URL is not set for PostgreSQL integration test.")
     _ensure_test_database_name(url)
 
-    engine = create_async_engine(url, future=True)
+    engine = create_async_engine(
+        url,
+        future=True,
+        poolclass=NullPool,
+    )
     session_factory = async_sessionmaker(engine, expire_on_commit=False)
 
     async def _get_db() -> AsyncGenerator[AsyncSession, None]:
@@ -596,6 +627,48 @@ def test_postgresql_api_flow_experiment():
                 assert payload["meta"]["pagination"]["total"] == 1
                 assert len(payload["data"]) == 1
                 assert payload["data"][0]["status"] == "PASS"
+
+                current_experiment = test_client.post(
+                    "/api/v1/experiments",
+                    json={
+                        "dataset_version_id": dataset_version_id,
+                        "target_version_id": target_version_id,
+                        "evaluator_version_id": evaluator_version_id,
+                    },
+                )
+                assert current_experiment.status_code == 201
+                current_experiment_id = current_experiment.json()["data"]["id"]
+                current_run = test_client.post(f"/api/v1/experiments/{current_experiment_id}/run")
+                assert current_run.status_code == 200
+                assert current_run.json()["data"]["status"] == "COMPLETED"
+
+                compare_payload = BaselineComparisonCreateRequest(
+                    baseline_experiment_id=experiment_id,
+                    current_experiment_id=current_experiment_id,
+                )
+
+                async def _compare_once():
+                    async with session_factory() as comparison_session:
+                        try:
+                            return await BaselineComparisonService(comparison_session).create_comparison(compare_payload)
+                        except ErrorCodeError as exc:
+                            return exc
+
+                comparison_results = await asyncio.gather(_compare_once(), _compare_once())
+                successful = [item for item in comparison_results if not isinstance(item, ErrorCodeError)]
+                duplicates = [item for item in comparison_results if isinstance(item, ErrorCodeError)]
+                assert len(successful) == 1
+                assert len(duplicates) == 1
+                assert duplicates[0].code == "BASELINE_COMPARISON_ALREADY_EXISTS"
+
+                comparison = test_client.get(f"/api/v1/baseline-comparisons/{successful[0].id}")
+                assert comparison.status_code == 200
+                assert comparison.json()["data"]["status"] == "UNCHANGED"
+                comparison_cases = test_client.get(
+                    f"/api/v1/baseline-comparisons/{successful[0].id}/cases"
+                )
+                assert comparison_cases.status_code == 200
+                assert comparison_cases.json()["meta"]["pagination"]["total"] == 1
 
                 policy = test_client.post(
                     f"/api/v1/projects/{project['id']}/quality-gate-policies",

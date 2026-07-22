@@ -35,6 +35,11 @@ from src.application.schemas.quality_gate import (
     QualityGatePolicyResponse,
     QualityGateResultResponse,
 )
+from src.application.schemas.baseline_comparison import (
+    BaselineComparisonCaseResponse,
+    BaselineComparisonCreateRequest,
+    BaselineComparisonResponse,
+)
 
 __all__ = [
     "BaseListResponse",
@@ -74,4 +79,7 @@ __all__ = [
     "QualityGatePolicyCreateRequest",
     "QualityGatePolicyResponse",
     "QualityGateResultResponse",
+    "BaselineComparisonCaseResponse",
+    "BaselineComparisonCreateRequest",
+    "BaselineComparisonResponse",
 ]

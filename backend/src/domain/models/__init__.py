@@ -9,6 +9,7 @@ from src.domain.models.dataset_version import DatasetVersion
 from src.domain.models.dataset_version_case import DatasetVersionCase
 from src.domain.models.target import Target, TargetVersion
 from src.domain.models.quality_gate import QualityGatePolicy, QualityGateResult
+from src.domain.models.baseline_comparison import BaselineComparison, BaselineComparisonCase
 
 __all__ = [
     "Base",
@@ -28,4 +29,6 @@ __all__ = [
     "EvaluatorVersion",
     "QualityGatePolicy",
     "QualityGateResult",
+    "BaselineComparison",
+    "BaselineComparisonCase",
 ]
