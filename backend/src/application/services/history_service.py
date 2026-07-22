@@ -178,6 +178,37 @@ class HistoryService:
         rows = (await self.db.execute(statement.offset((page - 1) * size).limit(size))).all()
         return [self._history_item(experiment, gate, comparison) for experiment, gate, comparison in rows], total
 
+    async def list_history_for_export(
+        self,
+        project_id: UUID,
+        row_limit: int,
+        experiment_status: str | None = None,
+        gate_status: str | None = None,
+        comparison_status: str | None = None,
+        created_from: datetime | None = None,
+        created_to: datetime | None = None,
+        sort: ExperimentSort = "created_at_desc",
+    ) -> list[dict]:
+        items, total = await self.list_history(
+            project_id=project_id,
+            page=1,
+            size=row_limit + 1,
+            experiment_status=experiment_status,
+            gate_status=gate_status,
+            comparison_status=comparison_status,
+            created_from=created_from,
+            created_to=created_to,
+            sort=sort,
+        )
+        if total > row_limit:
+            raise ErrorCodeError(
+                "CSV_EXPORT_ROW_LIMIT_EXCEEDED",
+                "CSV export row limit exceeded.",
+                409,
+                details={"total": total, "limit": row_limit},
+            )
+        return items
+
     async def trend_summary(
         self,
         project_id: UUID,

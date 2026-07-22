@@ -8,6 +8,7 @@ from src.application.services.evaluator_service import EvaluatorService
 from src.application.services.quality_gate_service import QualityGateService
 from src.application.services.baseline_comparison_service import BaselineComparisonService
 from src.application.services.history_service import HistoryService
+from src.application.services.history_csv_export_service import HistoryCsvExportService
 
 __all__ = [
     "ProjectService",
@@ -20,4 +21,5 @@ __all__ = [
     "QualityGateService",
     "BaselineComparisonService",
     "HistoryService",
+    "HistoryCsvExportService",
 ]

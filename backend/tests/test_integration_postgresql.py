@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from collections.abc import AsyncGenerator
 import asyncio
+import csv
+import io
 from types import SimpleNamespace
 import os
 import subprocess
@@ -698,6 +700,19 @@ def test_postgresql_api_flow_experiment():
                 assert history_by_id[current_experiment_id]["baseline_comparison"]["comparison_id"] == str(
                     successful[0].id
                 )
+
+                csv_export = test_client.get(
+                    f"/api/v1/projects/{project['id']}/experiment-history.csv"
+                )
+                assert csv_export.status_code == 200
+                assert csv_export.content.startswith(b"\xef\xbb\xbf")
+                csv_rows = list(
+                    csv.reader(io.StringIO(csv_export.content.decode("utf-8-sig"), newline=""))
+                )
+                assert len(csv_rows) == 3
+                csv_by_experiment_id = {row[0]: row for row in csv_rows[1:]}
+                assert csv_by_experiment_id[experiment_id][13] == gate_payload["id"]
+                assert csv_by_experiment_id[current_experiment_id][19] == str(successful[0].id)
 
                 trend = test_client.get(f"/api/v1/projects/{project['id']}/trend-summary")
                 assert trend.status_code == 200
