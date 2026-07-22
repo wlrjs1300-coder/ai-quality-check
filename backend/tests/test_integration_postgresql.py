@@ -740,6 +740,24 @@ def test_postgresql_api_flow_experiment():
                 assert summary_payload["readiness"]["status"] == "UNKNOWN"
                 assert summary_payload["readiness"]["reason_codes"] == ["QUALITY_GATE_MISSING"]
 
+                dashboard = test_client.get(
+                    f"/api/v1/projects/{project['id']}/dashboard-overview"
+                )
+                assert dashboard.status_code == 200
+                dashboard_payload = dashboard.json()["data"]
+                assert dashboard_payload["readiness"] == summary_payload["readiness"]
+                assert dashboard_payload["warning_codes"] == summary_payload["warning_codes"]
+                assert dashboard_payload["kpis"]["experiment_count"] == 2
+                assert dashboard_payload["kpis"]["completed_experiment_count"] == 2
+                assert dashboard_payload["trend"]["direction"] == "STABLE"
+                assert len(dashboard_payload["recent_experiments"]) == 2
+                dashboard_recent = {
+                    item["experiment_id"]: item for item in dashboard_payload["recent_experiments"]
+                }
+                assert dashboard_recent[experiment_id]["quality_gate_status"] == "PASS"
+                assert dashboard_recent[current_experiment_id]["baseline_comparison_status"] == "UNCHANGED"
+                assert dashboard_recent[experiment_id]["baseline_comparison_status"] is None
+
                 rerun = test_client.post(f"/api/v1/experiments/{experiment_id}/run")
                 assert rerun.status_code == 409
                 assert rerun.json()["error"]["code"] == "INVALID_STATE_TRANSITION"

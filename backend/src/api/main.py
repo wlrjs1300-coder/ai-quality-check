@@ -17,6 +17,7 @@ from src.api.routers.quality_gate_router import router as quality_gate_router
 from src.api.routers.baseline_comparison_router import router as baseline_comparison_router
 from src.api.routers.history_router import router as history_router
 from src.api.routers.project_summary_router import router as project_summary_router
+from src.api.routers.dashboard_router import router as dashboard_router
 
 app = FastAPI(title="EvalOps Backend")
 app.include_router(health_router)
@@ -31,6 +32,7 @@ app.include_router(quality_gate_router, prefix="/api/v1")
 app.include_router(baseline_comparison_router, prefix="/api/v1")
 app.include_router(history_router, prefix="/api/v1")
 app.include_router(project_summary_router, prefix="/api/v1")
+app.include_router(dashboard_router, prefix="/api/v1")
 
 
 @app.exception_handler(ErrorCodeError)
