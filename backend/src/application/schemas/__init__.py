@@ -12,6 +12,8 @@ from src.application.schemas.evaluator import (
     EvaluatorResponse,
     EvaluatorUpdateRequest,
     EvaluatorVersionResponse,
+    EvaluatorVersionExecuteRequest,
+    EvaluatorVersionExecuteResponse,
 )
 from src.application.schemas.target import (
     TargetCreateRequest,
@@ -44,6 +46,8 @@ __all__ = [
     "EvaluatorResponse",
     "EvaluatorUpdateRequest",
     "EvaluatorVersionResponse",
+    "EvaluatorVersionExecuteRequest",
+    "EvaluatorVersionExecuteResponse",
     "TargetCreateRequest",
     "TargetResponse",
     "TargetVersionExecuteRequest",

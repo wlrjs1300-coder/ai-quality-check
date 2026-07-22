@@ -10,6 +10,8 @@ from src.application.schemas import (
     BaseListResponse,
     EvaluatorCreateRequest,
     EvaluatorResponse,
+    EvaluatorVersionExecuteRequest,
+    EvaluatorVersionExecuteResponse,
     EvaluatorUpdateRequest,
     EvaluatorVersionResponse,
     ListMeta,
@@ -168,5 +170,21 @@ async def get_evaluator_version_by_id(
     evaluator_version = await service.get_version_by_id(version_id)
     return {
         "data": EvaluatorVersionResponse(**_version_to_dict(evaluator_version)).model_dump(),
+        "meta": {"request_id": _request_id(request)},
+    }
+
+
+@router.post("/evaluator-versions/{version_id}/execute")
+async def execute_evaluator_version(
+    request: Request,
+    version_id: UUID,
+    payload: EvaluatorVersionExecuteRequest,
+    db: AsyncSession = Depends(get_db_session),
+) -> dict:
+    service = EvaluatorService(db)
+    result = await service.execute_version(version_id, payload.output.model_dump())
+    response = EvaluatorVersionExecuteResponse(**result)
+    return {
+        "data": response.model_dump(),
         "meta": {"request_id": _request_id(request)},
     }

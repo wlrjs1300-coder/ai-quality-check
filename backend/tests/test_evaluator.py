@@ -1,6 +1,7 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 from uuid import uuid4
+
 
 
 def _create_project(client):
@@ -69,7 +70,7 @@ def test_evaluator_name_unique_by_project_and_cross_project_scope(client):
 
     cross = client.post(
         f"/api/v1/projects/{p2['id']}/evaluators",
-        json={"name": "shared-name", "evaluator_type": "NOT_CONTAINS", "config": {"forbidden": "금지"}},
+        json={"name": "shared-name", "evaluator_type": "NOT_CONTAINS", "config": {"forbidden": "x"}},
     )
     assert cross.status_code == 201
 
@@ -199,3 +200,143 @@ def test_inactive_evaluator_version_blocked(client):
     version = client.post(f"/api/v1/evaluators/{evaluator_id}/versions")
     assert version.status_code == 409
     assert version.json()["error"]["code"] == "EVALUATOR_INACTIVE"
+
+
+def test_evaluator_execute_contains(client):
+    project_id = _create_project(client)["id"]
+    evaluator = client.post(
+        f"/api/v1/projects/{project_id}/evaluators",
+        json={
+            "name": "contains-evaluator",
+            "evaluator_type": "CONTAINS",
+            "config": {"expected": "7", "case_sensitive": False},
+        },
+    ).json()["data"]
+    evaluator_id = evaluator["id"]
+
+    version = client.post(f"/api/v1/evaluators/{evaluator_id}/versions")
+    assert version.status_code == 201
+    version_id = version.json()["data"]["id"]
+
+    pass_response = client.post(
+        f"/api/v1/evaluator-versions/{version_id}/execute",
+        json={"output": {"text": "7일 이내로 안내합니다."}},
+    )
+    assert pass_response.status_code == 200
+    pass_payload = pass_response.json()["data"]
+    assert pass_payload["status"] == "PASS"
+    assert pass_payload["reason_code"] is None
+    assert pass_payload["reason"] is None
+
+    fail_response = client.post(
+        f"/api/v1/evaluator-versions/{version_id}/execute",
+        json={"output": {"text": "처리가 불가능합니다."}},
+    )
+    assert fail_response.status_code == 200
+    fail_payload = fail_response.json()["data"]
+    assert fail_payload["status"] == "FAIL"
+    assert fail_payload["reason_code"] == "EXPECTED_TEXT_NOT_FOUND"
+
+
+def test_evaluator_execute_not_contains(client):
+    project_id = _create_project(client)["id"]
+    evaluator = client.post(
+        f"/api/v1/projects/{project_id}/evaluators",
+        json={
+            "name": "not-contains-evaluator",
+            "evaluator_type": "NOT_CONTAINS",
+            "config": {"forbidden": "안됨", "case_sensitive": False},
+        },
+    ).json()["data"]
+    evaluator_id = evaluator["id"]
+
+    version = client.post(f"/api/v1/evaluators/{evaluator_id}/versions")
+    assert version.status_code == 201
+    version_id = version.json()["data"]["id"]
+
+    fail_response = client.post(
+        f"/api/v1/evaluator-versions/{version_id}/execute",
+        json={"output": {"text": "이 작업은 안됨으로 처리됩니다."}},
+    )
+    assert fail_response.status_code == 200
+    fail_payload = fail_response.json()["data"]
+    assert fail_payload["status"] == "FAIL"
+    assert fail_payload["reason_code"] == "FORBIDDEN_TEXT_FOUND"
+
+    pass_response = client.post(
+        f"/api/v1/evaluator-versions/{version_id}/execute",
+        json={"output": {"text": "이 작업은 완료됩니다."}},
+    )
+    assert pass_response.status_code == 200
+    pass_payload = pass_response.json()["data"]
+    assert pass_payload["status"] == "PASS"
+    assert pass_payload["reason_code"] is None
+
+
+def test_evaluator_execute_regex(client):
+    project_id = _create_project(client)["id"]
+    evaluator = client.post(
+        f"/api/v1/projects/{project_id}/evaluators",
+        json={
+            "name": "regex-evaluator",
+            "evaluator_type": "REGEX",
+            "config": {"pattern": r"\d+", "flags": ["IGNORECASE"]},
+        },
+    ).json()["data"]
+    evaluator_id = evaluator["id"]
+
+    version = client.post(f"/api/v1/evaluators/{evaluator_id}/versions")
+    assert version.status_code == 201
+    version_id = version.json()["data"]["id"]
+
+    regex_pass = client.post(
+        f"/api/v1/evaluator-versions/{version_id}/execute",
+        json={"output": {"text": "번호 123개."}},
+    )
+    assert regex_pass.status_code == 200
+    assert regex_pass.json()["data"]["status"] == "PASS"
+
+
+def test_evaluator_execute_validation_and_config_errors(client):
+    _, evaluator_id = _create_project_dataset_flow(client, evaluator_config={"expected": "A", "case_sensitive": False})
+    version = client.post(f"/api/v1/evaluators/{evaluator_id}/versions")
+    assert version.status_code == 201
+    version_id = version.json()["data"]["id"]
+
+    invalid_output = client.post(
+        f"/api/v1/evaluator-versions/{version_id}/execute",
+        json={"output": {}},
+    )
+    assert invalid_output.status_code == 422
+
+    bad_config = client.patch(
+        f"/api/v1/evaluators/{evaluator_id}",
+        json={"config": {"expected": "", "case_sensitive": False}},
+    )
+    assert bad_config.status_code == 200
+    bad_version = client.post(f"/api/v1/evaluators/{evaluator_id}/versions")
+    assert bad_version.status_code == 201
+    bad_version_id = bad_version.json()["data"]["id"]
+
+    evaluated = client.post(
+        f"/api/v1/evaluator-versions/{bad_version_id}/execute",
+        json={"output": {"text": "abc"}},
+    )
+    assert evaluated.status_code == 409
+    assert evaluated.json()["error"]["code"] == "INVALID_EVALUATOR_CONFIGURATION"
+
+    bad_flag = client.patch(
+        f"/api/v1/evaluators/{evaluator_id}",
+        json={"config": {"pattern": r"\\d+", "flags": ["INVALID"]}},
+    )
+    assert bad_flag.status_code == 200
+    bad_flag_version = client.post(f"/api/v1/evaluators/{evaluator_id}/versions")
+    assert bad_flag_version.status_code == 201
+    bad_flag_version_id = bad_flag_version.json()["data"]["id"]
+
+    bad_eval = client.post(
+        f"/api/v1/evaluator-versions/{bad_flag_version_id}/execute",
+        json={"output": {"text": "abc"}},
+    )
+    assert bad_eval.status_code == 409
+    assert bad_eval.json()["error"]["code"] == "INVALID_EVALUATOR_CONFIGURATION"

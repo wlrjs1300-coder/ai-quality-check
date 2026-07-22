@@ -38,3 +38,18 @@ class EvaluatorVersionResponse(BaseModel):
     evaluator_type_snapshot: Literal["CONTAINS", "NOT_CONTAINS", "REGEX"]
     config_snapshot: dict
     created_at: datetime
+
+
+class EvaluatorVersionExecuteRequest(BaseModel):
+    class Output(BaseModel):
+        text: str
+
+    output: Output
+
+
+class EvaluatorVersionExecuteResponse(BaseModel):
+    evaluator_version_id: UUID
+    evaluator_type: Literal["CONTAINS", "NOT_CONTAINS", "REGEX"]
+    status: Literal["PASS", "FAIL"]
+    reason_code: str | None = None
+    reason: str | None = None
