@@ -11,6 +11,7 @@ from src.application.services.history_service import HistoryService
 from src.application.services.history_csv_export_service import HistoryCsvExportService
 from src.application.services.project_summary_service import ProjectSummaryReportService
 from src.application.services.dashboard_service import ProjectDashboardOverviewService
+from src.application.services.demo_seed_service import DemoSeedService
 
 __all__ = [
     "ProjectService",
@@ -26,4 +27,5 @@ __all__ = [
     "HistoryCsvExportService",
     "ProjectSummaryReportService",
     "ProjectDashboardOverviewService",
+    "DemoSeedService",
 ]
