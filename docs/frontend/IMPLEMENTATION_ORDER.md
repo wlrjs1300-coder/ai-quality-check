@@ -8,6 +8,8 @@
 
 완료 조건: Loading·Empty·Error·Success, Project 생성 후 재조회, 404 이동, FastAPI field 오류 연결이 자동 테스트로 검증됩니다.
 
+상태: 구현 완료. TypeScript strict, lint, production build 검증을 기준으로 하며 별도 Frontend 테스트 Library는 아직 도입하지 않았습니다.
+
 제외: Dashboard, Registry mutation.
 
 ## Slice 2 — 관찰 가능한 Demo
