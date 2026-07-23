@@ -20,11 +20,14 @@ type SemanticStatus =
   | ComparisonStatus
   | ReadinessStatus
   | TrendDirection
+  | "DRAFT"
+  | "APPROVED"
+  | "DEPRECATED"
   | "UNKNOWN";
 
-const positive = new Set<SemanticStatus>(["COMPLETED", "PASS", "IMPROVED", "READY", "IMPROVING"]);
-const negative = new Set<SemanticStatus>(["FAILED", "BLOCK", "REGRESSED", "NOT_READY", "DECLINING"]);
-const pending = new Set<SemanticStatus>(["CREATED", "RUNNING"]);
+const positive = new Set<SemanticStatus>(["COMPLETED", "PASS", "IMPROVED", "READY", "IMPROVING", "APPROVED"]);
+const negative = new Set<SemanticStatus>(["FAILED", "BLOCK", "REGRESSED", "NOT_READY", "DECLINING", "DEPRECATED"]);
+const pending = new Set<SemanticStatus>(["CREATED", "RUNNING", "DRAFT"]);
 
 export function SemanticBadge({ status }: { status: SemanticStatus | null }) {
   const label = status ?? "데이터 없음";

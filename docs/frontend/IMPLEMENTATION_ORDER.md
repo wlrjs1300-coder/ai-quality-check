@@ -26,6 +26,8 @@
 
 완료 조건: DRAFT 정책, inactive 상태, 승인 Case 기반 Snapshot, duplicate/no-approved 오류가 화면 상태와 테스트로 연결됩니다.
 
+상태: 구현 완료. Dataset Registry와 생성, Dataset Detail의 Case 생성·DRAFT 수정·승인·폐기, Version 생성·목록·불변 상세를 실제 PostgreSQL 및 Browser Smoke Test로 검증했습니다. Dataset 이름·설명 수정과 비활성화 UI는 이번 Slice에서 제외했습니다.
+
 ## Slice 4 — Target와 Evaluator Snapshot
 
 포함: MOCK Target와 결정론적 Evaluator 생성·수정, Version 목록·생성·상세.
