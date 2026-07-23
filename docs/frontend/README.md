@@ -1,6 +1,6 @@
 # Frontend API Contract
 
-이 문서는 EvalOps Web 화면의 API 사용 계약을 정의합니다. Slice 1의 공통 API Client와 Projects 흐름에 이어 Slice 2의 Project Overview, Dashboard·Summary·Trend, History와 CSV Export가 구현됐습니다.
+이 문서는 EvalOps Web 화면의 API 사용 계약을 정의합니다. Slice 1·2의 Projects와 관찰 화면에 이어 Slice 3의 Dataset Registry, Evaluation Case 상태 흐름과 불변 Dataset Version 조회가 구현됐습니다.
 
 ## 문서
 
@@ -57,6 +57,7 @@ Project Overview에 Dashboard와 Summary를, Dataset Detail에 Case와 Version�
   - `GET /projects/{projectId}/trend-summary`
   - `GET /projects/{projectId}/experiment-history`
   - `GET /projects/{projectId}/experiment-history.csv`
+  - Dataset·Evaluation Case·Dataset Version API
 - Verify in browser
   - `http://localhost:3000/projects` should call backend through `http://localhost:8000/api/v1/projects`.
   - Project Overview와 History도 같은 proxy를 사용하며 기간·상태·정렬 Query를 Backend에 전달합니다.

@@ -120,12 +120,26 @@ code { font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size
 .download-error { margin: 16px 0; padding: 14px 16px; border: 1px solid #f0b8b3; border-radius: 8px; background: var(--danger-soft); color: var(--danger); }
 .download-error p { margin: 5px 0 0; }
 .pagination { display: flex; justify-content: center; align-items: center; gap: 16px; margin-top: 28px; }
+.dataset-grid, .case-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.dataset-card, .case-card, .version-card { min-width: 0; padding: 20px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface); }
+.compact-form { margin-top: 16px; }
+.case-form { display: grid; gap: 18px; }
+.checkbox-label { display: flex; grid-template-columns: auto 1fr; align-items: center; }
+.checkbox-label input { width: auto; }
+.case-card header { display: flex; justify-content: space-between; gap: 16px; }
+.case-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 18px; }
+.button-danger { border-color: var(--danger); background: var(--surface); color: var(--danger); }
+.button-danger:hover:not(:disabled) { background: var(--danger-soft); }
+.immutable-note { margin: 14px 0 0; padding: 9px 12px; border-radius: 7px; background: #eef0f3; color: #596579; font-size: 0.86rem; }
+.version-list { display: grid; gap: 12px; }
+.version-card { display: grid; grid-template-columns: 1fr 1.4fr 1fr auto; gap: 16px; align-items: center; }
+.version-card code { overflow-wrap: anywhere; }
 
 @media (max-width: 720px) {
   .app-shell { width: min(100% - 24px, 1120px); padding-top: 32px; }
   .page-header, .detail-header { align-items: stretch; flex-direction: column; }
   .form-grid, .project-grid { grid-template-columns: 1fr; }
-  .metric-grid, .overview-grid, .history-grid, .summary-panel, .history-filter-grid, .filter-fields { grid-template-columns: 1fr; }
+  .metric-grid, .overview-grid, .history-grid, .summary-panel, .history-filter-grid, .filter-fields, .dataset-grid, .case-grid, .version-card { grid-template-columns: 1fr; }
   .state-panel { align-items: flex-start; flex-direction: column; }
   .card-meta div, .detail-list div { grid-template-columns: 1fr; gap: 4px; }
   .warning-list li, .pagination { align-items: flex-start; flex-direction: column; }
