@@ -231,7 +231,15 @@ export function ProjectDetailClient({
                   {dashboard.recentExperiments.length === 0 ? (
                     <p className="empty-inline">기간에 해당하는 Experiment가 없습니다.</p>
                   ) : (
-                    <div className="history-grid">{dashboard.recentExperiments.slice(0, 5).map((item) => <RecentExperimentCard key={item.experimentId} item={item} />)}</div>
+                    <div className="history-grid">
+                      {dashboard.recentExperiments.slice(0, 5).map((item) => (
+                        <RecentExperimentCard
+                          key={item.experimentId}
+                          projectId={projectId}
+                          experiment={item}
+                        />
+                      ))}
+                    </div>
                   )}
                 </section>
               </>

@@ -44,7 +44,15 @@
 
 상태: 화면과 API 연결을 구현했고 TypeScript strict와 lint 검증을 통과했습니다. 부모·Version 목록의 독립 페이지네이션, 실행 오류 후 상태 재조회, Result 부분 오류 복구와 새로고침 복원을 포함합니다. 실제 PostgreSQL 데이터로 생성·실행·2페이지 이동·Network 복구를 확인하는 Browser 검증은 별도로 수행해야 합니다.
 
-## Slice 6 — Gate와 Comparison
+## Slice 6 — Experiment History 연결
+
+포함: Experiment History와 Dashboard 최근 Experiment의 상세 이동, History 복귀, Dataset Version 기반의 방어적 Project Scope 확인.
+
+완료 조건: History와 Dashboard 카드가 올바른 Project·Experiment 상세로 이동하고, Scope 확인 전 Experiment와 Result를 노출하지 않으며 History 404와 Network 오류에서 복구할 수 있습니다.
+
+상태: 화면 연결과 Scope 상태 분리를 구현했고 TypeScript strict와 lint 검증을 통과했습니다. 실제 History·Dashboard 이동, 다른 Project URL 조합 차단, Keyboard 이동과 Network 복구는 Browser에서 별도로 검증해야 합니다.
+
+## Slice 7 — Gate와 Comparison
 
 포함: Gate Policy 생성·평가, Baseline Comparison 생성·상세.
 

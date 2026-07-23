@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 import {
   type ComparisonStatus,
   type DashboardRecentExperiment,
@@ -85,7 +87,14 @@ export function WarningList({ codes }: { codes: string[] }) {
   );
 }
 
-export function ExperimentCard({ item }: { item: ExperimentHistoryItem }) {
+export function ExperimentCard({
+  projectId,
+  experiment,
+}: {
+  projectId: string;
+  experiment: ExperimentHistoryItem;
+}) {
+  const item = experiment;
   const reasonCodes = [
     ...(item.qualityGateResult?.reasonCodes ?? []),
     ...(item.baselineComparison?.reasonCodes ?? []),
@@ -120,11 +129,24 @@ export function ExperimentCard({ item }: { item: ExperimentHistoryItem }) {
       {reasonCodes.length > 0 ? (
         <p className="reason-codes">Reason: {reasonCodes.join(", ")}</p>
       ) : null}
+      <Link
+        className="card-link"
+        href={`/projects/${encodeURIComponent(projectId)}/experiments/${encodeURIComponent(item.experimentId)}`}
+      >
+        Experiment 상세 <span aria-hidden="true">→</span>
+      </Link>
     </article>
   );
 }
 
-export function RecentExperimentCard({ item }: { item: DashboardRecentExperiment }) {
+export function RecentExperimentCard({
+  projectId,
+  experiment,
+}: {
+  projectId: string;
+  experiment: DashboardRecentExperiment;
+}) {
+  const item = experiment;
   return (
     <article className="history-card">
       <header>
@@ -143,6 +165,12 @@ export function RecentExperimentCard({ item }: { item: DashboardRecentExperiment
         <span>Gate <SemanticBadge status={item.qualityGateStatus} /></span>
         <span>Comparison <SemanticBadge status={item.baselineComparisonStatus} /></span>
       </div>
+      <Link
+        className="card-link"
+        href={`/projects/${encodeURIComponent(projectId)}/experiments/${encodeURIComponent(item.experimentId)}`}
+      >
+        Experiment 상세 <span aria-hidden="true">→</span>
+      </Link>
     </article>
   );
 }
