@@ -20,7 +20,6 @@
 | Project Overview | Create target | POST | `/api/v1/projects/{project_id}/targets` |
 | Project Overview | Load evaluators | GET | `/api/v1/projects/{project_id}/evaluators` |
 | Project Overview | Create evaluator | POST | `/api/v1/projects/{project_id}/evaluators` |
-| Project Overview | Create gate policy | POST | `/api/v1/projects/{project_id}/quality-gate-policies` |
 | Dataset Detail | Load dataset | GET | `/api/v1/datasets/{dataset_id}` |
 | Dataset Detail | Update dataset | PATCH | `/api/v1/datasets/{dataset_id}` |
 | Dataset Detail | Load cases | GET | `/api/v1/datasets/{dataset_id}/evaluation-cases` |
@@ -48,6 +47,7 @@
 | Experiment Detail | Load experiment | GET | `/api/v1/experiments/{experiment_id}` |
 | Experiment Detail | Run experiment | POST | `/api/v1/experiments/{experiment_id}/run` |
 | Experiment Detail | Load results | GET | `/api/v1/experiments/{experiment_id}/results` |
+| Experiment Detail | Create gate policy | POST | `/api/v1/projects/{project_id}/quality-gate-policies` |
 | Experiment Detail | Load gate policy | GET | `/api/v1/quality-gate-policies/{policy_id}` |
 | Experiment Detail | Evaluate gate | POST | `/api/v1/quality-gate-policies/{policy_id}/evaluate` |
 | Experiment Detail | Load gate result | GET | `/api/v1/quality-gate-results/{result_id}` |
@@ -184,12 +184,17 @@ Experiment 단건 응답에는 `project_id`가 없으므로 Dataset Version 탐�
 | 동작 | Request | 성공 후 재조회 |
 |---|---|---|
 | Inline 실행 | Run Endpoint, Body 없음 | `experiment`, `experiment-results`, `history`, `dashboard`, `summary` |
-| Gate 평가 | `experiment_id` | Gate Result, `history`, `dashboard`, `summary` |
+| Gate Policy 생성 | `name`, `minimum_pass_rate`, 차단 옵션 | 생성된 Policy ID 보존 후 Gate 평가 |
+| Gate 평가 | `experiment_id` | Gate Result 표시, 실패 시 최신 `history`에서 복원 |
 | Baseline 비교 | 두 Experiment ID | Comparison, `history`, `dashboard`, `summary` |
 
 Result 사용 필드는 `status`, `reason_code`, `reason`, `input_snapshot`, `output_snapshot`, `created_at`입니다. 목록은 `page`, `size`를 사용합니다.
 
 화면 상태: Initial, Loading, Empty(Result 없음), Success, Error, Refreshing, Submitting, Disabled. 실행은 `CREATED`에서 한 번만 가능하고 중복 제출을 막습니다.
+
+Basic Quality Gate는 `COMPLETED`에서만 활성화합니다. Policy 생성과 평가는 별도 mutation 상태이며, Policy 생성 후 평가가 실패하면 같은 Policy ID로만 재시도합니다. 새로고침 및 불확실한 평가 응답은 Project History를 최대 100건씩 페이지 순회해 현재 Experiment의 최신 Result ID를 찾고 Result와 Policy 단건을 복원합니다. Gate 영역 오류는 Experiment와 Case Result를 초기화하지 않습니다.
+
+Policy 목록·수정·비활성화·Version API와 Gate Result 목록 API가 없으므로 최신 Result가 있으면 새 평가 Form을 숨깁니다. Policy 생성 Network Error는 생성 여부를 확정할 수 없고, 같은 이름으로 수동 재시도하면 중복 오류가 발생할 수 있습니다. Severity 기반 Rule은 지원하지 않으며 필수 Case 차단은 `required_for_release`를 사용합니다.
 
 ## History
 
@@ -234,6 +239,8 @@ Route: `/projects/{projectId}/comparisons/{comparisonId}`.
 ["evaluator-versions", evaluatorId, page, size]
 ["experiment", experimentId]
 ["experiment-results", experimentId, page, size]
+["quality-gate-policy", policyId]
+["quality-gate-result", resultId]
 ["history", projectId, filters]
 ["trend", projectId, createdFrom, createdTo]
 ["comparison", comparisonId]

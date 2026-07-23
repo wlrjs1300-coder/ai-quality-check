@@ -52,11 +52,19 @@
 
 상태: 화면 연결과 Scope 상태 분리를 구현했고 TypeScript strict와 lint 검증을 통과했습니다. 실제 History·Dashboard 이동, 다른 Project URL 조합 차단, Keyboard 이동과 Network 복구는 Browser에서 별도로 검증해야 합니다.
 
-## Slice 7 — Gate와 Comparison
+## Slice 7 — Basic Quality Gate
 
-포함: Gate Policy 생성·평가, Baseline Comparison 생성·상세.
+포함: 완료된 Experiment에서 Gate Policy 생성, 즉시 평가, 최신 PASS·BLOCK 결과 복원.
 
-완료 조건: `BLOCK`과 required failure 이유, `REGRESSED` Case를 재현하고 관련 Dashboard·Summary·History가 재조회됩니다.
+완료 조건: Backend가 계산한 `PASS|BLOCK`, pass rate, ERROR·필수 Case 실패 이유를 표시하고 새로고침 후 History의 최신 Gate Result를 복원합니다.
+
+제약: Policy 목록·수정·비활성화·Version API와 Gate Result 목록 API가 없습니다. 따라서 최신 Result가 있으면 새 평가 UI를 제공하지 않으며, Policy 생성 Network Error는 생성 여부를 완전히 복원할 수 없습니다. Severity 자체를 기준으로 한 Rule은 지원하지 않고 `required_for_release`를 필수 Case 차단에 사용합니다.
+
+## Slice 8 — Baseline Comparison
+
+포함: 완료된 Experiment 사이의 Baseline Comparison 생성·상세와 Case별 변화 확인.
+
+완료 조건: 비교 가능한 Experiment만 선택하고 `IMPROVED|UNCHANGED|REGRESSED`, pass rate delta와 Case별 변화 이유를 표시합니다.
 
 ## Demo Seed 시연 순서
 

@@ -30,6 +30,8 @@ import {
 } from "@/src/lib/api/targets";
 import { formatLocalDateTime, shortId } from "@/src/lib/formatters";
 
+import { QualityGatePanel } from "./quality-gate-panel";
+
 const RESULT_SIZE = 20;
 
 type VersionMetadata = {
@@ -549,6 +551,12 @@ export function ExperimentDetailClient({
               </div>
             </dl>
           </section>
+
+          <QualityGatePanel
+            projectId={projectId}
+            experimentId={experiment.id}
+            experimentStatus={experiment.status}
+          />
 
           <section className="overview-section">
             <div className="section-heading">
