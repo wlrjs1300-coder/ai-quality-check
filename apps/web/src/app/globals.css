@@ -149,6 +149,8 @@ code { font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size
 .result-card details { margin-top: 16px; }
 .result-card summary { cursor: pointer; font-weight: 700; }
 .snapshot-value { max-width: 100%; margin: 10px 0 0; padding: 14px; overflow: auto; border-radius: 8px; background: #111827; color: #f8fafc; white-space: pre-wrap; overflow-wrap: anywhere; }
+.metadata-error { display: grid; gap: 6px; margin-top: 8px; color: var(--danger); font-size: 0.82rem; }
+.metadata-error .text-button { width: fit-content; padding: 0; }
 
 @media (max-width: 720px) {
   .app-shell { width: min(100% - 24px, 1120px); padding-top: 32px; }

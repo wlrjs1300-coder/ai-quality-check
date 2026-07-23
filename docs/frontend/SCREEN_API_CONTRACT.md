@@ -175,7 +175,9 @@ Request Body는 `dataset_version_id`, `target_version_id`, `evaluator_version_id
 
 Route: `/projects/{projectId}/experiments/{experimentId}`.
 
-초기 API 호출: Experiment 단건 후 연결 Version 두 개를 ID로 조회하고, 상태가 `COMPLETED|FAILED`이면 Result 목록을 조회합니다. Gate/Comparison ID는 History·Dashboard navigation에서 전달받거나 생성 응답으로 보존합니다.
+초기 API 호출: Experiment 단건 후 URL Project 범위의 Dataset·Version 목록에서 `dataset_version_id`를 확인합니다. Scope 확인이 끝난 뒤 연결된 Target·Evaluator Version을 ID로 조회하고, 상태가 `COMPLETED|FAILED`이면 Result 목록을 조회합니다. Gate/Comparison ID는 History·Dashboard navigation에서 전달받거나 생성 응답으로 보존합니다.
+
+Experiment 단건 응답에는 `project_id`가 없으므로 Dataset Version 탐색은 방어적 UX로만 사용합니다. Scope 확인 전에는 Experiment와 Result를 표시하지 않으며, Target·Evaluator 메타데이터 실패는 해당 Version ID fallback으로 격리합니다. 실제 권한 경계는 향후 Backend의 Project-scoped 조회에서 보강해야 합니다.
 
 사용자 동작:
 
@@ -199,7 +201,7 @@ Route: `/projects/{projectId}/history`.
 
 Query는 `experiment_status`, `gate_status`, `comparison_status`, `created_from`, `created_to`, `sort`; History에만 `page`, `size`가 있습니다. CSV 다운로드는 현재 필터와 정렬을 그대로 전달합니다.
 
-사용 필드: Experiment 상태와 counts, `pass_rate`, Gate·Comparison 요약, Trend counts와 첫/최신 비율. Experiment·Gate·Comparison ID를 상세 navigation에 전달합니다.
+사용 필드: Experiment 상태와 counts, `pass_rate`, Gate·Comparison 요약, Trend counts와 첫/최신 비율. Experiment ID는 상세 navigation에 전달합니다. 카드에서는 Input·Output Snapshot을 조회하거나 표시하지 않으며 Version은 API가 제공하는 ID만 표시합니다.
 
 화면 상태: Initial, Loading, Empty, Success, Error, Refreshing, Submitting(다운로드). 날짜 역전은 요청 전에 차단합니다.
 

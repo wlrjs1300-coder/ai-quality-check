@@ -243,18 +243,47 @@ export function ProjectHistoryClient({ projectId, initial }: ProjectHistoryClien
       {downloadError ? <div className="download-error" role="alert"><strong>CSV 다운로드 실패</strong><p>{downloadError.message}</p></div> : null}
       {loading && items.length === 0 ? <LoadingState title="History를 불러오고 있습니다" /> : null}
       {error && items.length === 0 ? (
-        <ErrorState
-          title={error.kind === "network" ? "서버에 연결할 수 없습니다" : undefined}
-          message={error.message}
-          retryable={error.retryable}
-          onRetry={() => void load(query)}
-        />
+        error.status === 404 || error.code === "PROJECT_NOT_FOUND" ? (
+          <>
+            <ErrorState message="Project를 찾을 수 없습니다." />
+            <Link className="button button-secondary back-action" href="/projects">
+              Projects로 돌아가기
+            </Link>
+          </>
+        ) : (
+          <ErrorState
+            title={error.kind === "network" ? "서버에 연결할 수 없습니다" : undefined}
+            message={error.code === "INVALID_HISTORY_DATE_RANGE"
+              ? "시작일은 종료일보다 늦을 수 없습니다. 기간을 수정해 주세요."
+              : error.message}
+            retryable={error.code !== "INVALID_HISTORY_DATE_RANGE" && error.retryable}
+            onRetry={() => void load(query)}
+          />
+        )
       ) : null}
       {error && items.length > 0 ? (
-        <div className="download-error" role="alert"><strong>목록을 갱신하지 못했습니다.</strong><p>{error.message}</p><button className="text-button" type="button" onClick={() => void load(query)}>다시 시도</button></div>
+        <div className="download-error" role="alert">
+          <strong>목록을 갱신하지 못했습니다.</strong>
+          <p>{error.code === "INVALID_HISTORY_DATE_RANGE"
+            ? "시작일은 종료일보다 늦을 수 없습니다. 기간을 수정해 주세요."
+            : error.message}</p>
+          {error.code !== "INVALID_HISTORY_DATE_RANGE" ? (
+            <button className="text-button" type="button" onClick={() => void load(query)}>다시 시도</button>
+          ) : null}
+        </div>
       ) : null}
       {!loading && !error && items.length === 0 ? <section className="state-panel"><div><h2>조건에 맞는 History가 없습니다</h2><p>필터를 초기화하거나 다른 기간을 선택해 주세요.</p></div></section> : null}
-      {items.length > 0 ? <div className="history-grid">{items.map((item) => <ExperimentCard key={item.experimentId} item={item} />)}</div> : null}
+      {items.length > 0 ? (
+        <div className="history-grid">
+          {items.map((item) => (
+            <ExperimentCard
+              key={item.experimentId}
+              projectId={projectId}
+              experiment={item}
+            />
+          ))}
+        </div>
+      ) : null}
 
       {items.length > 0 ? (
         <nav className="pagination" aria-label="History pagination">

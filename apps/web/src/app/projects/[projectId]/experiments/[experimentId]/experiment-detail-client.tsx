@@ -33,9 +33,14 @@ import { formatLocalDateTime, shortId } from "@/src/lib/formatters";
 const RESULT_SIZE = 20;
 
 type VersionMetadata = {
-  dataset: string;
-  target: string;
-  evaluator: string;
+  dataset: string | null;
+  target: string | null;
+  evaluator: string | null;
+};
+
+type MetadataErrors = {
+  target: ApiError | null;
+  evaluator: ApiError | null;
 };
 
 type DatasetMetadata = {
@@ -112,10 +117,20 @@ export function ExperimentDetailClient({
   const [refreshing, setRefreshing] = useState(false);
   const [running, setRunning] = useState(false);
   const [runError, setRunError] = useState<ApiError | null>(null);
-  const [metadata, setMetadata] = useState<VersionMetadata | null>(null);
+  const [metadata, setMetadata] = useState<VersionMetadata>({
+    dataset: null,
+    target: null,
+    evaluator: null,
+  });
   const [metadataLoading, setMetadataLoading] = useState(false);
-  const [metadataError, setMetadataError] = useState<ApiError | null>(null);
-  const [scopeInvalid, setScopeInvalid] = useState(false);
+  const [metadataErrors, setMetadataErrors] = useState<MetadataErrors>({
+    target: null,
+    evaluator: null,
+  });
+  const [scopeChecking, setScopeChecking] = useState(false);
+  const [scopeVerified, setScopeVerified] = useState(false);
+  const [scopeNotFound, setScopeNotFound] = useState(false);
+  const [scopeError, setScopeError] = useState<ApiError | null>(null);
   const [results, setResults] = useState<EvaluationResult[]>([]);
   const [resultPage, setResultPage] = useState(1);
   const [resultTotal, setResultTotal] = useState(0);
@@ -125,6 +140,8 @@ export function ExperimentDetailClient({
 
   const experimentControllerRef = useRef<AbortController | null>(null);
   const experimentRequestIdRef = useRef(0);
+  const scopeControllerRef = useRef<AbortController | null>(null);
+  const scopeRequestIdRef = useRef(0);
   const metadataControllerRef = useRef<AbortController | null>(null);
   const metadataRequestIdRef = useRef(0);
   const resultControllerRef = useRef<AbortController | null>(null);
@@ -174,52 +191,95 @@ export function ExperimentDetailClient({
     const controller = new AbortController();
     metadataControllerRef.current = controller;
     setMetadataLoading(true);
-    setMetadataError(null);
-    setScopeInvalid(false);
+    setMetadataErrors({ target: null, evaluator: null });
 
     try {
-      const [datasetMetadata, targetVersion, evaluatorVersion] = await Promise.all([
-        findDatasetVersion(projectId, current.datasetVersionId, controller.signal),
-        getTargetVersionById(current.targetVersionId, controller.signal),
-        getEvaluatorVersionById(current.evaluatorVersionId, controller.signal),
+      const [targetResult, evaluatorResult] = await Promise.allSettled([
+        (async () => {
+          const version = await getTargetVersionById(current.targetVersionId, controller.signal);
+          const target = await getTarget(version.data.targetId, controller.signal);
+          return `${target.data.name} · Version ${version.data.version} · ${version.data.responseStrategy}`;
+        })(),
+        (async () => {
+          const version = await getEvaluatorVersionById(current.evaluatorVersionId, controller.signal);
+          const evaluator = await getEvaluator(version.data.evaluatorId, controller.signal);
+          return `${evaluator.data.name} · Version ${version.data.version} · ${version.data.evaluatorTypeSnapshot}`;
+        })(),
       ]);
       if (requestId !== metadataRequestIdRef.current || metadataControllerRef.current !== controller) {
         return;
       }
 
-      const [target, evaluator] = await Promise.all([
-        getTarget(targetVersion.data.targetId, controller.signal),
-        getEvaluator(evaluatorVersion.data.evaluatorId, controller.signal),
-      ]);
-      if (requestId !== metadataRequestIdRef.current || metadataControllerRef.current !== controller) {
-        return;
-      }
-
-      if (
-        target.data.projectId !== projectId
-        || evaluator.data.projectId !== projectId
-        || datasetMetadata === null
-      ) {
-        setScopeInvalid(true);
-        setMetadata(null);
-        return;
-      }
-
-      setMetadata({
-        dataset: `${datasetMetadata.dataset.name} · Version ${datasetMetadata.version.version} · ${datasetMetadata.version.caseCount} cases`,
-        target: `${target.data.name} · Version ${targetVersion.data.version} · ${targetVersion.data.responseStrategy}`,
-        evaluator: `${evaluator.data.name} · Version ${evaluatorVersion.data.version} · ${evaluatorVersion.data.evaluatorTypeSnapshot}`,
+      setMetadata((currentMetadata) => ({
+        ...currentMetadata,
+        target: targetResult.status === "fulfilled" ? targetResult.value : null,
+        evaluator: evaluatorResult.status === "fulfilled" ? evaluatorResult.value : null,
+      }));
+      setMetadataErrors({
+        target: targetResult.status === "rejected" && !isAbortError(targetResult.reason)
+          ? toApiError(targetResult.reason)
+          : null,
+        evaluator: evaluatorResult.status === "rejected" && !isAbortError(evaluatorResult.reason)
+          ? toApiError(evaluatorResult.reason)
+          : null,
       });
-    } catch (error) {
-      if (metadataControllerRef.current !== controller || isAbortError(error)) return;
-      setMetadataError(toApiError(error));
     } finally {
       if (requestId === metadataRequestIdRef.current && metadataControllerRef.current === controller) {
         setMetadataLoading(false);
         metadataControllerRef.current = null;
       }
     }
-  }, [projectId]);
+  }, []);
+
+  const verifyScope = useCallback(async (current: Experiment) => {
+    const requestId = ++scopeRequestIdRef.current;
+    scopeControllerRef.current?.abort();
+    const controller = new AbortController();
+    scopeControllerRef.current = controller;
+    setScopeChecking(true);
+    setScopeError(null);
+    setScopeNotFound(false);
+
+    try {
+      const datasetMetadata = await findDatasetVersion(
+        projectId,
+        current.datasetVersionId,
+        controller.signal,
+      );
+      if (requestId !== scopeRequestIdRef.current || scopeControllerRef.current !== controller) {
+        return;
+      }
+      if (datasetMetadata === null) {
+        setScopeVerified(false);
+        setScopeNotFound(true);
+        return;
+      }
+
+      setMetadata((currentMetadata) => ({
+        ...currentMetadata,
+        dataset: `${datasetMetadata.dataset.name} · Version ${datasetMetadata.version.version} · ${datasetMetadata.version.caseCount} cases`,
+      }));
+      setScopeVerified(true);
+      void resolveMetadata(current);
+      if (current.status === "COMPLETED" || current.status === "FAILED") {
+        void loadResults(1, false);
+      }
+    } catch (error) {
+      if (scopeControllerRef.current !== controller || isAbortError(error)) return;
+      const apiError = toApiError(error);
+      if (apiError.status === 404 || apiError.code === "PROJECT_NOT_FOUND") {
+        setScopeVerified(false);
+        setScopeNotFound(true);
+      } else {
+        setScopeError(apiError);
+      }
+    } finally {
+      if (requestId === scopeRequestIdRef.current && scopeControllerRef.current === controller) {
+        setScopeChecking(false);
+        scopeControllerRef.current = null;
+      }
+    }
+  }, [loadResults, projectId, resolveMetadata]);
 
   const loadExperiment = useCallback(async (
     retainData = false,
@@ -240,10 +300,7 @@ export function ExperimentDetailClient({
         return null;
       }
       setExperiment(response.data);
-      void resolveMetadata(response.data);
-      if (includeResults && (response.data.status === "COMPLETED" || response.data.status === "FAILED")) {
-        void loadResults(1, false);
-      }
+      if (includeResults) void verifyScope(response.data);
       return response.data;
     } catch (error) {
       if (experimentControllerRef.current !== controller || isAbortError(error)) return null;
@@ -256,12 +313,13 @@ export function ExperimentDetailClient({
         experimentControllerRef.current = null;
       }
     }
-  }, [experimentId, loadResults, resolveMetadata]);
+  }, [experimentId, verifyScope]);
 
   useEffect(() => {
     void loadExperiment(false, true);
     return () => {
       experimentControllerRef.current?.abort();
+      scopeControllerRef.current?.abort();
       metadataControllerRef.current?.abort();
       resultControllerRef.current?.abort();
       runControllerRef.current?.abort();
@@ -308,26 +366,65 @@ export function ExperimentDetailClient({
     }
   }
 
-  const notFound = experimentError?.status === 404
-    || experimentError?.code === "EXPERIMENT_NOT_FOUND"
-    || scopeInvalid;
+  const experimentNotFound = experimentError?.status === 404
+    || experimentError?.code === "EXPERIMENT_NOT_FOUND";
 
   if (initialLoading && !experiment && !experimentError) {
     return <main className="app-shell"><LoadingState title="Experiment를 불러오고 있습니다" /></main>;
   }
 
-  if ((experimentError && !experiment) || scopeInvalid) {
-    const error = experimentError;
+  if (experimentError && !experiment) {
     return (
       <main className="app-shell">
         <ErrorState
-          title={error?.kind === "network" ? "서버에 연결할 수 없습니다" : undefined}
-          message={notFound ? "Experiment를 찾을 수 없습니다." : error?.message ?? "Experiment 범위를 확인할 수 없습니다."}
-          retryable={!notFound && (error?.retryable ?? false)}
+          title={experimentError.kind === "network" ? "서버에 연결할 수 없습니다" : undefined}
+          message={experimentNotFound ? "Experiment를 찾을 수 없습니다." : experimentError.message}
+          retryable={!experimentNotFound && experimentError.retryable}
           onRetry={() => void loadExperiment(false, true)}
         />
-        <Link className="button button-secondary back-action" href={`/projects/${encodeURIComponent(projectId)}`}>
-          Project Overview로 돌아가기
+        <div className="header-actions">
+          <Link className="button button-secondary" href={`/projects/${encodeURIComponent(projectId)}/history`}>
+            History로 돌아가기
+          </Link>
+          <Link className="button button-secondary" href={`/projects/${encodeURIComponent(projectId)}`}>
+            Project Overview로 돌아가기
+          </Link>
+        </div>
+      </main>
+    );
+  }
+
+  if (experiment && scopeChecking && !scopeVerified) {
+    return <main className="app-shell"><LoadingState title="Experiment의 Project 범위를 확인하고 있습니다" /></main>;
+  }
+
+  if (experiment && scopeNotFound) {
+    return (
+      <main className="app-shell">
+        <ErrorState message="Experiment를 찾을 수 없습니다." />
+        <div className="header-actions">
+          <Link className="button button-secondary" href={`/projects/${encodeURIComponent(projectId)}/history`}>
+            History로 돌아가기
+          </Link>
+          <Link className="button button-secondary" href={`/projects/${encodeURIComponent(projectId)}`}>
+            Project Overview로 돌아가기
+          </Link>
+        </div>
+      </main>
+    );
+  }
+
+  if (experiment && scopeError && !scopeVerified) {
+    return (
+      <main className="app-shell">
+        <ErrorState
+          title={scopeError.kind === "network" ? "서버에 연결할 수 없습니다" : "Project 범위를 확인하지 못했습니다"}
+          message={scopeError.message}
+          retryable={scopeError.retryable}
+          onRetry={() => void verifyScope(experiment)}
+        />
+        <Link className="button button-secondary back-action" href={`/projects/${encodeURIComponent(projectId)}/history`}>
+          History로 돌아가기
         </Link>
       </main>
     );
@@ -341,16 +438,23 @@ export function ExperimentDetailClient({
       <nav className="breadcrumb" aria-label="Breadcrumb">
         <Link href={`/projects/${encodeURIComponent(projectId)}`}>Project Overview</Link>
         <span aria-hidden="true">/</span>
+        <Link href={`/projects/${encodeURIComponent(projectId)}/history`}>History</Link>
+        <span aria-hidden="true">/</span>
         <span>Experiment</span>
       </nav>
 
-      {experiment ? (
+      {experiment && scopeVerified ? (
         <>
           <header className="detail-header">
             <div>
               <p className="eyebrow">Inline Experiment</p>
               <h1>Experiment 상세</h1>
               <code title={experiment.id}>{experiment.id}</code>
+              <div className="header-actions">
+                <Link className="button button-secondary" href={`/projects/${encodeURIComponent(projectId)}/history`}>
+                  History로 돌아가기
+                </Link>
+              </div>
             </div>
             <ExperimentBadge status={experiment.status} />
           </header>
@@ -410,26 +514,38 @@ export function ExperimentDetailClient({
               <div><p className="eyebrow">Snapshots</p><h2>선택 Version</h2></div>
               {metadataLoading ? <span className="count-label">확인 중…</span> : null}
             </div>
-            {metadataError ? (
-              <ErrorState
-                title="Version 정보를 확인하지 못했습니다"
-                message={metadataError.message}
-                retryable={metadataError.retryable}
-                onRetry={() => void resolveMetadata(experiment)}
-              />
-            ) : null}
             <dl className="detail-list detail-panel">
               <div>
                 <dt>Dataset Version</dt>
-                <dd>{metadata?.dataset ?? <>Version 정보 확인 불가<br /><code>{experiment.datasetVersionId}</code></>}</dd>
+                <dd>{metadata.dataset}</dd>
               </div>
               <div>
                 <dt>Target Version</dt>
-                <dd>{metadata?.target ?? <>Version 정보 확인 불가<br /><code>{experiment.targetVersionId}</code></>}</dd>
+                <dd>
+                  {metadata.target ?? <>Target Version 정보 확인 불가<br />ID: <code>{experiment.targetVersionId}</code></>}
+                  {metadataErrors.target ? (
+                    <span className="metadata-error" role="alert">
+                      {metadataErrors.target.message}
+                      <button className="text-button" type="button" onClick={() => void resolveMetadata(experiment)}>
+                        다시 시도
+                      </button>
+                    </span>
+                  ) : null}
+                </dd>
               </div>
               <div>
                 <dt>Evaluator Version</dt>
-                <dd>{metadata?.evaluator ?? <>Version 정보 확인 불가<br /><code>{experiment.evaluatorVersionId}</code></>}</dd>
+                <dd>
+                  {metadata.evaluator ?? <>Evaluator Version 정보 확인 불가<br />ID: <code>{experiment.evaluatorVersionId}</code></>}
+                  {metadataErrors.evaluator ? (
+                    <span className="metadata-error" role="alert">
+                      {metadataErrors.evaluator.message}
+                      <button className="text-button" type="button" onClick={() => void resolveMetadata(experiment)}>
+                        다시 시도
+                      </button>
+                    </span>
+                  ) : null}
+                </dd>
               </div>
             </dl>
           </section>

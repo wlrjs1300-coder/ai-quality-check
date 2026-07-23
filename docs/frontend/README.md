@@ -1,6 +1,6 @@
 # Frontend API Contract
 
-이 문서는 EvalOps Web 화면의 API 사용 계약을 정의합니다. Slice 1~4에 이어 Slice 5의 Version 선택, Inline Experiment 실행과 Case별 Evaluation Result 조회가 구현됐습니다.
+이 문서는 EvalOps Web 화면의 API 사용 계약을 정의합니다. Slice 1~5에 이어 Slice 6의 History·Dashboard에서 Experiment 상세로 이어지는 조회 흐름과 방어적 Project Scope 확인이 구현됐습니다.
 
 ## 문서
 
@@ -63,3 +63,11 @@ Project Overview에 Dashboard와 Summary를, Dataset Detail에 Case와 Version�
 - Verify in browser
   - `http://localhost:3000/projects` should call backend through `http://localhost:8000/api/v1/projects`.
   - Project Overview와 History도 같은 proxy를 사용하며 기간·상태·정렬 Query를 Backend에 전달합니다.
+
+## Experiment Scope 제약
+
+- Experiment 단건 응답에는 `project_id`가 없고 Project-scoped 단건 API도 없습니다.
+- 상세 화면은 URL의 Project 범위에서 `dataset_version_id`를 찾은 뒤에만 Experiment와 Result를 표시합니다.
+- 이 탐색은 잘못 조합된 URL에서 상세 노출을 줄이는 방어적 UX이며 Backend 권한 검사를 대체하지 않습니다.
+- Target·Evaluator 메타데이터 복원 실패는 상세 전체를 차단하지 않고 해당 Version ID를 fallback으로 표시합니다.
+- History와 Dashboard에서는 Version 이름 복원을 위한 추가 N+1 요청이나 Input·Output Snapshot 조회를 수행하지 않습니다.
