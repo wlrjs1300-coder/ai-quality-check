@@ -57,6 +57,7 @@ export const updateTarget = (id: string, input: { name?: string; fixedResponse?:
 export const listTargetVersions = (id: string, page = 1, signal?: AbortSignal) => getPaginatedData(`/targets/${encodeURIComponent(id)}/versions?page=${page}&size=20`, parseTargetVersion, signal);
 export const createTargetVersion = (id: string) => request(`/targets/${encodeURIComponent(id)}/versions`, { method: "POST", parse: (value) => envelope(value, parseTargetVersion) });
 export const getTargetVersion = (id: string, version: number, signal?: AbortSignal) => getData(`/targets/${encodeURIComponent(id)}/versions/${version}`, parseTargetVersion, signal);
+export const getTargetVersionById = (id: string, signal?: AbortSignal) => getData(`/target-versions/${encodeURIComponent(id)}`, parseTargetVersion, signal);
 export function fixedResponse(config: JsonObject): string | null {
   const fixed = config.fixed_response;
   return isRecord(fixed) && isString(fixed.text) ? fixed.text : null;
