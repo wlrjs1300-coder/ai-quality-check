@@ -13,6 +13,8 @@ import {
 } from "@/src/components/AnalyticsUi";
 import { DateRangeFilter } from "@/src/components/DateRangeFilter";
 import { DatasetRegistry } from "@/src/components/DatasetRegistry";
+import { EvaluatorRegistry } from "@/src/components/EvaluatorRegistry";
+import { TargetRegistry } from "@/src/components/TargetRegistry";
 import { ErrorState, LoadingState } from "@/src/components/AsyncStates";
 import { StatusBadge } from "@/src/components/StatusBadge";
 import {
@@ -269,6 +271,8 @@ export function ProjectDetailClient({
             ) : !trendError ? <LoadingState title="Trend를 불러오고 있습니다" /> : null}
           </section>
           <DatasetRegistry projectId={projectId} projectActive={project.isActive} />
+          <TargetRegistry projectId={projectId} projectActive={project.isActive} />
+          <EvaluatorRegistry projectId={projectId} projectActive={project.isActive} />
         </>
       ) : null}
     </main>

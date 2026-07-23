@@ -34,6 +34,8 @@
 
 완료 조건: FIXED Target 및 세 Evaluator Type의 Snapshot Hash와 inactive·duplicate 상태를 표시합니다. Raw execute UI는 만들지 않습니다.
 
+상태: 구현 완료. MOCK+FIXED Target과 CONTAINS·NOT_CONTAINS·REGEX Evaluator의 생성·수정·영구 비활성화, Version 1·2 불변 Snapshot과 중복 오류를 실제 PostgreSQL API로 검증했습니다. Raw execute UI는 포함하지 않았습니다.
+
 ## Slice 5 — Inline Experiment
 
 포함: 세 Version 선택, Experiment 생성, 단건 실행, Case별 Result.
