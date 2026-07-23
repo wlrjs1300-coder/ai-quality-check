@@ -1,6 +1,6 @@
 # Frontend Implementation Order
 
-현재 화면은 구현되지 않았습니다. 아래 순서는 Demo Seed로 각 단계의 사용자 흐름을 검증할 수 있도록 작은 Vertical Slice로 나눕니다.
+아래 순서는 Demo Seed로 각 단계의 사용자 흐름을 검증할 수 있도록 작은 Vertical Slice로 나눕니다.
 
 ## Slice 1 — API 경계와 Projects
 
@@ -17,6 +17,8 @@
 포함: Project Overview의 Dashboard·Summary, History·Trend, CSV Export.
 
 완료 조건: 같은 기간 Filter가 네 조회와 CSV에 전달되고 Demo의 네 Experiment, 최신 `BLOCK`, `REGRESSED`, `DECLINING`을 표시합니다. CSV 파일명과 오류 응답을 구분합니다.
+
+상태: 화면과 API 연결을 구현했고 TypeScript strict, lint, production build를 통과했습니다. 실제 Demo Seed 값과 다운로드 동작의 Browser 검증은 로컬 서비스 실행 환경에서 별도로 확인해야 합니다.
 
 ## Slice 3 — Dataset Snapshot
 
@@ -51,7 +53,7 @@
 5. 같은 Filter로 CSV를 다운로드합니다.
 6. Seed를 재실행해 `already_seeded` no-op을 확인합니다.
 
-이 절차는 향후 Frontend 완료 조건이며 현재 화면 구현 완료를 의미하지 않습니다.
+이 절차 중 실제 Browser 동작 확인은 정적 빌드 완료와 별도의 검증 단계입니다.
 
 ## 전체 MVP 제외 범위
 

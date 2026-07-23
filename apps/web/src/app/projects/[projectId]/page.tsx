@@ -2,9 +2,11 @@ import { ProjectDetailClient } from "./project-detail-client";
 
 type ProjectDetailPageProps = {
   params: Promise<{ projectId: string }>;
+  searchParams: Promise<{ from?: string; to?: string }>;
 };
 
-export default async function ProjectDetailPage({ params }: ProjectDetailPageProps) {
+export default async function ProjectDetailPage({ params, searchParams }: ProjectDetailPageProps) {
   const { projectId } = await params;
-  return <ProjectDetailClient projectId={projectId} />;
+  const { from = "", to = "" } = await searchParams;
+  return <ProjectDetailClient projectId={projectId} initialFrom={from} initialTo={to} />;
 }
