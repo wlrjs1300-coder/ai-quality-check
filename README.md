@@ -4,6 +4,8 @@
 
 공개 HTTP API의 Endpoint와 오류·데모 흐름은 [Public API Documentation](docs/api/README.md)에서 확인할 수 있습니다.
 
+향후 Web 화면의 API 사용 계약은 [Frontend API Contract](docs/frontend/README.md)에서 확인할 수 있습니다.
+
 ## Scope (v0.1.0 Local Infrastructure)
 
 - Next.js App Router 기반 Web 애플리케이션 초기화

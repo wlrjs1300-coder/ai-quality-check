@@ -7,6 +7,7 @@ EvalOps Backend의 공개 HTTP API 문서 진입점입니다. 현재 API는 인�
 - [API Reference](API_REFERENCE.md): 전체 Endpoint와 요청·응답 계약
 - [Error Reference](ERROR_REFERENCE.md): 오류 Envelope와 오류 코드
 - [Demo Workflow](DEMO_WORKFLOW.md): Demo Seed와 권장 확인 순서
+- [Frontend API Contract](../frontend/README.md): 화면별 API 사용과 상태·오류 처리 계약
 
 ## 로컬 접근 경로
 
