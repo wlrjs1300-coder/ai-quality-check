@@ -1,6 +1,6 @@
 # Frontend API Contract
 
-이 문서는 EvalOps Web 화면의 API 사용 계약을 정의합니다. Slice 1~5에 이어 Slice 6의 History·Dashboard에서 Experiment 상세로 이어지는 조회 흐름과 방어적 Project Scope 확인이 구현됐습니다.
+이 문서는 EvalOps Web 화면의 API 사용 계약을 정의합니다. Slice 1~6의 조회·실행 흐름에 이어 Slice 7의 Basic Quality Gate 생성·평가·최신 결과 복원 흐름이 구현됐습니다.
 
 ## 문서
 
@@ -60,6 +60,7 @@ Project Overview에 Dashboard와 Summary를, Dataset Detail에 Case와 Version�
   - Dataset·Evaluation Case·Dataset Version API
   - Target·Target Version 및 Evaluator·Evaluator Version API
   - Experiment 생성·단건 실행·상태 및 Evaluation Result API
+  - Quality Gate Policy 생성·단건 조회, 평가 및 Result 단건 조회 API
 - Verify in browser
   - `http://localhost:3000/projects` should call backend through `http://localhost:8000/api/v1/projects`.
   - Project Overview와 History도 같은 proxy를 사용하며 기간·상태·정렬 Query를 Backend에 전달합니다.
@@ -71,3 +72,13 @@ Project Overview에 Dashboard와 Summary를, Dataset Detail에 Case와 Version�
 - 이 탐색은 잘못 조합된 URL에서 상세 노출을 줄이는 방어적 UX이며 Backend 권한 검사를 대체하지 않습니다.
 - Target·Evaluator 메타데이터 복원 실패는 상세 전체를 차단하지 않고 해당 Version ID를 fallback으로 표시합니다.
 - History와 Dashboard에서는 Version 이름 복원을 위한 추가 N+1 요청이나 Input·Output Snapshot 조회를 수행하지 않습니다.
+
+## Basic Quality Gate 제약
+
+- 완료된 Experiment에서 Policy를 생성한 뒤 같은 Policy로 즉시 평가하며 PASS·BLOCK은 Backend 결과를 그대로 표시합니다.
+- Policy 목록·수정·비활성화·Version API와 Gate Result 목록 API는 없습니다.
+- History는 Experiment별 최신 Gate Result만 제공하므로 최신 Result가 있으면 새 평가 UI를 제공하지 않습니다.
+- 평가 요청 결과가 불확실하면 History의 최신 Result ID로 Result와 Policy를 복원합니다.
+- Policy 생성 Network Error는 생성된 Policy ID를 조회할 방법이 없어 완전 복구할 수 없으며 자동 재시도하지 않습니다.
+- Severity 자체를 기준으로 한 Gate Rule은 없고 `required_for_release` Case 실패를 차단 조건으로 사용합니다.
+- Frontend의 Project Scope 확인은 방어적 UX이며 Backend 권한 경계를 대체하지 않습니다.

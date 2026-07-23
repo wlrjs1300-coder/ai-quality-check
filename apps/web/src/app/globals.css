@@ -137,6 +137,10 @@ code { font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size
 .registry-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
 .inline-fieldset { display: flex; flex-wrap: wrap; gap: 18px; padding: 14px; border: 1px solid var(--border); border-radius: 8px; }
 .inline-fieldset legend { padding: 0 6px; font-weight: 700; }
+.gate-form { display: grid; gap: 18px; }
+.gate-options { display: grid; gap: 6px; }
+.gate-options p { margin: 0 0 8px 26px; color: var(--muted); font-size: 0.84rem; }
+.gate-reasons { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
 .experiment-create-form { display: grid; gap: 20px; }
 .experiment-create-form .detail-panel { margin: 0; }
 .version-picker { display: grid; gap: 10px; margin-top: 16px; }
