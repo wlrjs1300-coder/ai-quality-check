@@ -1,6 +1,6 @@
 # Frontend API Contract
 
-이 문서는 아직 구현되지 않은 EvalOps Web 화면의 API 사용 계약을 정의합니다. 현재 Frontend는 Next.js App Router 초기 화면만 존재하며, 아래 Route와 Client는 향후 구현 대상입니다.
+이 문서는 EvalOps Web 화면의 API 사용 계약을 정의합니다. Slice 1의 공통 API Client, Projects 목록·생성, Project 상세가 구현됐으며 나머지 화면은 향후 구현 대상입니다.
 
 ## 문서
 
@@ -42,3 +42,15 @@ downloadCsv(path, query): Promise<{ blob: Blob; filename: string }>
 9. Comparison Detail
 
 Project Overview에 Dashboard와 Summary를, Dataset Detail에 Case와 Version을, 각 Registry Detail에 Version을 통합해 화면 수를 줄입니다.
+## Slice 1 Proxy Runtime Configuration
+
+- `NEXT_PUBLIC_API_BASE_URL=/api/backend`
+  - Frontend browser requests use same-origin path `/api/backend/*` and never call `http://localhost:8000` directly.
+- `BACKEND_API_BASE_URL=http://localhost:8000`
+  - Next.js rewrites this to backend `http://localhost:8000/api/v1/*` in production.
+- API routes used by the Slice 1 clients
+  - `GET /projects`
+  - `GET /projects/{projectId}`
+  - `POST /projects`
+- Verify in browser
+  - `http://localhost:3000/projects` should call backend through `http://localhost:8000/api/v1/projects`.

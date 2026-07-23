@@ -2,14 +2,14 @@ import "./globals.css";
 
 export const metadata = {
   title: "EvalOps",
-  description: "Local foundation scaffold",
+  description: "Evaluation operations workspace",
 };
 
 export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en">
+    <html lang="ko">
       <body>{children}</body>
     </html>
   );
