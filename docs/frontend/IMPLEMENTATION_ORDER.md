@@ -42,6 +42,8 @@
 
 완료 조건: 같은 Project 범위만 선택하고 중복 실행을 막으며 PASS·FAIL·ERROR와 실패 이유를 표시합니다.
 
+상태: 화면과 API 연결을 구현했고 TypeScript strict와 lint 검증을 통과했습니다. 부모·Version 목록의 독립 페이지네이션, 실행 오류 후 상태 재조회, Result 부분 오류 복구와 새로고침 복원을 포함합니다. 실제 PostgreSQL 데이터로 생성·실행·2페이지 이동·Network 복구를 확인하는 Browser 검증은 별도로 수행해야 합니다.
+
 ## Slice 6 — Gate와 Comparison
 
 포함: Gate Policy 생성·평가, Baseline Comparison 생성·상세.

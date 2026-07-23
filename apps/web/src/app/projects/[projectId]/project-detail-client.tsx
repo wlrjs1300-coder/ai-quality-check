@@ -168,6 +168,7 @@ export function ProjectDetailClient({
               <div className="header-actions">
                 <Link className="button button-secondary" href="/projects">Projects</Link>
                 <Link className="button" href={`/projects/${encodeURIComponent(projectId)}/history`}>전체 History</Link>
+                <Link className="button" href={`/projects/${encodeURIComponent(projectId)}/experiments/new`}>Experiment 생성</Link>
               </div>
             </div>
             <StatusBadge active={project.isActive} />

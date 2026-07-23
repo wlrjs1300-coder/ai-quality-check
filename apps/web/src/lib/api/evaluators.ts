@@ -51,3 +51,4 @@ export const updateEvaluator = (id: string, type: EvaluatorType, input: { name?:
 export const listEvaluatorVersions = (id: string, page = 1, signal?: AbortSignal) => getPaginatedData(`/evaluators/${encodeURIComponent(id)}/versions?page=${page}&size=20`, parseEvaluatorVersion, signal);
 export const createEvaluatorVersion = (id: string) => request(`/evaluators/${encodeURIComponent(id)}/versions`, { method: "POST", parse: (value) => envelope(value, parseEvaluatorVersion) });
 export const getEvaluatorVersion = (id: string, version: number, signal?: AbortSignal) => getData(`/evaluators/${encodeURIComponent(id)}/versions/${version}`, parseEvaluatorVersion, signal);
+export const getEvaluatorVersionById = (id: string, signal?: AbortSignal) => getData(`/evaluator-versions/${encodeURIComponent(id)}`, parseEvaluatorVersion, signal);
