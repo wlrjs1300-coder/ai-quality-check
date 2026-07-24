@@ -1,6 +1,6 @@
 # Screen API Contract
 
-아래 Route는 제안된 Frontend Route이며 아직 구현되지 않았습니다. API Path Parameter는 Public API와 같은 snake_case 표기를 사용합니다.
+아래 Route는 현재 구현된 Frontend 화면의 계약입니다. API Path Parameter는 Public API와 같은 snake_case 표기를 사용합니다. 구현 상태와 수동 검증 수준은 [Regression Test Matrix](REGRESSION_TEST_MATRIX.md)에서 별도로 관리합니다.
 
 ## Frontend Endpoint Inventory
 
@@ -55,7 +55,6 @@
 | Comparison Detail | Load comparison | GET | `/api/v1/baseline-comparisons/{comparison_id}` |
 | Comparison Detail | Load case comparisons | GET | `/api/v1/baseline-comparisons/{comparison_id}/cases` |
 | History | Load history | GET | `/api/v1/projects/{project_id}/experiment-history` |
-| History | Load trend | GET | `/api/v1/projects/{project_id}/trend-summary` |
 | History | Export CSV | GET | `/api/v1/projects/{project_id}/experiment-history.csv` |
 
 Raw Target/Evaluator execute Endpoint는 Experiment Inline 실행 내부에서 사용되므로 MVP 화면이 직접 호출하지 않습니다. `/health`도 사용자 화면 데이터 계약에서 제외합니다.
@@ -199,15 +198,15 @@ Baseline 후보는 Project History를 `experiment_status=COMPLETED`, `sort=creat
 
 ## History
 
-목적: Project 실행 이력, Trend와 같은 필터의 CSV를 제공합니다.
+목적: Project 실행 이력과 같은 필터의 CSV를 제공합니다. Trend는 Project Overview가 조회하며 History 화면은 직접 조회하지 않습니다.
 
 Route: `/projects/{projectId}/history`.
 
-초기 API 호출: History와 Trend를 같은 기간 Filter로 병렬 조회합니다.
+초기 API 호출: History를 현재 Filter와 pagination으로 조회합니다.
 
 Query는 `experiment_status`, `gate_status`, `comparison_status`, `created_from`, `created_to`, `sort`; History에만 `page`, `size`가 있습니다. CSV 다운로드는 현재 필터와 정렬을 그대로 전달합니다.
 
-사용 필드: Experiment 상태와 counts, `pass_rate`, Gate·Comparison 요약, Trend counts와 첫/최신 비율. Experiment ID는 상세 navigation에 전달합니다. 카드에서는 Input·Output Snapshot을 조회하거나 표시하지 않으며 Version은 API가 제공하는 ID만 표시합니다.
+사용 필드: Experiment 상태와 counts, `pass_rate`, Gate·Comparison 요약. Experiment ID는 상세 navigation에 전달합니다. 카드에서는 Input·Output Snapshot을 조회하거나 표시하지 않으며 Version은 API가 제공하는 ID만 표시합니다.
 
 화면 상태: Initial, Loading, Empty, Success, Error, Refreshing, Submitting(다운로드). 날짜 역전은 요청 전에 차단합니다.
 

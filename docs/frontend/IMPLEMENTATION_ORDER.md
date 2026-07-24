@@ -6,15 +6,15 @@
 
 포함: 공통 Client, 오류 Parser, Envelope 처리, Projects 목록·생성, Project 기본 상세.
 
-완료 조건: Loading·Empty·Error·Success, Project 생성 후 재조회, 404 이동, FastAPI field 오류 연결이 자동 테스트로 검증됩니다.
+완료 조건: Loading·Empty·Error·Success, Project 생성 후 재조회, 404 이동, FastAPI field 오류 연결을 검증합니다.
 
-상태: 구현 완료. TypeScript strict, lint, production build 검증을 기준으로 하며 별도 Frontend 테스트 Library는 아직 도입하지 않았습니다.
+상태: 구현 완료. TypeScript strict, lint, production build로 정적 검증했으며 별도 Frontend 테스트 Library와 자동 Browser Test는 아직 도입하지 않았습니다. Browser 동작은 수동 회귀 항목으로 관리합니다.
 
 제외: Dashboard, Registry mutation.
 
 ## Slice 2 — 관찰 가능한 Demo
 
-포함: Project Overview의 Dashboard·Summary, History·Trend, CSV Export.
+포함: Project Overview의 Dashboard·Summary·Trend, History 목록·필터, CSV Export.
 
 완료 조건: 같은 기간 Filter가 네 조회와 CSV에 전달되고 Demo의 네 Experiment, 최신 `BLOCK`, `REGRESSED`, `DECLINING`을 표시합니다. CSV 파일명과 오류 응답을 구분합니다.
 
@@ -80,6 +80,12 @@
 6. Seed를 재실행해 `already_seeded` no-op을 확인합니다.
 
 이 절차 중 실제 Browser 동작 확인은 정적 빌드 완료와 별도의 검증 단계입니다.
+
+## Slice 1~8 이후 — Regression과 UI/UX 개선
+
+기능 확장보다 [Regression Test Matrix](REGRESSION_TEST_MATRIX.md)의 공백과 [UI/UX Audit](UI_UX_AUDIT.md)의 기능적 결함을 먼저 처리합니다. 세부 순서는 [UI/UX Roadmap](UI_UX_ROADMAP.md)을 따르며, Token은 [Design Token Contract](DESIGN_TOKENS.md)에 정의만 하고 구현 PR에서 작은 범위로 적용합니다.
+
+현재 자동 Frontend 검증은 typecheck, lint, production build입니다. Playwright, Cypress, Vitest, Jest는 없으며 Browser 검증은 수동입니다.
 
 ## 전체 MVP 제외 범위
 
