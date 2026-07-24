@@ -7,6 +7,10 @@
 - [Screen API Contract](SCREEN_API_CONTRACT.md): 화면별 호출·필드·이동·재조회 계약
 - [State and Error Contract](STATE_AND_ERROR_CONTRACT.md): 화면 상태, 오류, 표시 규칙
 - [Implementation Order](IMPLEMENTATION_ORDER.md): MVP Vertical Slice 순서와 완료 조건
+- [Regression Test Matrix](REGRESSION_TEST_MATRIX.md): 13개 Route의 회귀 상태와 검증 증거
+- [UI/UX Audit](UI_UX_AUDIT.md): 기능적 결함과 UI 개선의 코드 기준 진단
+- [UI/UX Roadmap](UI_UX_ROADMAP.md): Slice 1~8 이후 개선 Phase
+- [Design Token Contract](DESIGN_TOKENS.md): 후속 CSS 구현에 사용할 Token 계약
 - [Public API Documentation](../api/README.md): Backend 전체 공개 계약
 
 ## 책임 경계
@@ -93,3 +97,10 @@ Project Overview에 Dashboard와 Summary를, Dataset Detail에 Case와 Version�
 - Dashboard 최근 Experiment에는 Comparison ID가 없으며 Project Overview의 최상위 최신 Comparison만 상세 연결이 가능합니다.
 - `total_case_count > 0`은 후보 보조 필터이며 실제 Result 존재를 보장하지 않습니다.
 - Frontend의 Project Scope 검사는 방어적 UX이며 Backend 권한 검사를 대체하지 않습니다.
+
+## 검증 현황
+
+- 저장소에서 자동으로 증명 가능한 Frontend 검증은 TypeScript typecheck, ESLint, Next.js production build입니다.
+- Browser 기능 검증은 현재 수동으로 수행하며 결과는 [Regression Test Matrix](REGRESSION_TEST_MATRIX.md)에 증거 수준과 함께 기록합니다.
+- Playwright, Cypress, Vitest, Jest 기반 Frontend 자동 테스트는 현재 도입하지 않았습니다.
+- 수동 Browser 확인을 자동 테스트 완료로 표현하지 않습니다.
