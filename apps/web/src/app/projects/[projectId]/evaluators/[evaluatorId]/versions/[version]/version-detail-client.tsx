@@ -24,6 +24,10 @@ function evaluatorVersionNotFoundError(): ApiError {
   });
 }
 
+function isAbortError(error: unknown): boolean {
+  return error instanceof DOMException && error.name === "AbortError";
+}
+
 export function EvaluatorVersionDetailClient({
   projectId,
   evaluatorId,
@@ -39,10 +43,14 @@ export function EvaluatorVersionDetailClient({
   const [loading, setLoading] = useState(true);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
   const requestIdRef = useRef(0);
+  const controllerRef = useRef<AbortController | null>(null);
   const number = Number(version);
 
   const load = useCallback(async () => {
     const requestId = ++requestIdRef.current;
+    controllerRef.current?.abort();
+    const controller = new AbortController();
+    controllerRef.current = controller;
     setLoading(true);
     setError(null);
     setItem(null);
@@ -50,11 +58,11 @@ export function EvaluatorVersionDetailClient({
 
     try {
       const results = await Promise.allSettled([
-        getEvaluator(evaluatorId),
-        getEvaluatorVersion(evaluatorId, number),
+        getEvaluator(evaluatorId, controller.signal),
+        getEvaluatorVersion(evaluatorId, number, controller.signal),
       ]);
 
-      if (requestId !== requestIdRef.current) {
+      if (requestId !== requestIdRef.current || controllerRef.current !== controller) {
         return;
       }
 
@@ -67,18 +75,19 @@ export function EvaluatorVersionDetailClient({
       } else {
         if (results[0].status === "fulfilled") {
           setEvaluator(results[0].value.data);
-        } else {
+        } else if (!isAbortError(results[0].reason)) {
           setError(toApiError(results[0].reason));
         }
 
         if (results[1].status === "fulfilled") {
           setItem(results[1].value.data);
-        } else {
+        } else if (!isAbortError(results[1].reason)) {
           setError(toApiError(results[1].reason));
         }
       }
     } finally {
-      if (requestId === requestIdRef.current) {
+      if (requestId === requestIdRef.current && controllerRef.current === controller) {
+        controllerRef.current = null;
         setLoading(false);
         setIsInitialLoad(false);
       }
@@ -87,6 +96,11 @@ export function EvaluatorVersionDetailClient({
 
   useEffect(() => {
     void load();
+    return () => {
+      requestIdRef.current += 1;
+      controllerRef.current?.abort();
+      controllerRef.current = null;
+    };
   }, [load]);
 
   if (error) {

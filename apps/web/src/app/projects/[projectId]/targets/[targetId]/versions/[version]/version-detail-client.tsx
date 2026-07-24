@@ -24,6 +24,10 @@ function targetVersionNotFoundError(): ApiError {
   });
 }
 
+function isAbortError(error: unknown): boolean {
+  return error instanceof DOMException && error.name === "AbortError";
+}
+
 export function TargetVersionDetailClient({
   projectId,
   targetId,
@@ -39,10 +43,14 @@ export function TargetVersionDetailClient({
   const [loading, setLoading] = useState(true);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
   const requestIdRef = useRef(0);
+  const controllerRef = useRef<AbortController | null>(null);
   const number = Number(version);
 
   const load = useCallback(async () => {
     const requestId = ++requestIdRef.current;
+    controllerRef.current?.abort();
+    const controller = new AbortController();
+    controllerRef.current = controller;
     setLoading(true);
     setError(null);
     setItem(null);
@@ -50,11 +58,11 @@ export function TargetVersionDetailClient({
 
     try {
       const result = await Promise.allSettled([
-        getTarget(targetId),
-        getTargetVersion(targetId, number),
+        getTarget(targetId, controller.signal),
+        getTargetVersion(targetId, number, controller.signal),
       ]);
 
-      if (requestId !== requestIdRef.current) {
+      if (requestId !== requestIdRef.current || controllerRef.current !== controller) {
         return;
       }
 
@@ -67,18 +75,19 @@ export function TargetVersionDetailClient({
       } else {
         if (result[0].status === "fulfilled") {
           setTarget(result[0].value.data);
-        } else {
+        } else if (!isAbortError(result[0].reason)) {
           setError(toApiError(result[0].reason));
         }
 
         if (result[1].status === "fulfilled") {
           setItem(result[1].value.data);
-        } else {
+        } else if (!isAbortError(result[1].reason)) {
           setError(toApiError(result[1].reason));
         }
       }
     } finally {
-      if (requestId === requestIdRef.current) {
+      if (requestId === requestIdRef.current && controllerRef.current === controller) {
+        controllerRef.current = null;
         setLoading(false);
         setIsInitialLoad(false);
       }
@@ -87,6 +96,11 @@ export function TargetVersionDetailClient({
 
   useEffect(() => {
     void load();
+    return () => {
+      requestIdRef.current += 1;
+      controllerRef.current?.abort();
+      controllerRef.current = null;
+    };
   }, [load]);
 
   if (error) {

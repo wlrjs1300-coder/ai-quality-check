@@ -36,7 +36,7 @@ Phase 0
 - Dataset Detail 404 복귀 — 구현 및 정적 검증 완료, Browser 회귀 검증 대기
 - Dataset Version 404 복귀 — 구현 및 정적 검증 완료, Browser 회귀 검증 대기
 - Dataset, Target, Evaluator Frontend Project Scope 대조 — 구현 및 정적 검증 완료, Browser 검증 대기(Backend Authorization은 범위 밖)
-- Target와 Evaluator Version AbortSignal
+- Target와 Evaluator Version AbortSignal — 구현 및 정적 검증 완료, Browser 검증 대기
 - 자동 Browser Test가 있는 것처럼 읽히는 문서 표현 정정
 
 ### 제외 범위
@@ -85,6 +85,8 @@ Phase 0
 - 각 기능 공백에 자동 증거 또는 날짜가 있는 수동 증거가 존재
 - typecheck, lint, production build 통과
 - 기존 핵심 흐름 회귀 없음
+
+Phase 0에 포함된 모든 기능(Pagination, 404 복귀, Project Scope 대조, Target/Evaluator Version AbortSignal)의 코드 구현과 정적 검증은 완료됐습니다. Browser 회귀 검증은 아직 남아 있으며, Browser 검증 전에는 Phase 0을 전체 완료로 표현하지 않습니다. Phase A로 넘어가기 전 위 항목들의 주요 Browser 회귀 검증이 필요합니다.
 
 ### 독립 Merge 가능 여부
 

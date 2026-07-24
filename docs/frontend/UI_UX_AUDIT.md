@@ -14,7 +14,7 @@ Project
 → Baseline Comparison
 ```
 
-현재 가장 큰 위험은 UI 미관보다 기능 공백과 화면별 상태 처리의 일관성 부족입니다. Projects와 Dataset Registry Pagination, Dataset Detail·Version 404 복귀, Dataset·Target·Evaluator Frontend Project Scope 대조는 코드 구현과 정적 검증을 마쳤고 Browser 회귀 검증만 남아 있습니다(Backend Authorization은 구현되지 않았으며 이번 변경은 Frontend URL 일관성 검증입니다). UI를 전면 재설계하기 전에 일부 Version 요청의 Abort 문제를 먼저 해결해야 합니다.
+현재 가장 큰 위험은 UI 미관보다 기능 공백과 화면별 상태 처리의 일관성 부족입니다. Projects와 Dataset Registry Pagination, Dataset Detail·Version 404 복귀, Dataset·Target·Evaluator Frontend Project Scope 대조, Target·Evaluator Version AbortSignal은 코드 구현과 정적 검증을 마쳤고 Browser 회귀 검증만 남아 있습니다(Backend Authorization은 구현되지 않았으며 이번 변경은 Frontend URL 일관성 검증입니다). UI를 전면 재설계하기 전에 Phase 0 기능 공백에 대한 Browser 회귀 검증을 먼저 완료해야 합니다.
 
 현재 자동 Frontend 검증은 typecheck, lint, production build뿐입니다. 2026-07-23에 확인한 Browser 시나리오는 수동 검증이며 저장소에 자동 Report가 없습니다.
 
@@ -29,9 +29,9 @@ Project
 | R05 | `/projects/{projectId}/datasets/{datasetId}` | Case 생성, 수정, 승인, 폐기와 Version 흐름 연결, 404 복귀 Action, Project Scope 대조 | 404 복귀와 Project Scope 대조 구현 및 정적 검증 완료, Browser 회귀 검증 대기 |
 | R06 | `/projects/{projectId}/datasets/{datasetId}/versions/{version}` | 불변 Snapshot과 Case 표시, 404 복귀 Action, Project Scope 대조 | 404 복귀와 Project Scope 대조 구현 및 정적 검증 완료, Browser 회귀 검증 대기 |
 | R07 | `/projects/{projectId}/targets/{targetId}` | MOCK 설정, 비활성화, FIXED Version 관리, Project Scope 대조 | Project Scope 대조 구현 및 정적 검증 완료, Browser 회귀 검증 대기 |
-| R08 | `/projects/{projectId}/targets/{targetId}/versions/{version}` | 불변 Snapshot과 404 복귀 Action, Project Scope 대조 | Project Scope 대조 구현 및 정적 검증 완료(Browser 회귀 검증 대기), 요청 AbortSignal 보강 필요 |
+| R08 | `/projects/{projectId}/targets/{targetId}/versions/{version}` | 불변 Snapshot과 404 복귀 Action, Project Scope 대조, AbortSignal 보강 | Project Scope 대조와 AbortSignal 보강 구현 및 정적 검증 완료, Browser 회귀 검증 대기 |
 | R09 | `/projects/{projectId}/evaluators/{evaluatorId}` | 세 Evaluator Type과 Version 관리, Project Scope 대조 | Project Scope 대조 구현 및 정적 검증 완료, Browser 회귀 검증 대기 |
-| R10 | `/projects/{projectId}/evaluators/{evaluatorId}/versions/{version}` | Snapshot과 404 복귀 Action, Project Scope 대조 | Project Scope 대조 구현 및 정적 검증 완료(Browser 회귀 검증 대기), 요청 AbortSignal 보강 필요 |
+| R10 | `/projects/{projectId}/evaluators/{evaluatorId}/versions/{version}` | Snapshot과 404 복귀 Action, Project Scope 대조, AbortSignal 보강 | Project Scope 대조와 AbortSignal 보강 구현 및 정적 검증 완료, Browser 회귀 검증 대기 |
 | R11 | `/projects/{projectId}/experiments/new` | 독립 Version 선택 상태, 오류와 pagination 처리 | 상태 설계는 좋지만 Client 파일이 크고 선택 정보 밀도가 높음 |
 | R12 | `/projects/{projectId}/experiments/{experimentId}` | Inline 실행, Result, Gate, Comparison이 연결됨 | 핵심 흐름은 완성됐지만 화면과 Client 파일이 지나치게 김 |
 | R13 | `/projects/{projectId}/comparisons/{comparisonId}` | Summary와 Case 목록 오류가 분리되고 pagination 제공 | Mobile Case Diff와 긴 Reason 표시 검증 필요 |
@@ -54,7 +54,7 @@ Project
 - Dataset Detail 404 복귀는 코드 구현과 정적 검증을 마쳤으며 Browser 회귀 검증이 남아 있습니다.
 - Dataset Version 404 복귀는 코드 구현과 정적 검증을 마쳤으며 Browser 회귀 검증이 남아 있습니다.
 - Dataset, Target, Evaluator Project Scope 대조는 코드 구현과 정적 검증을 마쳤으며 Browser 회귀 검증이 남아 있습니다(Frontend URL 일관성 검증이며 Backend Authorization은 구현되지 않음).
-- Target와 Evaluator Version API 요청에 AbortSignal 보강이 필요합니다.
+- Target와 Evaluator Version AbortSignal은 코드 구현과 정적 검증을 마쳤으며 Browser 회귀 검증이 남아 있습니다.
 - Projects와 Dataset Registry Pagination은 코드 구현과 정적 검증을 마쳤으며 Browser 회귀 검증이 남아 있습니다(20건 이하 데이터에서는 실제 2페이지 이동이 NOT_VERIFIED_DATA_LIMIT).
 - Error, Empty, Disabled Reason의 문구와 배치가 화면마다 다릅니다.
 - 같은 Network 오류의 제목과 설명이 완전히 통일되지 않았습니다.
@@ -208,7 +208,7 @@ Tabs 또는 Section Navigation은 후보입니다. URL, focus, 새로고침, 부
 
 ### 기능 결함 P2
 
-1. Target와 Evaluator Version AbortSignal
+1. Target와 Evaluator Version AbortSignal — 코드 구현 및 정적 검증 완료, Browser 회귀 검증 대기
 2. Error, Empty, Disabled 표현 일관성
 3. 768px Layout 위험
 4. 수동 Browser 검증이 자동 검증처럼 다시 기록되지 않도록 문서 정합성 유지
