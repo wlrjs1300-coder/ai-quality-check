@@ -11,8 +11,18 @@ import {
   type Evaluator,
   type EvaluatorVersion,
 } from "@/src/lib/api/evaluators";
-import { toApiError, type ApiError } from "@/src/lib/api/errors";
+import { ApiError, toApiError } from "@/src/lib/api/errors";
 import { formatLocalDateTime } from "@/src/lib/formatters";
+
+function evaluatorVersionNotFoundError(): ApiError {
+  return new ApiError({
+    kind: "application",
+    status: 404,
+    code: "EVALUATOR_VERSION_NOT_FOUND",
+    message: "Evaluator Version을 찾을 수 없습니다.",
+    retryable: false,
+  });
+}
 
 export function EvaluatorVersionDetailClient({
   projectId,
@@ -48,16 +58,24 @@ export function EvaluatorVersionDetailClient({
         return;
       }
 
-      if (results[0].status === "fulfilled") {
-        setEvaluator(results[0].value.data);
-      } else {
-        setError(toApiError(results[0].reason));
-      }
+      const scopeMismatch =
+        (results[0].status === "fulfilled" && results[0].value.data.projectId !== projectId)
+        || (results[1].status === "fulfilled" && results[1].value.data.evaluatorId !== evaluatorId);
 
-      if (results[1].status === "fulfilled") {
-        setItem(results[1].value.data);
+      if (scopeMismatch) {
+        setError(evaluatorVersionNotFoundError());
       } else {
-        setError(toApiError(results[1].reason));
+        if (results[0].status === "fulfilled") {
+          setEvaluator(results[0].value.data);
+        } else {
+          setError(toApiError(results[0].reason));
+        }
+
+        if (results[1].status === "fulfilled") {
+          setItem(results[1].value.data);
+        } else {
+          setError(toApiError(results[1].reason));
+        }
       }
     } finally {
       if (requestId === requestIdRef.current) {
@@ -65,7 +83,7 @@ export function EvaluatorVersionDetailClient({
         setIsInitialLoad(false);
       }
     }
-  }, [evaluatorId, number]);
+  }, [evaluatorId, number, projectId]);
 
   useEffect(() => {
     void load();

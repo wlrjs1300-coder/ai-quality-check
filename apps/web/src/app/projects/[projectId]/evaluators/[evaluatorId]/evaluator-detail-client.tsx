@@ -15,10 +15,20 @@ import {
   type EvaluatorConfigInput,
   type EvaluatorVersion,
 } from "@/src/lib/api/evaluators";
-import { toApiError, type ApiError } from "@/src/lib/api/errors";
+import { ApiError, toApiError } from "@/src/lib/api/errors";
 import { formatLocalDateTime, shortId } from "@/src/lib/formatters";
 
 const FLAGS = ["IGNORECASE", "MULTILINE", "DOTALL"] as const;
+
+function evaluatorNotFoundError(): ApiError {
+  return new ApiError({
+    kind: "application",
+    status: 404,
+    code: "EVALUATOR_NOT_FOUND",
+    message: "Evaluator를 찾을 수 없습니다.",
+    retryable: false,
+  });
+}
 
 export function EvaluatorDetailClient({
   projectId,
@@ -52,13 +62,17 @@ export function EvaluatorDetailClient({
     try {
       setError(null);
       const value = (await getEvaluator(evaluatorId)).data;
+      if (value.projectId !== projectId) {
+        setError(evaluatorNotFoundError());
+        return;
+      }
       setItem(value);
       setName(value.name);
       setInput(configInput(value.evaluatorType, value.config));
     } catch (loadError) {
       setError(toApiError(loadError));
     }
-  }, [evaluatorId]);
+  }, [evaluatorId, projectId]);
 
   const loadVersions = useCallback(
     async (nextPage = 1, retainData = false): Promise<void> => {

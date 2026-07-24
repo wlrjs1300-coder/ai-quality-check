@@ -11,8 +11,18 @@ import {
   type Target,
   type TargetVersion,
 } from "@/src/lib/api/targets";
-import { toApiError, type ApiError } from "@/src/lib/api/errors";
+import { ApiError, toApiError } from "@/src/lib/api/errors";
 import { formatLocalDateTime } from "@/src/lib/formatters";
+
+function targetVersionNotFoundError(): ApiError {
+  return new ApiError({
+    kind: "application",
+    status: 404,
+    code: "TARGET_VERSION_NOT_FOUND",
+    message: "Target Version을 찾을 수 없습니다.",
+    retryable: false,
+  });
+}
 
 export function TargetVersionDetailClient({
   projectId,
@@ -48,16 +58,24 @@ export function TargetVersionDetailClient({
         return;
       }
 
-      if (result[0].status === "fulfilled") {
-        setTarget(result[0].value.data);
-      } else {
-        setError(toApiError(result[0].reason));
-      }
+      const scopeMismatch =
+        (result[0].status === "fulfilled" && result[0].value.data.projectId !== projectId)
+        || (result[1].status === "fulfilled" && result[1].value.data.targetId !== targetId);
 
-      if (result[1].status === "fulfilled") {
-        setItem(result[1].value.data);
+      if (scopeMismatch) {
+        setError(targetVersionNotFoundError());
       } else {
-        setError(toApiError(result[1].reason));
+        if (result[0].status === "fulfilled") {
+          setTarget(result[0].value.data);
+        } else {
+          setError(toApiError(result[0].reason));
+        }
+
+        if (result[1].status === "fulfilled") {
+          setItem(result[1].value.data);
+        } else {
+          setError(toApiError(result[1].reason));
+        }
       }
     } finally {
       if (requestId === requestIdRef.current) {
@@ -65,7 +83,7 @@ export function TargetVersionDetailClient({
         setIsInitialLoad(false);
       }
     }
-  }, [targetId, number]);
+  }, [targetId, number, projectId]);
 
   useEffect(() => {
     void load();

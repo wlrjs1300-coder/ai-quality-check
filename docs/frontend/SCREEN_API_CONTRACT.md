@@ -133,6 +133,8 @@ Mutation 계약:
 
 404 복귀 계약: Dataset 단건 조회가 404 `DATASET_NOT_FOUND`이면 Retry를 노출하지 않고 Project Overview로 돌아가기와 Project 목록으로 이동 Action을 제공합니다. Network Error는 제목을 구분해 표시하고 Retry를 유지합니다. Dataset Version 단건 조회(`GET /datasets/{dataset_id}/versions/{version}`)가 404 `DATASET_VERSION_NOT_FOUND`이면 Retry를 노출하지 않고 Dataset 상세로 돌아가기와 Project Overview로 돌아가기 Action을 제공합니다. Backend는 Dataset 자체가 없는 경우와 Version이 다른 Dataset에 속한 경우를 모두 `DATASET_VERSION_NOT_FOUND`로 동일하게 응답하므로 Frontend도 이를 구분하지 않습니다. 잘못된 `version` 값(정수가 아니거나 1보다 작음)은 API를 호출하지 않고 Client에서 요청 전에 "잘못된 Version 번호입니다." 메시지로 차단합니다.
 
+Frontend URL Project Scope 대조: Dataset 단건 응답의 `project_id`가 URL `projectId`와 다르면 Dataset State를 설정하지 않고 위 404 `DATASET_NOT_FOUND`와 동일한 UX로 처리합니다(Retry 미노출, 동일 복귀 Action, Resource 정보 미노출). Dataset Version 응답의 `dataset_id`가 URL `datasetId`와 다른 경우도 방어적으로 대조해 동일하게 처리합니다. 이 대조는 Frontend URL 일관성 검증이며 Backend Authorization이나 Scope 필터가 아닙니다 — Backend API는 여전히 Resource ID 단독 조회이고 추가 API 요청은 발생하지 않습니다.
+
 ## Target Detail
 
 목적: MOCK Target 설정을 관리하고 FIXED Version Snapshot을 생성합니다.
@@ -147,6 +149,8 @@ Mutation 성공 후 Target 수정은 `target`과 상위 `targets`, Version 생�
 
 화면 상태: Initial, Loading, Empty, Success, Error, Refreshing, Submitting, Disabled. `DUPLICATE_TARGET_VERSION`은 기존 목록으로 안내합니다.
 
+Frontend URL Project Scope 대조: Target 단건 응답의 `project_id`가 URL `projectId`와 다르면 Target State를 설정하지 않고 기존 404 `TARGET_NOT_FOUND`와 동일한 UX로 처리합니다(Retry 미노출, 기존 Project Overview 복귀 Link 재사용, Resource 정보 미노출). Target Version 응답의 `target_id`가 URL `targetId`와 다른 경우도 방어적으로 대조해 동일하게 처리합니다. 이 대조는 Frontend URL 일관성 검증이며 Backend Authorization이나 Scope 필터가 아닙니다 — Backend API는 여전히 Resource ID 단독 조회이고 추가 API 요청은 발생하지 않습니다. Target Version API 요청의 AbortSignal 보강은 별도 작업(v0.25.3)입니다.
+
 ## Evaluator Detail
 
 목적: 결정론적 Evaluator 설정과 Version Snapshot을 관리합니다.
@@ -160,6 +164,8 @@ Route: `/projects/{projectId}/evaluators/{evaluatorId}`.
 Mutation 성공 후 Evaluator 수정은 `evaluator`와 상위 `evaluators`, Version 생성은 `evaluator-versions`를 재조회합니다. 지원 Type은 `CONTAINS`, `NOT_CONTAINS`, `REGEX`입니다.
 
 화면 상태: Initial, Loading, Empty, Success, Error, Refreshing, Submitting, Disabled. inactive 및 duplicate 오류는 최신 상태를 재조회합니다.
+
+Frontend URL Project Scope 대조: Evaluator 단건 응답의 `project_id`가 URL `projectId`와 다르면 Evaluator State를 설정하지 않고 기존 404 `EVALUATOR_NOT_FOUND`와 동일한 UX로 처리합니다(Retry 미노출, 기존 Project Overview 복귀 Link 재사용, Resource 정보 미노출). Evaluator Version 응답의 `evaluator_id`가 URL `evaluatorId`와 다른 경우도 방어적으로 대조해 동일하게 처리합니다. 이 대조는 Frontend URL 일관성 검증이며 Backend Authorization이나 Scope 필터가 아닙니다 — Backend API는 여전히 Resource ID 단독 조회이고 추가 API 요청은 발생하지 않습니다. Evaluator Version API 요청의 AbortSignal 보강은 별도 작업(v0.25.3)입니다.
 
 ## Experiment Create
 
