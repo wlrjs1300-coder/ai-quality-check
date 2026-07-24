@@ -149,7 +149,9 @@ Mutation 성공 후 Target 수정은 `target`과 상위 `targets`, Version 생�
 
 화면 상태: Initial, Loading, Empty, Success, Error, Refreshing, Submitting, Disabled. `DUPLICATE_TARGET_VERSION`은 기존 목록으로 안내합니다.
 
-Frontend URL Project Scope 대조: Target 단건 응답의 `project_id`가 URL `projectId`와 다르면 Target State를 설정하지 않고 기존 404 `TARGET_NOT_FOUND`와 동일한 UX로 처리합니다(Retry 미노출, 기존 Project Overview 복귀 Link 재사용, Resource 정보 미노출). Target Version 응답의 `target_id`가 URL `targetId`와 다른 경우도 방어적으로 대조해 동일하게 처리합니다. 이 대조는 Frontend URL 일관성 검증이며 Backend Authorization이나 Scope 필터가 아닙니다 — Backend API는 여전히 Resource ID 단독 조회이고 추가 API 요청은 발생하지 않습니다. Target Version API 요청의 AbortSignal 보강은 별도 작업(v0.25.3)입니다.
+Frontend URL Project Scope 대조: Target 단건 응답의 `project_id`가 URL `projectId`와 다르면 Target State를 설정하지 않고 기존 404 `TARGET_NOT_FOUND`와 동일한 UX로 처리합니다(Retry 미노출, 기존 Project Overview 복귀 Link 재사용, Resource 정보 미노출). Target Version 응답의 `target_id`가 URL `targetId`와 다른 경우도 방어적으로 대조해 동일하게 처리합니다. 이 대조는 Frontend URL 일관성 검증이며 Backend Authorization이나 Scope 필터가 아닙니다 — Backend API는 여전히 Resource ID 단독 조회이고 추가 API 요청은 발생하지 않습니다.
+
+Target Version 요청 취소 계약: Target Version 화면은 `getTarget`과 `getTargetVersion` 두 호출에 동일한 `AbortSignal`을 전달합니다. 새 `load` 시작 시 이전 요청을 Abort하고 새 `AbortController`를 생성하며, 응답 반영 전 기존 `requestId`와 `controller` identity를 모두 확인해 최신 요청만 반영합니다. AbortError는 UI에 노출하지 않고 Scope 불일치나 Not Found로도 변환하지 않습니다. 화면 unmount 시 `requestId`를 무효화하고 진행 중인 요청을 Abort합니다. Retry는 같은 `load` 함수를 재사용해 이전 요청을 자동으로 취소합니다. `getTarget`/`getTargetVersion`은 이미 optional `signal`을 지원하던 API Client이며, 이번 변경은 호출부에서 그 signal 인자를 사용하도록 한 것으로 API Client 시그니처는 변경되지 않았습니다.
 
 ## Evaluator Detail
 
@@ -165,7 +167,9 @@ Mutation 성공 후 Evaluator 수정은 `evaluator`와 상위 `evaluators`, Vers
 
 화면 상태: Initial, Loading, Empty, Success, Error, Refreshing, Submitting, Disabled. inactive 및 duplicate 오류는 최신 상태를 재조회합니다.
 
-Frontend URL Project Scope 대조: Evaluator 단건 응답의 `project_id`가 URL `projectId`와 다르면 Evaluator State를 설정하지 않고 기존 404 `EVALUATOR_NOT_FOUND`와 동일한 UX로 처리합니다(Retry 미노출, 기존 Project Overview 복귀 Link 재사용, Resource 정보 미노출). Evaluator Version 응답의 `evaluator_id`가 URL `evaluatorId`와 다른 경우도 방어적으로 대조해 동일하게 처리합니다. 이 대조는 Frontend URL 일관성 검증이며 Backend Authorization이나 Scope 필터가 아닙니다 — Backend API는 여전히 Resource ID 단독 조회이고 추가 API 요청은 발생하지 않습니다. Evaluator Version API 요청의 AbortSignal 보강은 별도 작업(v0.25.3)입니다.
+Frontend URL Project Scope 대조: Evaluator 단건 응답의 `project_id`가 URL `projectId`와 다르면 Evaluator State를 설정하지 않고 기존 404 `EVALUATOR_NOT_FOUND`와 동일한 UX로 처리합니다(Retry 미노출, 기존 Project Overview 복귀 Link 재사용, Resource 정보 미노출). Evaluator Version 응답의 `evaluator_id`가 URL `evaluatorId`와 다른 경우도 방어적으로 대조해 동일하게 처리합니다. 이 대조는 Frontend URL 일관성 검증이며 Backend Authorization이나 Scope 필터가 아닙니다 — Backend API는 여전히 Resource ID 단독 조회이고 추가 API 요청은 발생하지 않습니다.
+
+Evaluator Version 요청 취소 계약: Evaluator Version 화면은 `getEvaluator`와 `getEvaluatorVersion` 두 호출에 동일한 `AbortSignal`을 전달합니다. 새 `load` 시작 시 이전 요청을 Abort하고 새 `AbortController`를 생성하며, 응답 반영 전 기존 `requestId`와 `controller` identity를 모두 확인해 최신 요청만 반영합니다. AbortError는 UI에 노출하지 않고 Scope 불일치나 Not Found로도 변환하지 않습니다. 화면 unmount 시 `requestId`를 무효화하고 진행 중인 요청을 Abort합니다. Retry는 같은 `load` 함수를 재사용해 이전 요청을 자동으로 취소합니다. `getEvaluator`/`getEvaluatorVersion`은 이미 optional `signal`을 지원하던 API Client이며, 이번 변경은 호출부에서 그 signal 인자를 사용하도록 한 것으로 API Client 시그니처는 변경되지 않았습니다.
 
 ## Experiment Create
 
