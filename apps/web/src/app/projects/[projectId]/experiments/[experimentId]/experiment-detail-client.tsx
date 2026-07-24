@@ -30,6 +30,7 @@ import {
 } from "@/src/lib/api/targets";
 import { formatLocalDateTime, shortId } from "@/src/lib/formatters";
 
+import { BaselineComparisonPanel } from "./baseline-comparison-panel";
 import { QualityGatePanel } from "./quality-gate-panel";
 
 const RESULT_SIZE = 20;
@@ -556,6 +557,11 @@ export function ExperimentDetailClient({
             projectId={projectId}
             experimentId={experiment.id}
             experimentStatus={experiment.status}
+          />
+
+          <BaselineComparisonPanel
+            projectId={projectId}
+            experiment={experiment}
           />
 
           <section className="overview-section">

@@ -135,6 +135,14 @@ export function ExperimentCard({
       >
         Experiment 상세 <span aria-hidden="true">→</span>
       </Link>
+      {item.baselineComparison ? (
+        <Link
+          className="card-link"
+          href={`/projects/${encodeURIComponent(projectId)}/comparisons/${encodeURIComponent(item.baselineComparison.comparisonId)}`}
+        >
+          Comparison 상세 <span aria-hidden="true">→</span>
+        </Link>
+      ) : null}
     </article>
   );
 }
