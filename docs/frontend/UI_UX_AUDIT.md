@@ -2,144 +2,236 @@
 
 ## Executive Summary
 
-Slice 1~8???듭떖 ?먮쫫? ?ㅼ젣 Route? API ?곌껐濡?援ъ꽦?섏뼱 ?덇퀬, Project?먯꽌 Dataset쨌Target쨌Evaluator쨌Experiment쨌Gate쨌Comparison源뚯? ?대룞?????덉뒿?덈떎. ?꾩옱 媛?????꾪뿕? ?쒓컖???꾩꽦?꾨낫??紐⑸줉 ?묎렐?? URL scope 諛⑹뼱, 404 蹂듦뎄, ?붿껌 痍⑥냼 媛숈? 湲곕뒫??怨듬갚?낅땲?? UI 媛쒖꽑? ??怨듬갚??癒쇱? ?レ? ??怨듯넻 ?⑦꽩怨??뺣낫 ?꾧퀎瑜??묒? PR濡??뺣━?댁빞 ?⑸땲??
+Slice 1~8의 핵심 흐름은 실제 Frontend Route와 Backend API로 연결되어 있습니다.
 
-?꾩옱 ?먮룞 Frontend 寃利앹? typecheck, lint, production build肉먯엯?덈떎. Browser ?뺤씤? ?섎룞 利앷굅?대ŉ ?먮룞??Report???놁뒿?덈떎.
+```text
+Project
+→ Dataset / Target / Evaluator
+→ Version Snapshot
+→ Experiment
+→ Evaluation Result
+→ Quality Gate
+→ Baseline Comparison
+```
 
-## Route蹂?UI ?꾩꽦??
-| ?곸뿭 | ?꾩옱 媛뺤젏 | ?⑥? 臾몄젣 |
-|---|---|---|
-| Projects | 紐⑸줉쨌?앹꽦쨌?ㅻ쪟 ?곹깭 | 泥?20嫄?怨좎젙, pagination UI ?놁쓬 |
-| Project Overview | Dashboard쨌Summary쨌Registry ?듯빀, Panel ?낅┰ ?ㅻ쪟 | ?뺣낫 怨쇰?, KPI쨌Summary쨌Trend 以묐났 |
-| History | ?꾪꽣쨌CSV쨌?곸꽭 留곹겕쨌pagination | Trend??吏곸젒 議고쉶?섏? ?딆쑝誘濡?臾몄꽌 ?뺥빀???꾩슂 |
-| Dataset | Case ?곹깭 ?꾩씠? Snapshot 愿由?| 紐⑸줉 pagination, 404 蹂듦?, URL Project scope |
-| Target / Evaluator | ?ㅼ젙쨌鍮꾪솢?깊솕쨌Version 愿由?| URL Project scope ?議?遺議?|
-| Version Detail | 遺덈? Snapshot怨?404 硫붿떆吏 | Target/Evaluator AbortSignal, Dataset 蹂듦? UX |
-| Experiment Create | Version蹂??좏깮怨??앹꽦 ?곹깭 | 湲?Form, ?좏깮 ?뺣낫 諛??|
-| Experiment Detail | Result쨌Gate쨌Comparison ?곌껐 | ?몃줈 湲몄씠? UUID쨌湲곗닠 ?뺣낫 怨쇰떎 |
-| Comparison Detail | Summary? Case ?ㅻ쪟 遺꾨━, pagination | Mobile Case Diff 諛??|
+현재 가장 큰 위험은 UI 미관보다 기능 공백과 화면별 상태 처리의 일관성 부족입니다. UI를 전면 재설계하기 전에 Projects와 Dataset Registry pagination, Project Scope 대조, Dataset 계열 404 복귀, 일부 Version 요청의 Abort 문제를 먼저 해결해야 합니다.
 
-## ?뺣낫 ?꾧퀎
+현재 자동 Frontend 검증은 typecheck, lint, production build뿐입니다. 2026-07-23에 확인한 Browser 시나리오는 수동 검증이며 저장소에 자동 Report가 없습니다.
 
-### Project Overview
+## Route별 UI 완성도
 
-沅뚯옣 ?쒖꽌???ㅼ쓬怨?媛숈뒿?덈떎.
+| ID | Route | 강점 | 기능 또는 UI 문제 |
+|---|---|---|---|
+| R01 | `/` | `/projects`로 단순 Redirect | 별도 안내나 오류 상태 없음 |
+| R02 | `/projects` | 목록, 생성, Empty, 오류 상태 제공 | 복구 기준에서 첫 20건만 접근 가능 |
+| R03 | `/projects/{projectId}` | Dashboard, Summary, Trend, 최근 실행, 세 Registry 통합 | 정보가 많고 화면이 길며 KPI 의미가 일부 중복 |
+| R04 | `/projects/{projectId}/history` | Filter, CSV, pagination, Experiment와 Comparison Link | 좁은 화면에서 Filter와 Card 밀도 검증 필요 |
+| R05 | `/projects/{projectId}/datasets/{datasetId}` | Case 생성, 수정, 승인, 폐기와 Version 흐름 연결 | 404 복귀와 URL Project Scope 대조 부족 |
+| R06 | `/projects/{projectId}/datasets/{datasetId}/versions/{version}` | 불변 Snapshot과 Case 표시 | 404 복귀와 Project Scope 대조 부족 |
+| R07 | `/projects/{projectId}/targets/{targetId}` | MOCK 설정, 비활성화, FIXED Version 관리 | URL Project Scope 대조 부족 |
+| R08 | `/projects/{projectId}/targets/{targetId}/versions/{version}` | 불변 Snapshot과 404 복귀 Action | 요청 AbortSignal 보강 필요 |
+| R09 | `/projects/{projectId}/evaluators/{evaluatorId}` | 세 Evaluator Type과 Version 관리 | URL Project Scope 대조 부족 |
+| R10 | `/projects/{projectId}/evaluators/{evaluatorId}/versions/{version}` | Snapshot과 404 복귀 Action | 요청 AbortSignal 보강 필요 |
+| R11 | `/projects/{projectId}/experiments/new` | 독립 Version 선택 상태, 오류와 pagination 처리 | 상태 설계는 좋지만 Client 파일이 크고 선택 정보 밀도가 높음 |
+| R12 | `/projects/{projectId}/experiments/{experimentId}` | Inline 실행, Result, Gate, Comparison이 연결됨 | 핵심 흐름은 완성됐지만 화면과 Client 파일이 지나치게 김 |
+| R13 | `/projects/{projectId}/comparisons/{comparisonId}` | Summary와 Case 목록 오류가 분리되고 pagination 제공 | Mobile Case Diff와 긴 Reason 표시 검증 필요 |
 
-1. Project ?대쫫쨌?곹깭? ?듭떖 Action
-2. Release readiness, 理쒖떊 Gate, 理쒖떊 Comparison
-3. ?듭떖 KPI 理쒕? 4媛?4. 理쒓렐 Experiment
-5. ?곸꽭 Trend쨌Summary
-6. Dataset쨌Target쨌Evaluator Registry
+## 상태와 오류 일관성
 
-?꾩옱 Dashboard? Summary媛 ?좎궗???섏튂瑜?諛섎났??泥??먮떒????땅?덈떎. Backend 怨꾩궛媛믪? ?좎??섎릺 ?숈씪 ?섎?瑜?以묐났 移대뱶濡??쒗쁽?섏? ?딅뒗 寃껋씠 ?곗꽑?낅땲??
+### 잘 구현된 부분
 
-### Experiment Detail
+- Project Overview의 Dashboard, Summary, Trend 오류가 서로 분리됩니다.
+- Experiment는 Dataset Version을 이용해 URL Project Scope를 방어적으로 확인합니다.
+- Experiment Result, Gate, Comparison이 독립적인 상태와 오류를 가집니다.
+- Comparison Summary와 Case 목록 오류가 분리됩니다.
+- Target와 Evaluator Version 404에서 상위 Detail 복귀 Action을 제공합니다.
+- Network 오류와 예상하지 못한 응답을 구분합니다.
+- 주요 비동기 화면에 AbortController 또는 requestId 패턴이 있습니다.
+- 갱신 중 기존 데이터를 유지하는 화면이 존재합니다.
 
-沅뚯옣 ?쒖꽌???ㅼ쓬怨?媛숈뒿?덈떎.
+### 보완할 부분
 
-1. ?곹깭? ?ㅽ뻾 Action
-2. PASS쨌FAIL쨌ERROR, Critical쨌?꾩닔 ?ㅽ뙣 ?붿빟
-3. Gate쨌Comparison ?먯젙
-4. Case Result
-5. Gate쨌Comparison ?곸꽭
-6. Version ID, Hash, ?앹꽦 ?쒓컖 ??Metadata
+- Dataset Detail 404의 상위 화면 복귀가 부족합니다.
+- Dataset Version 404의 Dataset 복귀가 부족합니다.
+- Dataset, Target, Evaluator Detail은 URL `projectId`와 응답 Scope 대조가 충분하지 않습니다.
+- Target와 Evaluator Version API 요청에 AbortSignal 보강이 필요합니다.
+- Projects와 Dataset Registry는 복구 기준에서 첫 20건 이후 항목에 접근할 수 없습니다.
+- Error, Empty, Disabled Reason의 문구와 배치가 화면마다 다릅니다.
+- 같은 Network 오류의 제목과 설명이 완전히 통일되지 않았습니다.
+- Dataset Registry의 Loading과 Refreshing 구분이 다른 Registry보다 약합니다.
+- Disabled 이유가 본문, `title`, Form 오류 등 여러 방식으로 전달됩니다.
 
-Tabs ?먮뒗 Section Navigation? ?꾨낫??肉??뺤젙 援ы쁽???꾨떃?덈떎. ?꾪솚 ??URL쨌?덈줈怨좎묠쨌?ㅻ쪟 ?곹깭媛 異⑸룎?????덉쑝誘濡?Phase E?먯꽌 蹂꾨룄 寃?좏빀?덈떎.
+## 중복 UI Pattern
 
-## ?곹깭? ?ㅻ쪟 ?쇨???
-- Loading, Empty, Error, Refreshing, Disabled ?쒗쁽? 議댁옱?섏?留??붾㈃蹂?臾멸뎄? 諛곗튂媛 ?ㅻ쫭?덈떎.
-- Dashboard???섏쐞 Panel ?ㅻ쪟瑜?遺꾨━?섏?留?Registry? ?쇰? Detail? ?꾩껜 ?ㅻ쪟? 遺遺??ㅻ쪟??湲곗???遺덇퇏?쇳빀?덈떎.
-- 404 蹂듦? Action? Target쨌Evaluator 怨꾩뿴?먮뒗 ?덉쑝??Dataset 怨꾩뿴? 遺議깊빀?덈떎.
-- Network ?ㅻ쪟??Retry媛 媛?ν븯吏留? 鍮꾪솢?굿룸텋蹂쨌?꾩닔 ?좏깮怨?媛숈? Disabled ?댁쑀??`title` ?먮뒗 蹂몃Ц???⑹뼱???덉뒿?덈떎.
-- Error쨌Empty쨌Disabled Reason? 怨듯넻 ?쒓컖 怨꾩빟怨??묎렐???곌껐???꾩슂?⑸땲??
+아래 수치는 정확한 public API 계약이 아니라 현재 코드에서 파악한 대략적인 반복 규모입니다.
 
-## 以묐났 UI Pattern
+| Pattern | 대략적인 반복 |
+|---|---:|
+| `section-heading` | 약 24 |
+| `LoadingState` | 약 25 |
+| `ErrorState` | 약 35 |
+| Breadcrumb | 약 11 |
+| Detail Header | 약 10 |
+| Pagination | 약 8 |
+| Empty inline | 약 12 |
+| UUID를 표시하는 `code` | 약 29 |
+| 날짜 format 호출 | 약 30 |
+| Section 또는 Detail Card | 15 이상 |
 
-肄붾뱶 議곗궗?먯꽌 諛섎났 ?ъ슜??留롮? ?⑦꽩? Section heading, Loading/Error state, Breadcrumb, detail header, pagination, empty ?덈궡, ?좎쭨쨌ID ?쒖떆?낅땲??
+### 공통화 우선 후보
 
-沅뚯옣 怨듯넻???⑥쐞:
+1. Breadcrumb
+2. Pagination
+3. EmptyState
+4. PageHeader와 SectionHeader
+5. ResourceId와 Copy Action
+6. Inline Error와 Partial Error
+7. Field Error
+8. Disabled Reason
 
-- Breadcrumb? PageHeader
-- Pagination
-- EmptyState? PartialError
-- ResourceId? Copy action
-- DisabledReason怨?FieldError
+### 후순위 후보
 
-紐⑤뱺 Card??Form???섎굹??踰붿슜 而댄룷?뚰듃濡??⑹튂吏 ?딆뒿?덈떎. ??븷怨??곹샇?묒슜???ㅻⅨ ?붾㈃??媛숈? 異붿긽?붿뿉 ?ｌ쑝硫??뚭? 踰붿쐞媛 而ㅼ쭛?덈떎.
+- 모든 Card를 하나로 합치는 추상화
+- 모든 Form을 Schema 하나로 만드는 구조
+- Dataset, Target, Evaluator를 하나의 Registry 고차 컴포넌트로 합치는 구조
+- 모든 Metadata를 담는 거대한 범용 컴포넌트
 
-## `globals.css` 援ъ“
+후순위 후보는 화면별 의미와 상태가 달라 회귀 범위를 크게 만들 수 있습니다.
 
-?꾩옱 ?꾩뿭 CSS ???뚯씪??Layout, Card, Form, Badge, ?곹깭, 諛섏쓳??洹쒖튃???④퍡 ?덉뒿?덈떎. ?쇰? ?됱긽 蹂?섎뒗 ?덉쑝??spacing, radius, typography 媛믪씠 諛섎났?⑸땲??
+## `globals.css` 분석
 
-?대쾲 Planning 踰붿쐞?먯꽌??CSS瑜??섏젙?섏? ?딆뒿?덈떎. 癒쇱? [Design Tokens](DESIGN_TOKENS.md)???대쫫怨??섎?瑜?怨꾩빟?쇰줈 ?뺥븯怨? Phase A?먯꽌 ?쒓컖 蹂???녿뒗 ?좎뼵쨌移섑솚遺??吏꾪뻾?⑸땲??
+- 약 185줄의 단일 Global CSS입니다.
+- Layout, 공통 Component, 페이지 전용 규칙이 섞여 있습니다.
+- 배경, surface, border, text, primary, success, danger 일부만 변수로 정의돼 있습니다.
+- spacing, radius, warning, info, font-size 값이 여러 selector에 분산돼 있습니다.
+- `dataset-card` 이름을 Target와 Evaluator에서도 재사용합니다.
+- Gate와 Comparison 전용 규칙이 같은 파일에 누적돼 있습니다.
+- 핵심 반응형 규칙은 720px breakpoint 하나에 집중돼 있습니다.
+- 768px 부근에서 Desktop 다단 Layout이 유지되어 폭이 부족할 위험이 있습니다.
+- reduced motion 대응은 있으나 Dark Mode는 없습니다.
 
-## 諛섏쓳??
-- ?꾩옱 ?듭떖 breakpoint??720px ?섎굹?대ŉ Desktop 以묒떖 ?ㅻ떒 Layout??留롮뒿?덈떎.
-- 1440, 1024, 768, 390px瑜??꾩닔 寃利???쑝濡??〓땲??
-- 768px? Desktop ?ㅻ떒 援ъ꽦???좎??섎㈃??怨듦컙??遺議깊빐吏?媛?μ꽦??媛?????꾪뿕 援ш컙?낅땲??
-- History? Comparison Case Diff??Desktop table ?먮뒗 grid, Mobile card ?꾪솚??蹂꾨룄濡?寃?좏빀?덈떎.
+전체 CSS 재작성보다 [Frontend Design Token Contract](DESIGN_TOKENS.md)에 따라 기존 값을 단계적으로 토큰으로 치환하는 방식이 안전합니다.
 
-## ?묎렐??
-?뺤씤??媛뺤젏:
+## 정보 위계
+
+### Project Overview 권장 순서
+
+1. Project 이름, 상태, 핵심 Action
+2. Release Readiness와 최신 Gate, Comparison
+3. 핵심 KPI 약 4개
+4. 최근 Experiment
+5. 상세 Analytics
+6. Dataset, Target, Evaluator Registry
+
+현재 Dashboard, Summary, Trend가 유사한 수치를 반복해 사용자가 Release 판정보다 지표를 먼저 읽게 할 수 있습니다. Backend 계산값은 유지하되 첫 화면에서는 `BLOCK`과 `REGRESSED` 같은 판정을 우선해야 합니다.
+
+### Experiment Detail 권장 순서
+
+1. Experiment 상태와 Inline 실행 Action
+2. PASS, FAIL, ERROR와 필수 Case 실패 요약
+3. 최신 Gate와 Comparison Decision
+4. Case Results
+5. Quality Gate 상세
+6. Baseline Comparison 상세
+7. Version, UUID, Hash Metadata
+
+Tabs 또는 Section Navigation은 후보입니다. URL, focus, 새로고침, 부분 오류 상태를 검토하기 전에는 확정 구현으로 약속하지 않습니다.
+
+## UUID와 기술 정보 전략
+
+- 목록과 선택 UI는 이름과 Version 번호를 우선합니다.
+- 목록에서 식별 보조가 필요하면 UUID를 축약합니다.
+- 전체 UUID는 Detail Metadata 또는 Copy Action에서 제공합니다.
+- Hash는 화면에서 축약하고 정확한 원문을 복사할 수 있게 합니다.
+- 개발 정보는 `details` 또는 Metadata 영역으로 분리합니다.
+- Tooltip만으로 원문이나 Action을 전달하지 않습니다.
+- Copy는 실제 Button으로 제공하고 성공 알림을 표시합니다.
+
+## 반응형
+
+필수 검토 폭:
+
+- 1440px
+- 1024px
+- 768px
+- 390px
+
+768px은 현재 720px 단일 breakpoint 때문에 가장 위험한 폭입니다.
+
+우선 검증 화면:
+
+- Project Overview
+- History Filter
+- Experiment Create
+- Experiment Detail
+- Dataset Case Form
+- Comparison Case Diff
+- 긴 Hash와 UUID
+- Pagination과 Header Action wrapping
+
+## 접근성
+
+### 잘 구현된 부분
 
 - `main` landmark
-- ?곹깭瑜??됱긽 ???띿뒪?몃줈???꾨떖
+- 일부 Breadcrumb의 `aria-label`
+- Loading의 `aria-live` 또는 `aria-busy`
+- ErrorState의 `role="alert"`
 - `focus-visible`
-- reduced motion
-- Loading??live region怨??ㅻ쪟 alert ?ъ슜
-- ?ㅻ낫?쒕줈 ?대룞 媛?ν븳 Link쨌Button
+- 상태를 텍스트로 표시하는 Badge
+- Gate Checkbox 설명
+- Baseline Radio의 키보드 조작
+- reduced motion 처리
 
-蹂닿컯 ??ぉ:
+### 보완할 부분
 
-- Skip link
-- 紐⑤뱺 Breadcrumb???쇨???`aria-label`
-- Label怨?input??`id`/`htmlFor`, ?ㅻ쪟 ?ㅻ챸 ?곌껐
-- 紐⑤뱺 ?ㅻ쪟 ?곸뿭??`role="alert"` 湲곗?
-- Button??紐낆떆??`type`
-- Disabled ?댁쑀瑜?tooltip?먮쭔 ?섏〈?섏? ?딅뒗 ?덈궡
-- Refreshing ?곹깭??`aria-live`
-- ?앹꽦 Form focus ?대룞怨?dialog ?섎? 寃??- Breadcrumb 援щ텇?먯쓽 `aria-hidden`
-- Resource ID쨌Hash Copy action怨??꾨즺 feedback
+- Skip Link
+- 모든 Breadcrumb의 일관된 label
+- Form의 `id`와 `htmlFor` 규칙
+- Field Error와 control의 `aria-describedby` 연결
+- 모든 Button의 명시적 `type`
+- Disabled 이유를 텍스트로 전달
+- Refreshing 상태의 일관된 `aria-live`
+- Heading 단계 정리
+- Breadcrumb separator의 `aria-hidden`
+- UUID와 Hash Copy Action 및 성공 알림
 
-## UUID? 湲곗닠 ?뺣낫 ?몄텧
+## 기능 결함과 UI 개선 분리
 
-- 紐⑸줉怨??좏깮 UI???대쫫怨?Version 踰덊샇瑜??곗꽑?⑸땲??
-- 吏㏃? ID???앸퀎???꾩슂??紐⑸줉?먯꽌留?蹂댁“濡??쒖떆?⑸땲??
-- ?꾩껜 UUID? Hash??Detail Metadata???쒖젙?섍퀬 Copy action???쒓났?⑸땲??
-- Hash??異뺤빟 ?쒖떆?섎릺 ?먮Ц??蹂듭궗?????덉뼱???⑸땲??
-- Input쨌Output Snapshot怨?湲곗닠 ?ㅻ쪟???꾩슂 ?붾㈃?먯꽌留??쒖떆?섎ŉ Dashboard?먮뒗 ?몄텧?섏? ?딆뒿?덈떎.
+### 기능 결함 P1
 
-## 湲곕뒫??寃고븿
+1. Projects Pagination
+2. Dataset Registry Pagination
+3. Dataset Detail 404 복귀
+4. Dataset Version 404 복귀
+5. Dataset, Target, Evaluator Project Scope 대조
 
-### P1
+### 기능 결함 P2
 
-1. Projects 紐⑸줉??泥?20嫄댁쑝濡?怨좎젙?섏뼱 ?댄썑 ??ぉ???묎렐?????놁쓬
-2. Dataset Registry媛 泥?20嫄댁쑝濡?怨좎젙?섏뼱 ?댄썑 ??ぉ???묎렐?????놁쓬
-3. Dataset Detail 404?먯꽌 ?곸쐞 ?붾㈃ 蹂듦?媛 遺議깊븿
-4. Dataset Version 404?먯꽌 Dataset 蹂듦?媛 遺議깊븿
-5. Dataset쨌Target쨌Evaluator Detail??URL `projectId`? ?묐떟??Project scope瑜?異⑸텇???議고븯吏 ?딆쓬
+1. Target와 Evaluator Version AbortSignal
+2. Error, Empty, Disabled 표현 일관성
+3. 768px Layout 위험
+4. 수동 Browser 검증이 자동 검증처럼 다시 기록되지 않도록 문서 정합성 유지
 
-### P2
+### 순수 UI 개선
 
-1. Target쨌Evaluator Version ?붿껌??AbortSignal ?꾨떖??遺議깊븿
-2. Error쨌Empty쨌Disabled Reason ?쒗쁽??遺덇퇏?쇳븿
-3. 768px Layout ?뚭? ?꾪뿕????4. Browser ?먮룞 ?뚯뒪?멸? ?놁?留??쇰? 臾몄꽌媛 ?먮룞 寃利??꾨즺瑜??붿떆??
-## ?쒖닔 UI 媛쒖꽑
+- Project Overview 정보 과밀
+- Experiment Detail의 과도한 세로 길이
+- UUID와 Hash 과다 노출
+- Registry의 긴 Card 구조
+- 공통 Header, Breadcrumb, Pagination 부재
+- Loading, Empty, Partial Error 표현 차이
+- 720px 단일 breakpoint
+- Copy Action 부재
 
-- Project Overview ?뺣낫 怨쇰?
-- Experiment Detail??怨쇰룄???몃줈 湲몄씠
-- UUID쨌Hash 怨쇰떎 ?몄텧
-- Registry??湲?Card 援ъ“
-- 怨듯넻 Header쨌Breadcrumb쨌Pagination 遺??- Loading쨌Empty쨌Partial Error ?쒗쁽 遺덇퇏??- 720px ?⑥씪 breakpoint
-- Copy action 遺??
-## ?꾪뿕?꾩? ?곗꽑?쒖쐞
+이번 문서 복구 PR에서는 위 P1과 P2를 구현 완료로 변경하지 않습니다. 기능 결함을 Phase 0에서 먼저 처리한 뒤 시각 개선을 진행합니다.
 
-湲곕뒫??P1??Phase 0?먯꽌 癒쇱? ?닿껐?⑸땲?? ?댄썑 Token ?좎뼵, 怨듯넻 Navigation쨌State, ?붾㈃蹂??뺣낫 ?꾧퀎 ?쒖꽌濡?吏꾪뻾?⑸땲?? 怨듯넻 而댄룷?뚰듃 異붿텧怨??꾩껜 ?붾㈃ ?щ같移섎? ??PR???욎? ?딆뒿?덈떎.
+## 작업 모델 재평가 기준
 
-## ?묒뾽 紐⑤뜽 ?ы룊媛 湲곗?
+현재 문서 복구와 Foundation 단계는 작은 범위로 진행할 수 있습니다. 다음 상황에서는 더 높은 추론 수준을 다시 검토합니다.
 
-臾몄꽌 ?묒꽦怨?Foundation ?④퀎??Sol Light 踰붿쐞濡?異⑸텇?⑸땲?? ?ㅼ쓬 ?곹솴?먯꽌?????믪? 異붾줎 ?섏????ы룊媛?⑸땲??
-
-- Experiment Detail??Tabs濡??꾨㈃ ?ш뎄??- ??Route??怨듯넻 而댄룷?뚰듃瑜???PR?먯꽌 援먯껜
-- ?곹깭 怨꾩빟怨?Navigation 援ъ“瑜??숈떆??蹂寃?- 湲곗〈 API State? ??UI State媛 異⑸룎
-- 怨듯넻 而댄룷?뚰듃 異붿텧濡?10媛??댁긽 Route媛 ??踰덉뿉 蹂寃?
+- Experiment Detail을 Tabs로 전면 재구성
+- 전 Route의 공통 컴포넌트를 한 PR에서 교체
+- 상태 계약과 Navigation 구조를 동시에 변경
+- 기존 API State와 새로운 UI State가 충돌
+- 공통 컴포넌트 추출로 10개 이상 Route를 한 번에 변경

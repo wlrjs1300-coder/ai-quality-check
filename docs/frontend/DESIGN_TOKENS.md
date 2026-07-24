@@ -1,98 +1,166 @@
 # Frontend Design Token Contract
 
-??臾몄꽌???꾩냽 UI 援ы쁽?먯꽌 ?ъ슜??Token ?대쫫怨??섎?瑜??뺤쓽?⑸땲?? ?꾩옱 `globals.css`???곸슜?먮떎???살씠 ?꾨땲硫??대쾲 Planning ?묒뾽?먯꽌??CSS瑜?蹂寃쏀븯吏 ?딆뒿?덈떎.
+## 목적과 적용 원칙
 
-## Color
+이 문서는 후속 UI 구현에서 사용할 디자인 토큰의 이름, 초기 값, 의미를 정의합니다. 현재 `globals.css`에 이 계약이 모두 적용됐다는 뜻이 아니며, 이번 문서 복구 작업은 CSS를 변경하지 않습니다.
 
-```css
---color-bg;
---color-surface;
---color-surface-muted;
---color-text;
---color-text-muted;
---color-border;
---color-border-strong;
---color-primary;
---color-primary-hover;
---color-success;
---color-success-surface;
---color-warning;
---color-warning-surface;
---color-danger;
---color-danger-surface;
---color-info;
---color-info-surface;
---color-focus-ring;
-```
+- 기존 화면을 한 번에 바꾸지 않고 작은 PR에서 토큰을 단계적으로 적용합니다.
+- 기존 selector의 값을 토큰으로 치환할 때 의도하지 않은 시각 변화가 없는지 확인합니다.
+- 같은 상태의 의미를 화면마다 임의로 바꾸지 않습니다.
+- 상태는 색상과 함께 텍스트, 아이콘 또는 설명으로 전달합니다.
+- Light Mode를 우선하며 Dark Mode는 현재 Roadmap에서 제외합니다.
+- 아래 초기 값은 현재 UI의 색상과 크기를 기준으로 한 출발점이며, 실제 적용 전 대비와 회귀를 다시 검증합니다.
 
-Surface? Text??諛섎뱶???띿쑝濡??鍮꾨? 寃利앺빀?덈떎. Semantic status瑜??쒗쁽?????됱긽留??ъ슜?섏? ?딄퀬 Badge text, icon ?먮뒗 ?ㅻ챸???④퍡 ?쒓났?⑸땲??
-
-## Spacing
+## Color Tokens
 
 ```css
---space-1: 4px;
---space-2: 8px;
---space-3: 12px;
---space-4: 16px;
---space-5: 24px;
---space-6: 32px;
---space-7: 40px;
---space-8: 56px;
---space-9: 80px;
+:root {
+  --color-bg: #f3f5f7;
+  --color-surface: #ffffff;
+  --color-surface-muted: #f8fafc;
+  --color-text: #172033;
+  --color-text-muted: #627087;
+  --color-border: #d8dee7;
+  --color-border-strong: #aeb8c7;
+  --color-primary: #2457d6;
+  --color-primary-hover: #1845b8;
+  --color-success: #18794e;
+  --color-success-surface: #eaf8f1;
+  --color-warning: #875d00;
+  --color-warning-surface: #fff7df;
+  --color-danger: #b42318;
+  --color-danger-surface: #fff1f0;
+  --color-info: #2457d6;
+  --color-info-surface: #eef4ff;
+}
 ```
 
-## Radius and Size
+| 토큰 | 의미 |
+|---|---|
+| `--color-bg` | 앱 전체 배경 |
+| `--color-surface` | 카드, 폼, 패널 배경 |
+| `--color-surface-muted` | 보조 패널과 약한 구분 영역 |
+| `--color-text` | 기본 본문과 제목 |
+| `--color-text-muted` | 설명, 보조 정보, 메타데이터 |
+| `--color-border` | 기본 경계선 |
+| `--color-border-strong` | 입력 필드와 강조 경계선 |
+| `--color-primary` | 주요 Action과 Link |
+| `--color-primary-hover` | 주요 Action hover |
+| `--color-success` | 성공 상태 텍스트 |
+| `--color-success-surface` | 성공 상태 배경 |
+| `--color-warning` | 주의 상태 텍스트 |
+| `--color-warning-surface` | 주의 상태 배경 |
+| `--color-danger` | 차단, 오류, 회귀 상태 텍스트 |
+| `--color-danger-surface` | 차단, 오류, 회귀 상태 배경 |
+| `--color-info` | 갱신, 범위 확인, 안내 텍스트 |
+| `--color-info-surface` | 갱신, 범위 확인, 안내 배경 |
+
+## Spacing Tokens
 
 ```css
---radius-control: 8px;
---radius-card: 12px;
---radius-pill: 999px;
-
---control-height: 44px;
---container-width: 1120px;
+:root {
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 40px;
+  --space-8: 56px;
+  --space-9: 80px;
+}
 ```
 
-`--control-height`??湲곕낯 Button怨?Input??pointer target 湲곗??낅땲?? 醫곸? ?붾㈃?먯꽌??議곗옉 ?곸뿭???꾩쓽濡?異뺤냼?섏? ?딆뒿?덈떎.
+작은 간격은 control 내부와 inline 요소에 사용하고, 큰 간격은 section과 page 구분에 사용합니다. 토큰 적용 과정에서 기존 화면 밀도를 임의로 바꾸지 않습니다.
 
-## Breakpoint Contract
+## Radius Tokens
 
-CSS Custom Property???쇰컲 Media Query 議곌굔??吏곸젒 ?ъ슜?????놁뒿?덈떎. ?곕씪???ㅼ쓬 媛믪? 臾몄꽌쨌援ы쁽 媛?怨꾩빟?쇰줈 ?좎??섍퀬 `@media`?먮뒗 媛믪쓣 吏곸젒 ?ъ슜?⑸땲??
+```css
+:root {
+  --radius-control: 8px;
+  --radius-card: 12px;
+  --radius-pill: 999px;
+}
+```
 
-| ?대쫫 | 媛?| 紐⑹쟻 |
+- `--radius-control`: Button, Input, 작은 안내 영역
+- `--radius-card`: Card, Form, Detail Panel
+- `--radius-pill`: Badge와 상태 Label
+
+## Shadow Tokens
+
+```css
+:root {
+  --shadow-panel: 0 8px 24px rgba(23, 32, 51, 0.05);
+  --shadow-focus: 0 0 0 3px rgba(36, 87, 214, 0.3);
+}
+```
+
+`--shadow-focus`는 키보드 focus를 분명히 표시하기 위한 계약입니다. Browser 기본 outline을 제거하고 그림자만 남기는 방식은 사용하지 않습니다.
+
+## Typography Tokens
+
+```css
+:root {
+  --font-size-xs: 0.78rem;
+  --font-size-sm: 0.9rem;
+  --font-size-body: 1rem;
+  --font-size-lead: 1.125rem;
+  --font-size-heading-sm: 1.2rem;
+  --font-size-heading-md: 1.25rem;
+  --font-size-heading-lg: 2rem;
+
+  --line-height-compact: 1.25;
+  --line-height-body: 1.5;
+  --line-height-relaxed: 1.65;
+}
+```
+
+큰 화면 제목의 반응형 크기는 `clamp()`를 유지할 수 있습니다. 토큰은 기본 크기 계약이며 모든 제목을 하나의 고정 크기로 강제하지 않습니다.
+
+## Layout Tokens
+
+```css
+:root {
+  --container-width: 1120px;
+  --control-height: 44px;
+}
+```
+
+- `--container-width`: 기본 앱 본문 최대 너비
+- `--control-height`: Button과 주요 Form control의 최소 높이
+
+### Breakpoint 계약
+
+| 이름 | 값 | 기본 목적 |
 |---|---:|---|
-| small | 480px | Mobile ?⑥씪 ?닿낵 湲?ID 泥섎━ |
-| medium | 768px | Tablet Layout怨?Card ?щ같移?|
-| large | 1024px | Desktop ?ㅻ떒 Layout |
+| small | 480px | 좁은 Mobile 화면 |
+| medium | 768px | Tablet과 다단 Layout 전환 |
+| large | 1024px | 넓은 Desktop Layout |
 
-?꾩닔 寃利?viewport??1440, 1024, 768, 390px?낅땲??
+CSS Custom Property는 일반적인 media query 조건에 직접 사용할 수 없습니다. 따라서 breakpoint 값은 문서 계약으로 관리하고 `@media` 규칙에는 해당 값을 직접 기록합니다.
+
+필수 수동 검토 폭은 1440px, 1024px, 768px, 390px입니다.
 
 ## Semantic Status
 
-| ?섎? | ?곹깭 | ?쒗쁽 ?먯튃 |
+| 의미 | 상태 | 표현 원칙 |
 |---|---|---|
-| success | `PASS`, `COMPLETED`, `IMPROVED` | ?깃났 Text? Surface |
-| warning | `DRAFT`, `RUNNING`, `FAIL` | 二쇱쓽 Text? Surface, ?ㅼ쓬 ?됰룞 ?덈궡 |
-| danger | `BLOCK`, `ERROR`, `FAILED`, `REGRESSED` | ?꾪뿕 Text? Surface, ?먯씤쨌蹂듦뎄 Action |
-| neutral | `INACTIVE`, `UNCHANGED`, ?곗씠???놁쓬 | 以묐┰ Text? Surface |
-| info | Refreshing, Scope ?뺤씤, ?ㅽ뻾 ?덈궡 | ?뺣낫 Text? Surface |
+| success | `PASS`, `COMPLETED`, `IMPROVED` | 성공 텍스트와 surface를 함께 사용 |
+| warning | `DRAFT`, `RUNNING`, `FAIL` | 주의 텍스트와 다음 행동을 함께 표시 |
+| danger | `BLOCK`, `ERROR`, `FAILED`, `REGRESSED` | 원인과 복구 또는 검토 Action을 함께 표시 |
+| neutral | `INACTIVE`, `UNCHANGED`, 데이터 없음 | 중립 텍스트와 약한 surface 사용 |
+| info | Refreshing, Scope 확인, 실행 안내 | 처리 중인 상태와 목적을 텍스트로 표시 |
 
-`FAIL`? 媛쒕퀎 ?됯? ?ㅽ뙣?대ŉ ?ㅽ뻾 ?ㅻ쪟? 援щ텇?섍린 ?꾪빐 warning???ъ슜?⑸땲?? `BLOCK`, `ERROR`, `FAILED`, `REGRESSED`??諛고룷 ?먮뒗 ?ㅽ뻾 ?꾪뿕???섎??섎?濡?danger瑜??ъ슜?⑸땲??
+개별 평가의 `FAIL`은 실행 자체의 `FAILED`와 구분합니다. `BLOCK`과 `REGRESSED`는 평균 수치보다 먼저 사용자가 인식할 수 있어야 합니다.
 
-## Accessibility Contract
+## 접근성
 
-- ?됱긽留뚯쑝濡??곹깭瑜??꾨떖?섏? ?딆뒿?덈떎.
-- Text쨌Surface 議고빀? WCAG contrast 寃利앹쓣 嫄곗묩?덈떎.
-- `--color-focus-ring`?쇰줈 ?ㅻ낫??focus瑜?紐낇솗???쒖떆?⑸땲??
-- 湲곗〈 reduced motion ?숈옉???좎??⑸땲??
-- Disabled control 二쇰????띿뒪???댁쑀瑜??쒓났?⑸땲??
-- ?곹깭 蹂寃쎌? ?꾩슂??寃쎌슦 `aria-live`濡??꾨떖?⑸땲??
-- Light Mode瑜??곗꽑?⑸땲??
-- Dark Mode???꾩옱 Roadmap ?쒖쇅 踰붿쐞?낅땲??
-
-## ?곸슜 ?먯튃
-
-1. Phase A?먯꽌 Token???좎뼵?섎릺 ?쒓컖 寃곌낵瑜?諛붽씀吏 ?딆뒿?덈떎.
-2. ?됱긽, spacing, radius ?쒖쑝濡??묒? 踰붿쐞?먯꽌 移섑솚?⑸땲??
-3. ??PR?먯꽌 ??Route瑜????移섑솚?섏? ?딆뒿?덈떎.
-4. ?곸슜 ?꾪썑 1440쨌1024쨌768쨌390px怨?keyboard focus瑜?鍮꾧탳?⑸땲??
-5. ?곹깭 ?섎?瑜?Backend ?먯젙怨??ㅻⅤ寃??щ텇瑜섑븯吏 ?딆뒿?덈떎.
+- Text와 Surface 조합은 실제 적용 시 WCAG contrast를 검증합니다.
+- focus ring 토큰을 사용하고 키보드 focus를 숨기지 않습니다.
+- 기존 reduced motion 대응을 유지합니다.
+- 상태 Badge에는 사람이 읽을 수 있는 상태 텍스트를 포함합니다.
+- 색상만으로 성공, 실패, 차단, 회귀를 구분하지 않습니다.
+- Disabled control에는 가능한 경우 주변 텍스트로 이유를 제공합니다.
+- 상태 갱신은 필요한 위치에서 `aria-live`를 사용합니다.
+- Light Mode를 먼저 안정화하며 Dark Mode는 현재 범위에 포함하지 않습니다.
