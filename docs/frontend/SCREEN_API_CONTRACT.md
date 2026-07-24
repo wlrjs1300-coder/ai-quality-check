@@ -131,6 +131,8 @@ Mutation 계약:
 
 오류 대응: `NO_APPROVED_CASES`는 승인 안내, `DUPLICATE_DATASET_VERSION`은 Version 목록 재조회, `RESOURCE_IMMUTABLE`은 Case 재조회, inactive 오류는 mutation을 비활성화합니다.
 
+404 복귀 계약: Dataset 단건 조회가 404 `DATASET_NOT_FOUND`이면 Retry를 노출하지 않고 Project Overview로 돌아가기와 Project 목록으로 이동 Action을 제공합니다. Network Error는 제목을 구분해 표시하고 Retry를 유지합니다. Dataset Version 단건 조회(`GET /datasets/{dataset_id}/versions/{version}`)가 404 `DATASET_VERSION_NOT_FOUND`이면 Retry를 노출하지 않고 Dataset 상세로 돌아가기와 Project Overview로 돌아가기 Action을 제공합니다. Backend는 Dataset 자체가 없는 경우와 Version이 다른 Dataset에 속한 경우를 모두 `DATASET_VERSION_NOT_FOUND`로 동일하게 응답하므로 Frontend도 이를 구분하지 않습니다. 잘못된 `version` 값(정수가 아니거나 1보다 작음)은 API를 호출하지 않고 Client에서 요청 전에 "잘못된 Version 번호입니다." 메시지로 차단합니다.
+
 ## Target Detail
 
 목적: MOCK Target 설정을 관리하고 FIXED Version Snapshot을 생성합니다.

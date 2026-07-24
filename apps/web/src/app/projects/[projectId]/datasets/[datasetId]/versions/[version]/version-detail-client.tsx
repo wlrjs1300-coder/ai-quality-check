@@ -22,10 +22,12 @@ export function DatasetVersionDetailClient({ projectId, datasetId, versionValue 
   const [loading, setLoading] = useState(true);
   const controllerRef = useRef<AbortController | null>(null);
   const versionNumber = Number(versionValue);
+  const invalidVersion = !Number.isInteger(versionNumber) || versionNumber < 1;
 
   const load = useCallback(async () => {
-    if (!Number.isInteger(versionNumber) || versionNumber < 1) {
-      setError(toApiError(new Error("Invalid version"))); setLoading(false); return;
+    if (invalidVersion) {
+      setLoading(false);
+      return;
     }
     controllerRef.current?.abort();
     const controller = new AbortController();
@@ -41,16 +43,63 @@ export function DatasetVersionDetailClient({ projectId, datasetId, versionValue 
     if (results[1].status === "fulfilled") setVersion(results[1].value.data);
     else if (!(results[1].reason instanceof DOMException && results[1].reason.name === "AbortError")) setError(toApiError(results[1].reason));
     setLoading(false);
-  }, [datasetId, versionNumber]);
+  }, [datasetId, versionNumber, invalidVersion]);
 
   useEffect(() => { void load(); return () => controllerRef.current?.abort(); }, [load]);
 
-  if (loading) return <main className="app-shell"><LoadingState title="Dataset Version을 불러오고 있습니다" /></main>;
-  if (error || !dataset || !version) return <main className="app-shell"><ErrorState message={error?.code === "DATASET_VERSION_NOT_FOUND" ? "Dataset Version을 찾을 수 없습니다." : error?.message ?? "응답 데이터가 없습니다."} retryable={Boolean(error?.retryable)} onRetry={() => void load()} /></main>;
+  const breadcrumb = (
+    <nav className="breadcrumb" aria-label="Breadcrumb">
+      <Link href="/projects">Projects</Link>
+      <span aria-hidden="true">/</span>
+      <Link href={`/projects/${projectId}`}>Overview</Link>
+      <span aria-hidden="true">/</span>
+      <Link href={`/projects/${projectId}/datasets/${datasetId}`}>{dataset ? dataset.name : "Dataset"}</Link>
+      <span aria-hidden="true">/</span>
+      <span>{version ? `Version ${version.version}` : "Version"}</span>
+    </nav>
+  );
+  const backActions = (
+    <div className="header-actions">
+      <Link className="button button-secondary" href={`/projects/${projectId}/datasets/${datasetId}`}>
+        Dataset 상세로 돌아가기
+      </Link>
+      <Link className="button button-secondary" href={`/projects/${projectId}`}>
+        Project Overview로 돌아가기
+      </Link>
+    </div>
+  );
+
+  if (invalidVersion) {
+    return (
+      <main className="app-shell">
+        {breadcrumb}
+        <ErrorState message="잘못된 Version 번호입니다." retryable={false} />
+        {backActions}
+      </main>
+    );
+  }
+
+  if (loading) return <main className="app-shell">{breadcrumb}<LoadingState title="Dataset Version을 불러오고 있습니다" /></main>;
+
+  if (error || !dataset || !version) {
+    const isVersionNotFound = error?.status === 404 || error?.code === "DATASET_VERSION_NOT_FOUND";
+    return (
+      <main className="app-shell">
+        {breadcrumb}
+        <ErrorState
+          title={error?.kind === "network" ? "서버에 연결할 수 없습니다" : undefined}
+          message={isVersionNotFound ? "Dataset Version을 찾을 수 없습니다." : error?.message ?? "응답 데이터가 없습니다."}
+          retryable={!isVersionNotFound && Boolean(error?.retryable)}
+          onRetry={isVersionNotFound ? undefined : () => void load()}
+        />
+        {isVersionNotFound ? backActions : null}
+      </main>
+    );
+  }
 
   return (
     <main className="app-shell">
-      <nav className="breadcrumb" aria-label="Breadcrumb"><Link href="/projects">Projects</Link><span>/</span><Link href={`/projects/${projectId}`}>Overview</Link><span>/</span><Link href={`/projects/${projectId}/datasets/${datasetId}`}>{dataset.name}</Link><span>/</span><span>Version {version.version}</span></nav>
+      {breadcrumb}
       <header className="detail-header"><div><p className="eyebrow">Immutable Snapshot</p><h1>Dataset Version {version.version}</h1><p className="page-description">생성 당시 승인된 Case 내용을 보존합니다. 원본 Case가 변경되거나 폐기돼도 이 Snapshot에는 영향을 주지 않습니다.</p></div><SemanticBadge status="APPROVED" /></header>
       <section className="detail-panel"><dl className="detail-list"><div><dt>Dataset</dt><dd>{dataset.name}</dd></div><div><dt>Version ID</dt><dd><code>{version.id}</code></dd></div><div><dt>Content Hash</dt><dd><code>{version.contentHash}</code></dd></div><div><dt>Case Count</dt><dd>{version.caseCount}</dd></div><div><dt>생성</dt><dd>{formatLocalDateTime(version.createdAt)}</dd></div></dl></section>
       <section className="overview-section" aria-labelledby="snapshot-case-title"><div className="section-heading"><h2 id="snapshot-case-title">Snapshot Cases</h2><span>{version.cases.length}건</span></div>

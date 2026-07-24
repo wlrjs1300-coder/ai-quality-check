@@ -183,12 +183,45 @@ export function DatasetDetailClient({ projectId, datasetId }: Props) {
           ? "비활성 리소스에서는 Version을 생성할 수 없습니다."
           : versionError?.message;
 
+  const breadcrumb = (
+    <nav className="breadcrumb" aria-label="Breadcrumb">
+      <Link href="/projects">Projects</Link>
+      <span aria-hidden="true">/</span>
+      <Link href={`/projects/${projectId}`}>Overview</Link>
+      <span aria-hidden="true">/</span>
+      <span>Dataset</span>
+    </nav>
+  );
+  const isDatasetNotFound = datasetError?.status === 404 || datasetError?.code === "DATASET_NOT_FOUND";
+
   if (loading && !dataset && !datasetError) return <main className="app-shell"><LoadingState title="Dataset을 불러오고 있습니다" /></main>;
-  if (datasetError && !dataset) return <main className="app-shell"><ErrorState message={datasetError.message} retryable={datasetError.retryable} onRetry={() => void loadDataset()} /></main>;
+  if (datasetError && !dataset) {
+    return (
+      <main className="app-shell">
+        {breadcrumb}
+        <ErrorState
+          title={datasetError.kind === "network" ? "서버에 연결할 수 없습니다" : undefined}
+          message={isDatasetNotFound ? "Dataset을 찾을 수 없습니다." : datasetError.message}
+          retryable={!isDatasetNotFound && datasetError.retryable}
+          onRetry={isDatasetNotFound ? undefined : () => void loadDataset()}
+        />
+        {isDatasetNotFound ? (
+          <div className="header-actions">
+            <Link className="button button-secondary" href={`/projects/${projectId}`}>
+              Project Overview로 돌아가기
+            </Link>
+            <Link className="button button-secondary" href="/projects">
+              Project 목록으로 이동
+            </Link>
+          </div>
+        ) : null}
+      </main>
+    );
+  }
 
   return (
     <main className="app-shell">
-      <nav className="breadcrumb" aria-label="Breadcrumb"><Link href="/projects">Projects</Link><span>/</span><Link href={`/projects/${projectId}`}>Overview</Link><span>/</span><span>Dataset</span></nav>
+      {breadcrumb}
       {dataset ? (
         <>
           <header className="detail-header">

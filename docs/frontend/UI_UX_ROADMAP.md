@@ -33,8 +33,8 @@ Phase 0
 
 - Projects Pagination — 구현 및 정적 검증 완료, Browser 회귀 검증 대기
 - Dataset Registry Pagination — 구현 및 정적 검증 완료, Browser 회귀 검증 대기
-- Dataset Detail 404 복귀
-- Dataset Version 404 복귀
+- Dataset Detail 404 복귀 — 구현 및 정적 검증 완료, Browser 회귀 검증 대기
+- Dataset Version 404 복귀 — 구현 및 정적 검증 완료, Browser 회귀 검증 대기
 - Dataset, Target, Evaluator Project Scope 대조
 - Target와 Evaluator Version AbortSignal
 - 자동 Browser Test가 있는 것처럼 읽히는 문서 표현 정정
