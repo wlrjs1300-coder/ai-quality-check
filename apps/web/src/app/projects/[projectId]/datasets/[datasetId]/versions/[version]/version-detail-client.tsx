@@ -6,13 +6,23 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { SemanticBadge } from "@/src/components/AnalyticsUi";
 import { ErrorState, LoadingState } from "@/src/components/AsyncStates";
 import { getDataset, getDatasetVersion, type Dataset, type DatasetVersionDetail } from "@/src/lib/api/datasets";
-import { toApiError, type ApiError } from "@/src/lib/api/errors";
+import { ApiError, toApiError } from "@/src/lib/api/errors";
 import { formatLocalDateTime } from "@/src/lib/formatters";
 
 type Props = { projectId: string; datasetId: string; versionValue: string };
 
 function labels(items: Record<string, unknown>[], key: string): string[] {
   return items.map((item) => typeof item[key] === "string" ? item[key] : "").filter(Boolean);
+}
+
+function datasetVersionNotFoundError(): ApiError {
+  return new ApiError({
+    kind: "application",
+    status: 404,
+    code: "DATASET_VERSION_NOT_FOUND",
+    message: "Dataset Version을 찾을 수 없습니다.",
+    retryable: false,
+  });
 }
 
 export function DatasetVersionDetailClient({ projectId, datasetId, versionValue }: Props) {
@@ -38,12 +48,21 @@ export function DatasetVersionDetailClient({ projectId, datasetId, versionValue 
       getDatasetVersion(datasetId, versionNumber, controller.signal),
     ]);
     if (controllerRef.current !== controller) return;
-    if (results[0].status === "fulfilled") setDataset(results[0].value.data);
-    else if (!(results[0].reason instanceof DOMException && results[0].reason.name === "AbortError")) setError(toApiError(results[0].reason));
-    if (results[1].status === "fulfilled") setVersion(results[1].value.data);
-    else if (!(results[1].reason instanceof DOMException && results[1].reason.name === "AbortError")) setError(toApiError(results[1].reason));
+
+    const scopeMismatch =
+      (results[0].status === "fulfilled" && results[0].value.data.projectId !== projectId)
+      || (results[1].status === "fulfilled" && results[1].value.data.datasetId !== datasetId);
+
+    if (scopeMismatch) {
+      setError(datasetVersionNotFoundError());
+    } else {
+      if (results[0].status === "fulfilled") setDataset(results[0].value.data);
+      else if (!(results[0].reason instanceof DOMException && results[0].reason.name === "AbortError")) setError(toApiError(results[0].reason));
+      if (results[1].status === "fulfilled") setVersion(results[1].value.data);
+      else if (!(results[1].reason instanceof DOMException && results[1].reason.name === "AbortError")) setError(toApiError(results[1].reason));
+    }
     setLoading(false);
-  }, [datasetId, versionNumber, invalidVersion]);
+  }, [datasetId, versionNumber, invalidVersion, projectId]);
 
   useEffect(() => { void load(); return () => controllerRef.current?.abort(); }, [load]);
 

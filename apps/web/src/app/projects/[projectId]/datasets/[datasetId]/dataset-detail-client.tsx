@@ -20,10 +20,20 @@ import {
   type EvaluationCase,
   type EvaluationCaseInput,
 } from "@/src/lib/api/datasets";
-import { toApiError, type ApiError } from "@/src/lib/api/errors";
+import { ApiError, toApiError } from "@/src/lib/api/errors";
 import { formatLocalDateTime, shortId } from "@/src/lib/formatters";
 
 type Props = { projectId: string; datasetId: string };
+
+function datasetNotFoundError(): ApiError {
+  return new ApiError({
+    kind: "application",
+    status: 404,
+    code: "DATASET_NOT_FOUND",
+    message: "Dataset을 찾을 수 없습니다.",
+    retryable: false,
+  });
+}
 type FormState = {
   caseKey: string; question: string; expectedSummary: string; evidenceSource: string;
   evidenceContent: string; required: string; forbidden: string; tags: string;
@@ -92,9 +102,17 @@ export function DatasetDetailClient({ projectId, datasetId }: Props) {
   const controllerRef = useRef<AbortController | null>(null);
 
   const loadDataset = useCallback(async (signal?: AbortSignal) => {
-    try { setDatasetError(null); setDataset((await getDataset(datasetId, signal)).data); }
+    try {
+      setDatasetError(null);
+      const data = (await getDataset(datasetId, signal)).data;
+      if (data.projectId !== projectId) {
+        setDatasetError(datasetNotFoundError());
+        return;
+      }
+      setDataset(data);
+    }
     catch (error) { if (!(error instanceof DOMException && error.name === "AbortError")) setDatasetError(toApiError(error)); }
-  }, [datasetId]);
+  }, [datasetId, projectId]);
   const loadCases = useCallback(async (page: number, signal?: AbortSignal) => {
     try {
       setCaseError(null);

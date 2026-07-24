@@ -6,8 +6,18 @@ import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
 import { ErrorState, LoadingState } from "@/src/components/AsyncStates";
 import { StatusBadge } from "@/src/components/StatusBadge";
 import { createTargetVersion, fixedResponse, getTarget, listTargetVersions, updateTarget, type Target, type TargetVersion } from "@/src/lib/api/targets";
-import { toApiError, type ApiError } from "@/src/lib/api/errors";
+import { ApiError, toApiError } from "@/src/lib/api/errors";
 import { formatLocalDateTime, shortId } from "@/src/lib/formatters";
+
+function targetNotFoundError(): ApiError {
+  return new ApiError({
+    kind: "application",
+    status: 404,
+    code: "TARGET_NOT_FOUND",
+    message: "Target을 찾을 수 없습니다.",
+    retryable: false,
+  });
+}
 
 export function TargetDetailClient({
   projectId,
@@ -38,13 +48,17 @@ export function TargetDetailClient({
     try {
       setError(null);
       const item = (await getTarget(targetId)).data;
+      if (item.projectId !== projectId) {
+        setError(targetNotFoundError());
+        return;
+      }
       setTarget(item);
       setName(item.name);
       setResponse(fixedResponse(item.config) ?? "");
     } catch (loadError) {
       setError(toApiError(loadError));
     }
-  }, [targetId]);
+  }, [targetId, projectId]);
 
   const loadVersions = useCallback(
     async (nextPage = 1, retainData = false): Promise<void> => {
