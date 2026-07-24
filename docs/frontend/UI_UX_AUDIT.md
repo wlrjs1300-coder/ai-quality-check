@@ -14,7 +14,7 @@ Project
 → Baseline Comparison
 ```
 
-현재 가장 큰 위험은 UI 미관보다 기능 공백과 화면별 상태 처리의 일관성 부족입니다. Projects와 Dataset Registry Pagination은 코드 구현과 정적 검증을 마쳤고 Browser 회귀 검증만 남아 있습니다. UI를 전면 재설계하기 전에 Project Scope 대조, Dataset 계열 404 복귀, 일부 Version 요청의 Abort 문제를 먼저 해결해야 합니다.
+현재 가장 큰 위험은 UI 미관보다 기능 공백과 화면별 상태 처리의 일관성 부족입니다. Projects와 Dataset Registry Pagination, Dataset Detail·Version 404 복귀는 코드 구현과 정적 검증을 마쳤고 Browser 회귀 검증만 남아 있습니다. UI를 전면 재설계하기 전에 Dataset·Target·Evaluator Project Scope 대조와 일부 Version 요청의 Abort 문제를 먼저 해결해야 합니다.
 
 현재 자동 Frontend 검증은 typecheck, lint, production build뿐입니다. 2026-07-23에 확인한 Browser 시나리오는 수동 검증이며 저장소에 자동 Report가 없습니다.
 
@@ -26,8 +26,8 @@ Project
 | R02 | `/projects` | 목록, 생성, Pagination, Empty, 오류 상태 제공 | Pagination 구현 및 정적 검증 완료, Browser 회귀 검증 대기 |
 | R03 | `/projects/{projectId}` | Dashboard, Summary, Trend, 최근 실행, 세 Registry 통합 | 정보가 많고 화면이 길며 KPI 의미가 일부 중복 |
 | R04 | `/projects/{projectId}/history` | Filter, CSV, pagination, Experiment와 Comparison Link | 좁은 화면에서 Filter와 Card 밀도 검증 필요 |
-| R05 | `/projects/{projectId}/datasets/{datasetId}` | Case 생성, 수정, 승인, 폐기와 Version 흐름 연결 | 404 복귀와 URL Project Scope 대조 부족 |
-| R06 | `/projects/{projectId}/datasets/{datasetId}/versions/{version}` | 불변 Snapshot과 Case 표시 | 404 복귀와 Project Scope 대조 부족 |
+| R05 | `/projects/{projectId}/datasets/{datasetId}` | Case 생성, 수정, 승인, 폐기와 Version 흐름 연결, 404 복귀 Action | URL Project Scope 대조 부족(404 복귀는 구현 및 정적 검증 완료, Browser 검증 대기) |
+| R06 | `/projects/{projectId}/datasets/{datasetId}/versions/{version}` | 불변 Snapshot과 Case 표시, 404 복귀 Action | Project Scope 대조 부족(404 복귀는 구현 및 정적 검증 완료, Browser 검증 대기) |
 | R07 | `/projects/{projectId}/targets/{targetId}` | MOCK 설정, 비활성화, FIXED Version 관리 | URL Project Scope 대조 부족 |
 | R08 | `/projects/{projectId}/targets/{targetId}/versions/{version}` | 불변 Snapshot과 404 복귀 Action | 요청 AbortSignal 보강 필요 |
 | R09 | `/projects/{projectId}/evaluators/{evaluatorId}` | 세 Evaluator Type과 Version 관리 | URL Project Scope 대조 부족 |
@@ -51,8 +51,8 @@ Project
 
 ### 보완할 부분
 
-- Dataset Detail 404의 상위 화면 복귀가 부족합니다.
-- Dataset Version 404의 Dataset 복귀가 부족합니다.
+- Dataset Detail 404 복귀는 코드 구현과 정적 검증을 마쳤으며 Browser 회귀 검증이 남아 있습니다.
+- Dataset Version 404 복귀는 코드 구현과 정적 검증을 마쳤으며 Browser 회귀 검증이 남아 있습니다.
 - Dataset, Target, Evaluator Detail은 URL `projectId`와 응답 Scope 대조가 충분하지 않습니다.
 - Target와 Evaluator Version API 요청에 AbortSignal 보강이 필요합니다.
 - Projects와 Dataset Registry Pagination은 코드 구현과 정적 검증을 마쳤으며 Browser 회귀 검증이 남아 있습니다(20건 이하 데이터에서는 실제 2페이지 이동이 NOT_VERIFIED_DATA_LIMIT).
@@ -202,8 +202,8 @@ Tabs 또는 Section Navigation은 후보입니다. URL, focus, 새로고침, 부
 
 1. Projects Pagination — 코드 구현 및 정적 검증 완료, Browser 회귀 검증 대기 (첫 20건만 접근 가능하던 결함은 해소)
 2. Dataset Registry Pagination — 코드 구현 및 정적 검증 완료, Browser 회귀 검증 대기 (첫 20건만 접근 가능하던 결함은 해소)
-3. Dataset Detail 404 복귀
-4. Dataset Version 404 복귀
+3. Dataset Detail 404 복귀 — 코드 구현 및 정적 검증 완료, Browser 회귀 검증 대기
+4. Dataset Version 404 복귀 — 코드 구현 및 정적 검증 완료, Browser 회귀 검증 대기
 5. Dataset, Target, Evaluator Project Scope 대조
 
 ### 기능 결함 P2
