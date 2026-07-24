@@ -31,8 +31,8 @@ Phase 0
 
 ### 포함 범위
 
-- Projects Pagination
-- Dataset Registry Pagination
+- Projects Pagination — 구현 및 정적 검증 완료, Browser 회귀 검증 대기
+- Dataset Registry Pagination — 구현 및 정적 검증 완료, Browser 회귀 검증 대기
 - Dataset Detail 404 복귀
 - Dataset Version 404 복귀
 - Dataset, Target, Evaluator Project Scope 대조

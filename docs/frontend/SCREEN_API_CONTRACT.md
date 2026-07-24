@@ -71,10 +71,12 @@ Route: `/projects`
 
 | 사용자 동작 | Request | 성공 후 처리 | 재조회 |
 |---|---|---|---|
-| 페이지 이동 | `GET` with `page`, `size` | 목록 교체 | 없음 |
+| 페이지 이동 | `GET` with `page`, `size` | 기존 목록 유지 후 Refreshing 교체 | 없음 |
 | Project 생성 | `POST` body `slug`, `name`, `description?` | 생성 Project로 이동 가능 | `projects` |
 
 사용 필드: `id`, `slug`, `name`, `description`, `is_active`, `meta.pagination`. `id`를 Project Overview Route로 전달합니다.
+
+Pagination 계약: `page`는 1부터, `size`는 20 고정입니다. Backend Meta는 `total`, `page`, `size`만 제공하며 `total_pages`는 없으므로 Frontend에서 `Math.ceil(total / size)`로 계산합니다. 페이지 이동은 이전 요청을 Abort하고 requestId로 최신 응답만 반영하며 응답이 오기 전까지 기존 목록을 유지합니다. Project 생성 성공 후에는 최신순 정렬을 기준으로 1페이지를 재조회합니다. 요청한 page가 범위를 초과하면 마지막 유효 page로 한 번 보정합니다. 기존 목록이 있는 상태에서 갱신이 실패하면 목록을 유지한 채 부분 오류로 표시합니다.
 
 화면 상태: Initial, Loading, Empty, Success, Error, Refreshing, Submitting. 중복 slug는 Form 오류로 표시합니다.
 
@@ -98,6 +100,8 @@ Route: `/projects/{projectId}`. 진입 조건은 `projectId`입니다.
 | Evaluator 생성 | `POST` `name`, `evaluator_type`, `config` | Evaluator Detail 이동 | `evaluators` |
 
 사용 필드: Project의 `id`, `slug`, `name`, `description`, `is_active`; Dashboard의 `readiness`, `kpis`, `recent_experiments`, `trend`, `warning_codes`; Summary의 `summary`, `metrics`, 최신 Gate·Comparison. 비활성 Project에서는 mutation Action을 Disabled로 처리합니다.
+
+Dataset Registry Pagination 계약: `page`는 1부터, `size`는 20 고정이며 Backend Meta의 `total`, `page`, `size`로 Frontend가 `Math.ceil(total / size)`를 계산합니다(`total_pages` 없음). 페이지 이동은 이전 요청을 Abort하고 requestId로 최신 응답만 반영하며 기존 Dataset 목록을 유지한 채 Refreshing으로 갱신합니다. Dataset 생성 성공 후에는 1페이지를 재조회합니다. 요청한 page가 범위를 초과하면 마지막 유효 page로 한 번 보정하며, 기존 목록이 있는 상태의 갱신 실패는 목록을 유지한 채 부분 오류로 표시합니다.
 
 화면 상태: Initial, Loading, Empty(Tab 목록별), Success, Error, Refreshing, Submitting, Disabled.
 

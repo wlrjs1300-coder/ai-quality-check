@@ -20,25 +20,50 @@ export function ProjectsPageClient() {
   const [projects, setProjects] = useState<Project[] | null>(null);
   const [error, setError] = useState<ApiError | null>(null);
   const [refreshing, setRefreshing] = useState(false);
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
   const [createOpen, setCreateOpen] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const requestRef = useRef<AbortController | null>(null);
+  const requestIdRef = useRef(0);
+  const hasLoadedRef = useRef(false);
+  const size = 20;
 
-  const load = useCallback(async (refresh = false) => {
+  const load = useCallback(async (requestedPage = 1, retainData = false): Promise<void> => {
+    const requestId = ++requestIdRef.current;
     requestRef.current?.abort();
     const controller = new AbortController();
     requestRef.current = controller;
-    if (refresh) setRefreshing(true);
+    if (retainData) setRefreshing(true);
     setError(null);
 
     try {
-      const result = await listProjects(controller.signal);
+      const normalizedPage = Math.max(1, requestedPage);
+      const result = await listProjects(normalizedPage, controller.signal);
+      if (requestId !== requestIdRef.current || requestRef.current !== controller) return;
+
+      const responseSize = Math.max(1, result.pagination.size);
+      const responseTotalPages = result.pagination.total === 0
+        ? 0
+        : Math.ceil(result.pagination.total / responseSize);
+
+      if (result.pagination.total > 0 && normalizedPage > responseTotalPages) {
+        setTotal(result.pagination.total);
+        await load(responseTotalPages, retainData);
+        return;
+      }
+
       setProjects(result.data);
+      setPage(result.pagination.total === 0 ? 1 : result.pagination.page);
+      setTotal(result.pagination.total);
+      hasLoadedRef.current = true;
     } catch (loadError) {
       if (loadError instanceof DOMException && loadError.name === "AbortError") return;
-      setError(toApiError(loadError));
+      if (requestId === requestIdRef.current && requestRef.current === controller) {
+        setError(toApiError(loadError));
+      }
     } finally {
-      if (requestRef.current === controller) {
+      if (requestId === requestIdRef.current && requestRef.current === controller) {
         requestRef.current = null;
         setRefreshing(false);
       }
@@ -46,8 +71,9 @@ export function ProjectsPageClient() {
   }, []);
 
   useEffect(() => {
-    void load();
+    void load(1);
     return () => {
+      requestIdRef.current += 1;
       const controller = requestRef.current;
       requestRef.current = null;
       controller?.abort();
@@ -57,10 +83,16 @@ export function ProjectsPageClient() {
   async function handleCreated(project: Project) {
     setNotice(`${project.name} Project가 생성되었습니다.`);
     setCreateOpen(false);
-    await load(true);
+    setPage(1);
+    await load(1, true);
   }
 
   const isNetworkFailure = error?.kind === "network";
+  const totalPages = total === 0 ? 0 : Math.ceil(total / size);
+
+  function movePage(nextPage: number) {
+    void load(nextPage, hasLoadedRef.current);
+  }
 
   return (
     <main className="app-shell">
@@ -85,20 +117,29 @@ export function ProjectsPageClient() {
       {refreshing ? <p className="refreshing" role="status">목록 갱신 중입니다.</p> : null}
 
       {projects === null && !error ? <LoadingState title="Project 목록을 불러오고 있습니다" /> : null}
-      {error ? (
+      {error && projects === null ? (
         <ErrorState
           title={isNetworkFailure ? "서버에 연결할 수 없습니다" : "요청 처리 중 오류가 발생했습니다"}
           message={error.message}
           retryable={isNetworkFailure || error.retryable || error.kind === "unexpected"}
-          onRetry={() => void load()}
+          onRetry={() => void load(page)}
         />
       ) : null}
-      {projects?.length === 0 ? <EmptyState onCreate={() => setCreateOpen(true)} /> : null}
+      {error && projects !== null ? (
+        <div className="download-error" role="alert">
+          <strong>Project 목록을 갱신하지 못했습니다.</strong>
+          <p>{error.message}</p>
+          <button className="text-button" type="button" onClick={() => void load(page, true)}>
+            다시 시도
+          </button>
+        </div>
+      ) : null}
+      {projects?.length === 0 && !error ? <EmptyState onCreate={() => setCreateOpen(true)} /> : null}
       {projects && projects.length > 0 ? (
         <section aria-labelledby="project-list-title">
           <div className="section-heading">
             <h2 id="project-list-title">등록된 Project</h2>
-            <span className="count-label">{projects.length}개</span>
+            <span className="count-label">전체 {total}개</span>
           </div>
           <div className="project-grid">
             {projects.map((project) => (
@@ -120,6 +161,25 @@ export function ProjectsPageClient() {
               </article>
             ))}
           </div>
+          <nav className="pagination" aria-label="Project 목록 페이지 이동">
+            <button
+              className="button button-secondary"
+              type="button"
+              disabled={page <= 1 || refreshing}
+              onClick={() => movePage(page - 1)}
+            >
+              이전
+            </button>
+            <span>{`전체 ${total}건 · ${page} / ${totalPages} 페이지`}</span>
+            <button
+              className="button button-secondary"
+              type="button"
+              disabled={page >= totalPages || refreshing}
+              onClick={() => movePage(page + 1)}
+            >
+              다음
+            </button>
+          </nav>
         </section>
       ) : null}
     </main>
