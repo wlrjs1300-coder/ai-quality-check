@@ -57,8 +57,11 @@ export function parseProject(value: unknown): Project {
   };
 }
 
-export function listProjects(signal?: AbortSignal): Promise<PaginatedResult<Project>> {
-  return getPaginatedData("/projects?page=1&size=20", parseProject, signal);
+export function listProjects(
+  page = 1,
+  signal?: AbortSignal,
+): Promise<PaginatedResult<Project>> {
+  return getPaginatedData(`/projects?page=${page}&size=20`, parseProject, signal);
 }
 
 export function getProject(projectId: string, signal?: AbortSignal) {

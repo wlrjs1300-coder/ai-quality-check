@@ -38,8 +38,8 @@
 | ID | 영역 | Route | 시나리오 | 사전 조건 | 필요한 Demo 데이터 | 예상 결과 | 현재 상태 | 검증 유형 | 마지막 검증일 | 증거 수준 | 자동화 후보 | 비고 |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|
 | R01 | Entry | `/` | 초기 진입 | Web 실행 | 없음 | `/projects`로 이동 | STATIC_ONLY | Production Build | - | Repository Evidence | Route Smoke | Redirect 코드와 build Route 확인 |
-| R02 | Projects | `/projects` | 목록, 생성, Empty, 오류 | Project API 실행 | Project 1건 이상 | 목록과 생성 Form 또는 Empty, Error 상태 표시 | REGRESSION_REQUIRED | Typecheck, Lint, Production Build | - | Repository Evidence | Browser E2E | 복구 기준에서 첫 20건만 접근 가능 |
-| R03 | Project Overview | `/projects/{projectId}` | Dashboard, Summary, Trend, Registry 진입 | 유효 Project | Demo Seed Project | Release 상태와 최근 Experiment 표시 | VERIFIED_MANUAL | Browser Manual | 2026-07-23 | Session Manual Evidence | Browser E2E | 최신 Comparison Link와 오류 복구 일부 확인 |
+| R02 | Projects | `/projects` | 목록, 생성, Pagination, Empty, 오류 | Project API 실행 | Project 21건 이상(2페이지 이동 검증 시) | 목록과 생성 Form, Pagination 이동 또는 Empty, Error 상태 표시 | STATIC_ONLY | Typecheck, Lint, Production Build | - | Repository Evidence | Browser E2E | Pagination 코드 구현 및 정적 검증 완료. Browser 수동 검증 대기. 데이터 20건 이하 환경에서 실제 2페이지 이동은 NOT_VERIFIED_DATA_LIMIT |
+| R03 | Project Overview | `/projects/{projectId}` | Dashboard, Summary, Trend, Registry 진입 | 유효 Project | Demo Seed Project | Release 상태와 최근 Experiment 표시 | VERIFIED_MANUAL | Browser Manual | 2026-07-23 | Session Manual Evidence | Browser E2E | 최신 Comparison Link와 오류 복구 일부 확인. Dataset Registry Pagination은 2026-07-23 검증 이후 추가 구현되어 STATIC_ONLY이며 이 날짜의 수동 검증에는 포함되지 않음 |
 | R04 | History | `/projects/{projectId}/history` | Filter, CSV, pagination, 상세 이동 | 유효 Project | 네 Demo Experiment | History와 상세 Link, CSV 표시 | VERIFIED_MANUAL | Browser Manual | 2026-07-23 | Session Manual Evidence | Browser E2E | History는 Trend API를 직접 호출하지 않음 |
 | R05 | Dataset | `/projects/{projectId}/datasets/{datasetId}` | Case 상태 전이와 Version 관리 | 유효 Project와 Dataset | DRAFT, APPROVED Case | Case와 Dataset Version 표시 | REGRESSION_REQUIRED | Typecheck, Lint, Production Build | - | Repository Evidence | Browser E2E | 404 복귀와 Project Scope 보강 필요 |
 | R06 | Dataset Version | `/projects/{projectId}/datasets/{datasetId}/versions/{version}` | 불변 Snapshot 조회 | Dataset Version 존재 | Snapshot Case | Hash와 Case Snapshot 표시 | REGRESSION_REQUIRED | Typecheck, Lint, Production Build | - | Repository Evidence | Browser E2E | 404 복귀와 Project Scope 보강 필요 |
@@ -50,6 +50,13 @@
 | R11 | Experiment Create | `/projects/{projectId}/experiments/new` | Version 선택과 생성 | 세 Version 존재 | Dataset, Target, Evaluator Version | 같은 Project 범위의 Experiment 생성 | VERIFIED_MANUAL | Browser Manual | 2026-07-23 | Session Manual Evidence | Browser E2E | 20건 초과 선택 pagination은 미검증 |
 | R12 | Experiment Detail | `/projects/{projectId}/experiments/{experimentId}` | Inline 실행, Result, Gate, Comparison | 유효 Experiment | PASS Result와 Gate 데이터 | 상태, Result, 판정과 복구 Action 표시 | VERIFIED_MANUAL | Browser Manual | 2026-07-23 | Session Manual Evidence | Browser E2E | FAILED 실행과 새 BLOCK 생성은 미검증 |
 | R13 | Comparison Detail | `/projects/{projectId}/comparisons/{comparisonId}` | Summary, Case Diff, scope, 404 | 유효 Comparison | REGRESSED와 Case Diff 5건 | 전체 판정과 Case 변화 표시 | VERIFIED_MANUAL | Browser Manual | 2026-07-23 | Session Manual Evidence | Browser E2E | IMPROVED와 UNCHANGED 생성은 미검증 |
+
+## Pagination 구현 상태
+
+| 기능 | 현재 상태 | 검증 유형 | 증거 수준 | 비고 |
+|---|---|---|---|---|
+| Projects Pagination | STATIC_ONLY | Typecheck, Lint, Production Build | Repository Evidence | Browser 수동 검증 전. 데이터 20건 이하이면 실제 2페이지 이동은 NOT_VERIFIED_DATA_LIMIT |
+| Dataset Registry Pagination | STATIC_ONLY | Typecheck, Lint, Production Build | Repository Evidence | Browser 수동 검증 전. 2026-07-23 R03 수동 검증에는 포함되지 않음. 데이터 20건 이하이면 실제 2페이지 이동은 NOT_VERIFIED_DATA_LIMIT |
 
 ## 2026-07-23 수동 Browser 검증
 
@@ -131,4 +138,4 @@
 
 Playwright, Cypress, Vitest, Jest 또는 Browser E2E Runner는 현재 없습니다. Browser 동작은 수동 검증으로만 기록하며 자동 검증 완료로 표현하지 않습니다.
 
-이 문서는 손상 전 Planning 기준을 복구한 것입니다. 후속 Pagination 변경 상태는 반영하지 않습니다.
+이 문서는 손상 전 Planning 기준을 복구한 것입니다. Projects와 Dataset Registry Pagination 구현 상태는 위 표에 STATIC_ONLY로 반영했으며, Browser 수동 검증은 아직 수행하지 않았습니다.

@@ -14,7 +14,7 @@ Project
 → Baseline Comparison
 ```
 
-현재 가장 큰 위험은 UI 미관보다 기능 공백과 화면별 상태 처리의 일관성 부족입니다. UI를 전면 재설계하기 전에 Projects와 Dataset Registry pagination, Project Scope 대조, Dataset 계열 404 복귀, 일부 Version 요청의 Abort 문제를 먼저 해결해야 합니다.
+현재 가장 큰 위험은 UI 미관보다 기능 공백과 화면별 상태 처리의 일관성 부족입니다. Projects와 Dataset Registry Pagination은 코드 구현과 정적 검증을 마쳤고 Browser 회귀 검증만 남아 있습니다. UI를 전면 재설계하기 전에 Project Scope 대조, Dataset 계열 404 복귀, 일부 Version 요청의 Abort 문제를 먼저 해결해야 합니다.
 
 현재 자동 Frontend 검증은 typecheck, lint, production build뿐입니다. 2026-07-23에 확인한 Browser 시나리오는 수동 검증이며 저장소에 자동 Report가 없습니다.
 
@@ -23,7 +23,7 @@ Project
 | ID | Route | 강점 | 기능 또는 UI 문제 |
 |---|---|---|---|
 | R01 | `/` | `/projects`로 단순 Redirect | 별도 안내나 오류 상태 없음 |
-| R02 | `/projects` | 목록, 생성, Empty, 오류 상태 제공 | 복구 기준에서 첫 20건만 접근 가능 |
+| R02 | `/projects` | 목록, 생성, Pagination, Empty, 오류 상태 제공 | Pagination 구현 및 정적 검증 완료, Browser 회귀 검증 대기 |
 | R03 | `/projects/{projectId}` | Dashboard, Summary, Trend, 최근 실행, 세 Registry 통합 | 정보가 많고 화면이 길며 KPI 의미가 일부 중복 |
 | R04 | `/projects/{projectId}/history` | Filter, CSV, pagination, Experiment와 Comparison Link | 좁은 화면에서 Filter와 Card 밀도 검증 필요 |
 | R05 | `/projects/{projectId}/datasets/{datasetId}` | Case 생성, 수정, 승인, 폐기와 Version 흐름 연결 | 404 복귀와 URL Project Scope 대조 부족 |
@@ -55,7 +55,7 @@ Project
 - Dataset Version 404의 Dataset 복귀가 부족합니다.
 - Dataset, Target, Evaluator Detail은 URL `projectId`와 응답 Scope 대조가 충분하지 않습니다.
 - Target와 Evaluator Version API 요청에 AbortSignal 보강이 필요합니다.
-- Projects와 Dataset Registry는 복구 기준에서 첫 20건 이후 항목에 접근할 수 없습니다.
+- Projects와 Dataset Registry Pagination은 코드 구현과 정적 검증을 마쳤으며 Browser 회귀 검증이 남아 있습니다(20건 이하 데이터에서는 실제 2페이지 이동이 NOT_VERIFIED_DATA_LIMIT).
 - Error, Empty, Disabled Reason의 문구와 배치가 화면마다 다릅니다.
 - 같은 Network 오류의 제목과 설명이 완전히 통일되지 않았습니다.
 - Dataset Registry의 Loading과 Refreshing 구분이 다른 Registry보다 약합니다.
@@ -200,8 +200,8 @@ Tabs 또는 Section Navigation은 후보입니다. URL, focus, 새로고침, 부
 
 ### 기능 결함 P1
 
-1. Projects Pagination
-2. Dataset Registry Pagination
+1. Projects Pagination — 코드 구현 및 정적 검증 완료, Browser 회귀 검증 대기 (첫 20건만 접근 가능하던 결함은 해소)
+2. Dataset Registry Pagination — 코드 구현 및 정적 검증 완료, Browser 회귀 검증 대기 (첫 20건만 접근 가능하던 결함은 해소)
 3. Dataset Detail 404 복귀
 4. Dataset Version 404 복귀
 5. Dataset, Target, Evaluator Project Scope 대조
