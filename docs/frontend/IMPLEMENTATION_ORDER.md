@@ -66,6 +66,10 @@
 
 완료 조건: 비교 가능한 Experiment만 선택하고 `IMPROVED|UNCHANGED|REGRESSED`, pass rate delta와 Case별 변화 이유를 표시합니다.
 
+상태: 화면과 API 연결을 구현했습니다. 같은 Project·Dataset Version의 완료 History를 후보로 사용하고 생성 응답 Scope 확인, 제한적 중복 복구, 상세 새로고침, Case Diff 독립 오류와 페이지네이션, History 및 Dashboard 최신 Comparison 연결을 포함합니다. 실제 PostgreSQL 데이터로 세 판정과 오류·복구를 확인하는 Browser 검증은 별도로 수행해야 합니다.
+
+제약: Comparison 목록 API가 없고 History는 Current별 최신 Comparison만 제공합니다. 같은 Dataset Version과 완전히 일치하는 Result Case 집합이 필요하며, 과거 중복 Comparison의 ID는 완전히 복원할 수 없습니다.
+
 ## Demo Seed 시연 순서
 
 1. Backend에서 Demo Seed를 실행하고 출력된 `project_id`를 확인합니다.

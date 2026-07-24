@@ -141,6 +141,20 @@ code { font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size
 .gate-options { display: grid; gap: 6px; }
 .gate-options p { margin: 0 0 8px 26px; color: var(--muted); font-size: 0.84rem; }
 .gate-reasons { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.comparison-form { display: grid; gap: 18px; }
+.baseline-candidates { margin: 0; padding: 18px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface); }
+.baseline-candidates legend { padding: 0 8px; font-weight: 800; }
+.baseline-candidate-list, .comparison-case-list { display: grid; gap: 12px; }
+.baseline-candidate { display: grid; gap: 14px; padding: 16px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface-muted); cursor: pointer; }
+.baseline-candidate:hover { border-color: var(--accent); }
+.baseline-candidate-selected { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(36, 87, 214, 0.12); }
+.baseline-candidate-heading { display: flex; gap: 10px; align-items: center; }
+.baseline-candidate-heading input { width: auto; }
+.baseline-candidate-heading > span { display: grid; gap: 3px; }
+.baseline-candidate-heading small { color: var(--muted); }
+.baseline-candidate-details { display: flex; flex-wrap: wrap; gap: 8px 16px; color: var(--muted); font-size: 0.86rem; font-weight: 500; }
+.baseline-candidate-details > span { display: inline-flex; gap: 6px; align-items: center; }
+.comparison-reasons { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
 .experiment-create-form { display: grid; gap: 20px; }
 .experiment-create-form .detail-panel { margin: 0; }
 .version-picker { display: grid; gap: 10px; margin-top: 16px; }

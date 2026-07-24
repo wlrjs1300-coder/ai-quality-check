@@ -97,7 +97,6 @@ Route: `/projects/{projectId}`. 진입 조건은 `projectId`입니다.
 | Dataset 생성 | `POST` `name`, `description?` | Dataset Detail 이동 | `datasets` |
 | Target 생성 | `POST` `name`, `target_type=MOCK`, `config` | Target Detail 이동 | `targets` |
 | Evaluator 생성 | `POST` `name`, `evaluator_type`, `config` | Evaluator Detail 이동 | `evaluators` |
-| Gate Policy 생성 | `POST` `name`, `minimum_pass_rate`, 차단 옵션 | 반환된 `policy_id` 보존 | `project`, 관련 Gate 선택 상태 |
 
 사용 필드: Project의 `id`, `slug`, `name`, `description`, `is_active`; Dashboard의 `readiness`, `kpis`, `recent_experiments`, `trend`, `warning_codes`; Summary의 `summary`, `metrics`, 최신 Gate·Comparison. 비활성 Project에서는 mutation Action을 Disabled로 처리합니다.
 
@@ -186,7 +185,7 @@ Experiment 단건 응답에는 `project_id`가 없으므로 Dataset Version 탐�
 | Inline 실행 | Run Endpoint, Body 없음 | `experiment`, `experiment-results`, `history`, `dashboard`, `summary` |
 | Gate Policy 생성 | `name`, `minimum_pass_rate`, 차단 옵션 | 생성된 Policy ID 보존 후 Gate 평가 |
 | Gate 평가 | `experiment_id` | Gate Result 표시, 실패 시 최신 `history`에서 복원 |
-| Baseline 비교 | 두 Experiment ID | Comparison, `history`, `dashboard`, `summary` |
+| Baseline 비교 | `baseline_experiment_id`, `current_experiment_id` | 응답 Scope 확인 후 Comparison 상세 이동 |
 
 Result 사용 필드는 `status`, `reason_code`, `reason`, `input_snapshot`, `output_snapshot`, `created_at`입니다. 목록은 `page`, `size`를 사용합니다.
 
@@ -195,6 +194,8 @@ Result 사용 필드는 `status`, `reason_code`, `reason`, `input_snapshot`, `ou
 Basic Quality Gate는 `COMPLETED`에서만 활성화합니다. Policy 생성과 평가는 별도 mutation 상태이며, Policy 생성 후 평가가 실패하면 같은 Policy ID로만 재시도합니다. 새로고침 및 불확실한 평가 응답은 Project History를 최대 100건씩 페이지 순회해 현재 Experiment의 최신 Result ID를 찾고 Result와 Policy 단건을 복원합니다. Gate 영역 오류는 Experiment와 Case Result를 초기화하지 않습니다.
 
 Policy 목록·수정·비활성화·Version API와 Gate Result 목록 API가 없으므로 최신 Result가 있으면 새 평가 Form을 숨깁니다. Policy 생성 Network Error는 생성 여부를 확정할 수 없고, 같은 이름으로 수동 재시도하면 중복 오류가 발생할 수 있습니다. Severity 기반 Rule은 지원하지 않으며 필수 Case 차단은 `required_for_release`를 사용합니다.
+
+Baseline 후보는 Project History를 `experiment_status=COMPLETED`, `sort=created_at_desc`, `size=100`으로 전체 페이지 순회해 구성합니다. Current 자신, 다른 Dataset Version, Case 수가 0인 항목은 제외하며 실제 Result 존재와 Case 집합 일치는 Backend가 최종 판정합니다. 생성 Network 오류 또는 중복 오류에서는 Current의 최신 History Comparison을 조회하고 Project·Baseline·Current ID가 모두 일치할 때만 상세로 복구합니다.
 
 ## History
 
@@ -221,6 +222,10 @@ Route: `/projects/{projectId}/comparisons/{comparisonId}`.
 사용 필드: 전체 `status`, Case counts, baseline/current pass counts, `pass_rate_delta`, `reason_codes`, `reason_summary`; Case의 `case_key`, 이전·현재 status, `change_status`, `reason_code`.
 
 화면 상태: Initial, Loading, Empty(Case 없음), Success, Error, Refreshing. `BASELINE_COMPARISON_NOT_FOUND`는 History로 이동합니다.
+
+Comparison 단건의 `project_id`와 URL Project가 일치한 뒤에만 Summary와 Case Diff를 표시합니다. Summary와 Case 목록 오류는 분리하며 Case 재조회 중에도 기존 Summary와 Case를 유지합니다. History 카드에는 최신 Comparison ID가 있을 때만 상세 링크를 표시하고, Dashboard 최근 Experiment에는 ID가 없으므로 링크를 만들지 않습니다. Project Overview 최상위 최신 Comparison에는 ID가 있어 상세 연결을 제공합니다.
+
+Comparison 목록 및 Project-scoped 목록 API는 없습니다. History는 Current별 최신 Comparison 하나만 제공하므로 동일 Current의 과거 Comparison과 최신이 아닌 중복 쌍은 완전히 복원할 수 없습니다.
 
 ## 개념적 Query Key
 

@@ -223,6 +223,14 @@ export function ProjectDetailClient({
                     <h3>최신 판정</h3>
                     <p>Quality Gate <SemanticBadge status={dashboard.latestQualityGateResult?.status ?? null} /></p>
                     <p>Comparison <SemanticBadge status={dashboard.latestBaselineComparison?.status ?? null} /></p>
+                    {dashboard.latestBaselineComparison ? (
+                      <Link
+                        className="card-link"
+                        href={`/projects/${encodeURIComponent(projectId)}/comparisons/${encodeURIComponent(dashboard.latestBaselineComparison.comparisonId)}`}
+                      >
+                        최신 Comparison 상세 <span aria-hidden="true">→</span>
+                      </Link>
+                    ) : null}
                   </article>
                 </div>
                 <div className="detail-panel"><h3>Warning</h3><WarningList codes={dashboard.warningCodes} /></div>
