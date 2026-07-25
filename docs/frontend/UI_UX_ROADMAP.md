@@ -31,12 +31,13 @@ Phase 0
 
 ### 포함 범위
 
-- Projects Pagination — 구현 및 정적 검증 완료, Browser 회귀 검증 대기
-- Dataset Registry Pagination — 구현 및 정적 검증 완료, Browser 회귀 검증 대기
-- Dataset Detail 404 복귀 — 구현 및 정적 검증 완료, Browser 회귀 검증 대기
-- Dataset Version 404 복귀 — 구현 및 정적 검증 완료, Browser 회귀 검증 대기
-- Dataset, Target, Evaluator Frontend Project Scope 대조 — 구현 및 정적 검증 완료, Browser 검증 대기(Backend Authorization은 범위 밖)
-- Target와 Evaluator Version AbortSignal — 구현 및 정적 검증 완료, Browser 검증 대기
+- Projects Pagination — 구현 및 정적 검증 완료, Browser 검증 완료(2026-07-25, 다중 페이지는 Project 2건으로 NOT_VERIFIED_DATA_LIMIT)
+- Dataset Registry Pagination — 구현 및 정적 검증 완료, Browser 검증 시도(2026-07-25)했으나 Dataset 1건으로 NOT_VERIFIED_DATA_LIMIT
+- Dataset Detail 404 복귀 — 구현 및 정적 검증 완료, Browser 검증 완료(2026-07-25)
+- Dataset Version 404 복귀 — 구현 및 정적 검증 완료, Browser 검증 완료(2026-07-25)
+- Dataset, Target, Evaluator Frontend Project Scope 대조 — 구현 및 정적 검증 완료, Browser 검증 완료(2026-07-25, Backend Authorization은 범위 밖)
+- Target와 Evaluator Version AbortSignal — 구현 및 정적 검증 완료, Browser 검증 완료(2026-07-25)
+- Dataset Evaluation Case / Snapshot Case 배열 필드 파서 회귀 — 2026-07-25 Browser 검증에서 발견(REGRESSION_REQUIRED), 별도 fix 브랜치 필요, Phase 0 완료 차단 요소
 - 자동 Browser Test가 있는 것처럼 읽히는 문서 표현 정정
 
 ### 제외 범위
@@ -86,7 +87,7 @@ Phase 0
 - typecheck, lint, production build 통과
 - 기존 핵심 흐름 회귀 없음
 
-Phase 0에 포함된 모든 기능(Pagination, 404 복귀, Project Scope 대조, Target/Evaluator Version AbortSignal)의 코드 구현과 정적 검증은 완료됐습니다. Browser 회귀 검증은 아직 남아 있으며, Browser 검증 전에는 Phase 0을 전체 완료로 표현하지 않습니다. Phase A로 넘어가기 전 위 항목들의 주요 Browser 회귀 검증이 필요합니다.
+2026-07-25 세션에서 위 기능들의 Browser 회귀 검증을 수행했습니다. Projects 1페이지 표시·생성·Network 복구, Target/Evaluator 상세·Version 정상 표시, Target/Evaluator Version AbortSignal(요청 취소·최신 응답 반영·AbortError 미노출), Dataset/Target/Evaluator 상세 및 Version 6개 Route의 Project Scope 차단은 모두 VERIFIED_MANUAL로 확인됐습니다. 반면 Dataset 상세의 Evaluation Case 표시와 Dataset Version의 Snapshot Case 표시에서 배열 필드 파서 회귀(REGRESSION_REQUIRED)가 발견되어, 별도 fix 브랜치에서 파서를 수정하고 재검증하기 전까지 Phase 0을 완료로 선언하지 않습니다. Pagination 다중 페이지 이동은 Project·Dataset이 21건 미만이라 NOT_VERIFIED_DATA_LIMIT이며, Keyboard 전수 검증은 세션 시간 제약으로 BLOCKED_BY_TIME 처리해 Phase F 접근성 마감 단계로 이관합니다. Phase A 진입 여부는 Dataset 파서 수정과 두 화면 재검증 완료 후 다시 판단합니다.
 
 ### 독립 Merge 가능 여부
 
