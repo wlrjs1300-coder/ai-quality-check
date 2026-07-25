@@ -14,7 +14,7 @@ Project
 → Baseline Comparison
 ```
 
-현재 가장 큰 위험은 UI 미관보다 기능 공백과 화면별 상태 처리의 일관성 부족입니다. Projects와 Dataset Registry Pagination, Dataset Detail·Version 404 복귀, Dataset·Target·Evaluator Frontend Project Scope 대조, Target·Evaluator Version AbortSignal은 코드 구현과 정적 검증을 마쳤고 Browser 회귀 검증만 남아 있습니다(Backend Authorization은 구현되지 않았으며 이번 변경은 Frontend URL 일관성 검증입니다). UI를 전면 재설계하기 전에 Phase 0 기능 공백에 대한 Browser 회귀 검증을 먼저 완료해야 합니다.
+현재 가장 큰 위험은 UI 미관보다 기능 공백과 화면별 상태 처리의 일관성 부족입니다. 2026-07-25 Browser 회귀 검증에서 Projects Pagination(1페이지 범위), Dataset·Dataset Version 404 복귀, Dataset/Target/Evaluator Project Scope 대조, Target/Evaluator Version AbortSignal은 모두 VERIFIED_MANUAL로 확인됐습니다(Backend Authorization은 구현되지 않았으며 이번 변경은 Frontend URL 일관성 검증입니다). 다만 같은 세션에서 Dataset Evaluation Case·Snapshot Case 배열 필드 파서 회귀가 새로 발견돼 REGRESSION_REQUIRED로 남아 있으며, 이 수정과 재검증 전까지는 UI 전면 재설계로 넘어가지 않습니다.
 
 현재 자동 Frontend 검증은 typecheck, lint, production build뿐입니다. 2026-07-23에 확인한 Browser 시나리오는 수동 검증이며 저장소에 자동 Report가 없습니다.
 
@@ -23,15 +23,15 @@ Project
 | ID | Route | 강점 | 기능 또는 UI 문제 |
 |---|---|---|---|
 | R01 | `/` | `/projects`로 단순 Redirect | 별도 안내나 오류 상태 없음 |
-| R02 | `/projects` | 목록, 생성, Pagination, Empty, 오류 상태 제공 | Pagination 구현 및 정적 검증 완료, Browser 회귀 검증 대기 |
+| R02 | `/projects` | 목록, 생성, Pagination, Empty, 오류 상태 제공 | Pagination 1페이지 범위 Browser 검증 완료(2026-07-25). 다중 페이지·Empty는 NOT_VERIFIED_DATA_LIMIT |
 | R03 | `/projects/{projectId}` | Dashboard, Summary, Trend, 최근 실행, 세 Registry 통합 | 정보가 많고 화면이 길며 KPI 의미가 일부 중복 |
 | R04 | `/projects/{projectId}/history` | Filter, CSV, pagination, Experiment와 Comparison Link | 좁은 화면에서 Filter와 Card 밀도 검증 필요 |
-| R05 | `/projects/{projectId}/datasets/{datasetId}` | Case 생성, 수정, 승인, 폐기와 Version 흐름 연결, 404 복귀 Action, Project Scope 대조 | 404 복귀와 Project Scope 대조 구현 및 정적 검증 완료, Browser 회귀 검증 대기 |
-| R06 | `/projects/{projectId}/datasets/{datasetId}/versions/{version}` | 불변 Snapshot과 Case 표시, 404 복귀 Action, Project Scope 대조 | 404 복귀와 Project Scope 대조 구현 및 정적 검증 완료, Browser 회귀 검증 대기 |
-| R07 | `/projects/{projectId}/targets/{targetId}` | MOCK 설정, 비활성화, FIXED Version 관리, Project Scope 대조 | Project Scope 대조 구현 및 정적 검증 완료, Browser 회귀 검증 대기 |
-| R08 | `/projects/{projectId}/targets/{targetId}/versions/{version}` | 불변 Snapshot과 404 복귀 Action, Project Scope 대조, AbortSignal 보강 | Project Scope 대조와 AbortSignal 보강 구현 및 정적 검증 완료, Browser 회귀 검증 대기 |
-| R09 | `/projects/{projectId}/evaluators/{evaluatorId}` | 세 Evaluator Type과 Version 관리, Project Scope 대조 | Project Scope 대조 구현 및 정적 검증 완료, Browser 회귀 검증 대기 |
-| R10 | `/projects/{projectId}/evaluators/{evaluatorId}/versions/{version}` | Snapshot과 404 복귀 Action, Project Scope 대조, AbortSignal 보강 | Project Scope 대조와 AbortSignal 보강 구현 및 정적 검증 완료, Browser 회귀 검증 대기 |
+| R05 | `/projects/{projectId}/datasets/{datasetId}` | Case 생성, 수정, 승인, 폐기와 Version 흐름 연결, 404 복귀 Action, Project Scope 대조 | 404 복귀와 Project Scope 대조는 Browser 검증 완료(2026-07-25). Evaluation Case 배열 필드 파서 회귀로 정상 표시가 REGRESSION_REQUIRED |
+| R06 | `/projects/{projectId}/datasets/{datasetId}/versions/{version}` | 불변 Snapshot과 Case 표시, 404 복귀 Action, Project Scope 대조 | 404 복귀와 Project Scope 대조는 Browser 검증 완료(2026-07-25). Snapshot Case 배열 필드 파서 회귀로 정상 표시가 REGRESSION_REQUIRED |
+| R07 | `/projects/{projectId}/targets/{targetId}` | MOCK 설정, 비활성화, FIXED Version 관리, Project Scope 대조 | Project Scope 대조 Browser 검증 완료(2026-07-25) |
+| R08 | `/projects/{projectId}/targets/{targetId}/versions/{version}` | 불변 Snapshot과 404 복귀 Action, Project Scope 대조, AbortSignal 보강 | Project Scope 대조와 AbortSignal Browser 검증 완료(2026-07-25) |
+| R09 | `/projects/{projectId}/evaluators/{evaluatorId}` | 세 Evaluator Type과 Version 관리, Project Scope 대조 | Project Scope 대조 Browser 검증 완료(2026-07-25) |
+| R10 | `/projects/{projectId}/evaluators/{evaluatorId}/versions/{version}` | Snapshot과 404 복귀 Action, Project Scope 대조, AbortSignal 보강 | Project Scope 대조와 AbortSignal Browser 검증 완료(2026-07-25) |
 | R11 | `/projects/{projectId}/experiments/new` | 독립 Version 선택 상태, 오류와 pagination 처리 | 상태 설계는 좋지만 Client 파일이 크고 선택 정보 밀도가 높음 |
 | R12 | `/projects/{projectId}/experiments/{experimentId}` | Inline 실행, Result, Gate, Comparison이 연결됨 | 핵심 흐름은 완성됐지만 화면과 Client 파일이 지나치게 김 |
 | R13 | `/projects/{projectId}/comparisons/{comparisonId}` | Summary와 Case 목록 오류가 분리되고 pagination 제공 | Mobile Case Diff와 긴 Reason 표시 검증 필요 |
@@ -51,11 +51,11 @@ Project
 
 ### 보완할 부분
 
-- Dataset Detail 404 복귀는 코드 구현과 정적 검증을 마쳤으며 Browser 회귀 검증이 남아 있습니다.
-- Dataset Version 404 복귀는 코드 구현과 정적 검증을 마쳤으며 Browser 회귀 검증이 남아 있습니다.
-- Dataset, Target, Evaluator Project Scope 대조는 코드 구현과 정적 검증을 마쳤으며 Browser 회귀 검증이 남아 있습니다(Frontend URL 일관성 검증이며 Backend Authorization은 구현되지 않음).
-- Target와 Evaluator Version AbortSignal은 코드 구현과 정적 검증을 마쳤으며 Browser 회귀 검증이 남아 있습니다.
-- Projects와 Dataset Registry Pagination은 코드 구현과 정적 검증을 마쳤으며 Browser 회귀 검증이 남아 있습니다(20건 이하 데이터에서는 실제 2페이지 이동이 NOT_VERIFIED_DATA_LIMIT).
+- Dataset 상세의 Evaluation Case 목록과 Dataset Version의 Snapshot Case 표시는 2026-07-25 Browser 검증에서 배열 필드 파서 회귀(REGRESSION_REQUIRED)가 발견됐습니다 — 404 복귀 자체는 정상입니다.
+- Dataset, Target, Evaluator Project Scope 대조는 2026-07-25 Browser 검증을 완료했습니다(Frontend URL 일관성 검증이며 Backend Authorization은 구현되지 않음).
+- Target와 Evaluator Version AbortSignal은 2026-07-25 Browser 검증을 완료했습니다.
+- Projects와 Dataset Registry Pagination은 2026-07-25 Browser 검증을 완료했습니다(Project/Dataset 20건 이하 데이터에서는 실제 2페이지 이동이 NOT_VERIFIED_DATA_LIMIT).
+- Dataset 계열 Not Found 화면은 Breadcrumb를 유지하지만 Target/Evaluator 계열 Not Found 화면은 Breadcrumb 자체가 없어 오류 화면 구성이 일관되지 않습니다(2026-07-25 확인, Scope 차단 기능 자체는 정상).
 - Error, Empty, Disabled Reason의 문구와 배치가 화면마다 다릅니다.
 - 같은 Network 오류의 제목과 설명이 완전히 통일되지 않았습니다.
 - Dataset Registry의 Loading과 Refreshing 구분이 다른 Registry보다 약합니다.
@@ -200,15 +200,16 @@ Tabs 또는 Section Navigation은 후보입니다. URL, focus, 새로고침, 부
 
 ### 기능 결함 P1
 
-1. Projects Pagination — 코드 구현 및 정적 검증 완료, Browser 회귀 검증 대기 (첫 20건만 접근 가능하던 결함은 해소)
-2. Dataset Registry Pagination — 코드 구현 및 정적 검증 완료, Browser 회귀 검증 대기 (첫 20건만 접근 가능하던 결함은 해소)
-3. Dataset Detail 404 복귀 — 코드 구현 및 정적 검증 완료, Browser 회귀 검증 대기
-4. Dataset Version 404 복귀 — 코드 구현 및 정적 검증 완료, Browser 회귀 검증 대기
-5. Dataset, Target, Evaluator Project Scope 대조 — Frontend Scope 대조 코드 구현 및 정적 검증 완료, Browser 회귀 검증 대기 (Backend Authorization은 구현되지 않음)
+1. Projects Pagination — Browser 검증 완료(2026-07-25, 첫 20건만 접근 가능하던 결함 해소). 다중 페이지 이동은 Project 2건으로 NOT_VERIFIED_DATA_LIMIT
+2. Dataset Registry Pagination — Browser 검증 시도(2026-07-25)했으나 Dataset 1건으로 다중 페이지·Empty는 NOT_VERIFIED_DATA_LIMIT
+3. Dataset Detail 404 복귀 — Browser 검증 완료(2026-07-25)
+4. Dataset Version 404 복귀 — Browser 검증 완료(2026-07-25)
+5. Dataset, Target, Evaluator Project Scope 대조 — Browser 검증 완료(2026-07-25, Backend Authorization은 구현되지 않음)
+6. Dataset Evaluation Case / Snapshot Case 배열 필드 파서 회귀 — 2026-07-25 Browser 검증에서 신규 발견(REGRESSION_REQUIRED). `parseEvaluationCase`/`parseSnapshotCase`가 문자열 배열 필드를 객체 배열로 잘못 파싱. 별도 fix 브랜치에서 수정 및 재검증 필요
 
 ### 기능 결함 P2
 
-1. Target와 Evaluator Version AbortSignal — 코드 구현 및 정적 검증 완료, Browser 회귀 검증 대기
+1. Target와 Evaluator Version AbortSignal — Browser 검증 완료(2026-07-25)
 2. Error, Empty, Disabled 표현 일관성
 3. 768px Layout 위험
 4. 수동 Browser 검증이 자동 검증처럼 다시 기록되지 않도록 문서 정합성 유지
@@ -220,11 +221,12 @@ Tabs 또는 Section Navigation은 후보입니다. URL, focus, 새로고침, 부
 - UUID와 Hash 과다 노출
 - Registry의 긴 Card 구조
 - 공통 Header, Breadcrumb, Pagination 부재
+- Target/Evaluator Not Found 화면의 Breadcrumb 부재(Dataset 계열은 유지, 2026-07-25 확인 — Scope 차단 기능 자체는 정상이며 UX 일관성 후보로만 기록)
 - Loading, Empty, Partial Error 표현 차이
 - 720px 단일 breakpoint
 - Copy Action 부재
 
-이번 문서 복구 PR에서는 위 P1과 P2를 구현 완료로 변경하지 않습니다. 기능 결함을 Phase 0에서 먼저 처리한 뒤 시각 개선을 진행합니다.
+P1 1·3·4·5와 P2 1은 2026-07-25 Browser 검증으로 확인이 끝났습니다. P1 2(Dataset Registry Pagination 다중 페이지)는 데이터 제한으로, P1 6(Dataset 파서 회귀)은 별도 fix 브랜치의 수정과 재검증 전까지 남아 있으며, 이 두 항목이 해소되기 전에는 Phase 0을 완료로 선언하지 않고 시각 개선(P1/P2 이후 단계)으로 넘어가지 않습니다.
 
 ## 작업 모델 재평가 기준
 
