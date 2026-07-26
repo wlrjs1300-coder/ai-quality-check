@@ -2,16 +2,49 @@
 
 ## 목적과 적용 원칙
 
-이 문서는 후속 UI 구현에서 사용할 디자인 토큰의 이름, 초기 값, 의미를 정의합니다. 현재 `globals.css`에 이 계약이 모두 적용됐다는 뜻이 아니며, 이번 문서 복구 작업은 CSS를 변경하지 않습니다.
+이 문서는 후속 UI 구현에서 사용할 Design Token의 이름, 목표 값, 의미와 단계별 적용 경계를 정의합니다. Token이 선언됐다는 사실과 기존 Selector가 Token을 사용한다는 사실은 구분합니다.
 
-- 기존 화면을 한 번에 바꾸지 않고 작은 PR에서 토큰을 단계적으로 적용합니다.
-- 기존 selector의 값을 토큰으로 치환할 때 의도하지 않은 시각 변화가 없는지 확인합니다.
+- 기존 화면을 한 번에 바꾸지 않고 Phase A1, A2, A3의 작은 범위로 적용합니다.
+- 값이 같다는 사실만으로 두 표현의 Semantic 의미가 같다고 판단하지 않습니다.
+- 기존 Selector의 값을 Token으로 치환할 때 의도하지 않은 시각 변화가 없는지 별도로 확인합니다.
 - 같은 상태의 의미를 화면마다 임의로 바꾸지 않습니다.
 - 상태는 색상과 함께 텍스트, 아이콘 또는 설명으로 전달합니다.
 - Light Mode를 우선하며 Dark Mode는 현재 Roadmap에서 제외합니다.
-- 아래 초기 값은 현재 UI의 색상과 크기를 기준으로 한 출발점이며, 실제 적용 전 대비와 회귀를 다시 검증합니다.
+- 자동 시각 회귀가 없으므로 typecheck, lint, production build 통과는 시각 동일성의 증거가 아닙니다.
 
-## Color Tokens
+## 현재 구현 상태
+
+현재 `globals.css`는 다음 12개의 축약형 CSS Custom Property를 사용합니다.
+
+```css
+--background
+--surface
+--surface-muted
+--border
+--text
+--muted
+--accent
+--accent-dark
+--danger
+--danger-soft
+--success
+--success-soft
+```
+
+기존 Selector는 위 변수와 literal 값을 사용합니다. Phase A1에서 새 정식 Token을 선언하지만 기존 Selector에는 적용하지 않습니다.
+
+- 기존 축약형 변수는 삭제하거나 이름을 변경하지 않습니다.
+- 기존 축약형 변수와 새 정식 Token 사이의 Alias 전환도 Phase A1에서 하지 않습니다.
+- 기존 Selector의 `var()` 참조, literal, 순서와 specificity를 유지합니다.
+- 현재 실제 반응형 규칙은 `@media (max-width: 720px)` 하나입니다.
+- 현재 `focus-visible`은 `outline: 3px solid rgba(36, 87, 214, 0.3)`와 `outline-offset: 2px` 구조입니다.
+- 현재 reduced motion 규칙은 loading marker의 animation을 제거합니다.
+
+## 목표 Token 계약
+
+아래 Token은 Phase A의 목표 계약입니다. Phase A1에서는 선언만 존재하며 기존 Selector에 적용된 상태가 아닙니다.
+
+### Color와 Semantic Status Tokens
 
 ```css
 :root {
@@ -35,27 +68,39 @@
 }
 ```
 
-| 토큰 | 의미 |
+| Token | 의미 |
 |---|---|
 | `--color-bg` | 앱 전체 배경 |
-| `--color-surface` | 카드, 폼, 패널 배경 |
-| `--color-surface-muted` | 보조 패널과 약한 구분 영역 |
+| `--color-surface` | Card, Form, Panel 배경 |
+| `--color-surface-muted` | 보조 Panel과 약한 구분 영역 |
 | `--color-text` | 기본 본문과 제목 |
-| `--color-text-muted` | 설명, 보조 정보, 메타데이터 |
+| `--color-text-muted` | 설명, 보조 정보, Metadata |
 | `--color-border` | 기본 경계선 |
 | `--color-border-strong` | 입력 필드와 강조 경계선 |
 | `--color-primary` | 주요 Action과 Link |
 | `--color-primary-hover` | 주요 Action hover |
-| `--color-success` | 성공 상태 텍스트 |
-| `--color-success-surface` | 성공 상태 배경 |
-| `--color-warning` | 주의 상태 텍스트 |
-| `--color-warning-surface` | 주의 상태 배경 |
-| `--color-danger` | 차단, 오류, 회귀 상태 텍스트 |
-| `--color-danger-surface` | 차단, 오류, 회귀 상태 배경 |
-| `--color-info` | 갱신, 범위 확인, 안내 텍스트 |
-| `--color-info-surface` | 갱신, 범위 확인, 안내 배경 |
+| `--color-success` | 성공 상태 Text |
+| `--color-success-surface` | 성공 상태 Surface |
+| `--color-warning` | 주의 상태 Text의 목표 기본값 |
+| `--color-warning-surface` | 주의 상태 Surface |
+| `--color-danger` | 차단, 오류, 회귀 상태 Text |
+| `--color-danger-surface` | 차단, 오류, 회귀 상태 Surface |
+| `--color-info` | 갱신, 범위 확인, 안내 Text |
+| `--color-info-surface` | 갱신, 범위 확인, 안내 Surface |
 
-## Spacing Tokens
+상태 의미 계약은 다음과 같습니다.
+
+| 의미 | 상태 | 표현 원칙 |
+|---|---|---|
+| success | `PASS`, `COMPLETED`, `IMPROVED` | 성공 Text와 Surface를 함께 사용 |
+| warning | `DRAFT`, `RUNNING`, `FAIL` | 주의 Text와 다음 행동을 함께 표시 |
+| danger | `BLOCK`, `ERROR`, `FAILED`, `REGRESSED` | 원인과 복구 또는 검토 Action을 함께 표시 |
+| neutral | `INACTIVE`, `UNCHANGED`, 데이터 없음 | 중립 Text와 약한 Surface 사용 |
+| info | Refreshing, Scope 확인, 실행 안내 | 처리 중인 상태와 목적을 Text로 표시 |
+
+개별 평가의 `FAIL`은 실행 자체의 `FAILED`와 구분합니다. `BLOCK`과 `REGRESSED`는 평균 수치보다 먼저 사용자가 인식할 수 있어야 합니다.
+
+### Spacing Tokens
 
 ```css
 :root {
@@ -71,9 +116,9 @@
 }
 ```
 
-작은 간격은 control 내부와 inline 요소에 사용하고, 큰 간격은 section과 page 구분에 사용합니다. 토큰 적용 과정에서 기존 화면 밀도를 임의로 바꾸지 않습니다.
+작은 간격은 control 내부와 inline 요소에 사용하고, 큰 간격은 section과 page 구분에 사용합니다. 이 scale에 없는 현재 literal을 가장 가까운 값으로 바꾸지 않습니다.
 
-## Radius Tokens
+### Radius Tokens
 
 ```css
 :root {
@@ -83,22 +128,27 @@
 }
 ```
 
-- `--radius-control`: Button, Input, 작은 안내 영역
-- `--radius-card`: Card, Form, Detail Panel
+- `--radius-control`: Button과 8px radius를 사용하는 control
+- `--radius-card`: 12px radius를 사용하는 Card, Form, Detail Panel
 - `--radius-pill`: Badge와 상태 Label
 
-## Shadow Tokens
+현재 7px 또는 10px radius를 사용하는 Selector를 위 Token에 맞추기 위해 8px 또는 12px로 변경하지 않습니다.
+
+### Shadow와 Focus Tokens
 
 ```css
 :root {
   --shadow-panel: 0 8px 24px rgba(23, 32, 51, 0.05);
   --shadow-focus: 0 0 0 3px rgba(36, 87, 214, 0.3);
+  --focus-ring-color: rgba(36, 87, 214, 0.3);
+  --focus-outline-width: 3px;
+  --focus-outline-offset: 2px;
 }
 ```
 
-`--shadow-focus`는 키보드 focus를 분명히 표시하기 위한 계약입니다. Browser 기본 outline을 제거하고 그림자만 남기는 방식은 사용하지 않습니다.
+`--shadow-focus`는 목표 계약의 후보이며 현재 focus 구현에 적용 완료된 Token이 아닙니다. 현재 `focus-visible`의 outline과 outline-offset 구조를 유지하며, Browser 기본 outline을 제거하고 shadow만 남기는 방식으로 변경하지 않습니다. Focus 계약의 적용 방식은 Phase A3에서 결정합니다.
 
-## Typography Tokens
+### Typography와 Line Height Tokens
 
 ```css
 :root {
@@ -116,9 +166,9 @@
 }
 ```
 
-큰 화면 제목의 반응형 크기는 `clamp()`를 유지할 수 있습니다. 토큰은 기본 크기 계약이며 모든 제목을 하나의 고정 크기로 강제하지 않습니다.
+큰 화면 제목의 반응형 `clamp()`는 유지할 수 있습니다. 현재 `1.6` line-height를 `1.5` 또는 `1.65`로 변경하지 않습니다.
 
-## Layout Tokens
+### Layout과 Control Height Tokens
 
 ```css
 :root {
@@ -127,40 +177,97 @@
 }
 ```
 
-- `--container-width`: 기본 앱 본문 최대 너비
-- `--control-height`: Button과 주요 Form control의 최소 높이
+- `--container-width`: 기본 앱 본문 최대 너비의 목표 계약
+- `--control-height`: 기본 Button과 주요 Form control의 최소 높이 목표 계약
+- compact button의 현재 `36px` 높이는 기본 `44px` control과 별도로 유지합니다.
 
-### Breakpoint 계약
+### Breakpoint 목표 계약
 
-| 이름 | 값 | 기본 목적 |
-|---|---:|---|
-| small | 480px | 좁은 Mobile 화면 |
-| medium | 768px | Tablet과 다단 Layout 전환 |
-| large | 1024px | 넓은 Desktop Layout |
+| 이름 | 값 | 기본 목적 | 현재 적용 상태 |
+|---|---:|---|---|
+| small | 480px | 좁은 Mobile 화면 | 미적용 |
+| medium | 768px | Tablet과 다단 Layout 전환 | 미적용 |
+| large | 1024px | 넓은 Desktop Layout | 미적용 |
 
-CSS Custom Property는 일반적인 media query 조건에 직접 사용할 수 없습니다. 따라서 breakpoint 값은 문서 계약으로 관리하고 `@media` 규칙에는 해당 값을 직접 기록합니다.
+480px, 768px, 1024px은 목표 계약이며 현재 구현 완료 상태가 아닙니다. 실제 CSS는 `max-width: 720px`만 사용합니다. CSS Custom Property는 일반적인 media query 조건에 직접 사용할 수 없으므로 breakpoint는 문서 계약으로 관리하고 `@media` 조건에는 결정된 값을 직접 기록합니다.
 
 필수 수동 검토 폭은 1440px, 1024px, 768px, 390px입니다.
 
-## Semantic Status
+## 이번 Phase A1 적용 범위
 
-| 의미 | 상태 | 표현 원칙 |
-|---|---|---|
-| success | `PASS`, `COMPLETED`, `IMPROVED` | 성공 텍스트와 surface를 함께 사용 |
-| warning | `DRAFT`, `RUNNING`, `FAIL` | 주의 텍스트와 다음 행동을 함께 표시 |
-| danger | `BLOCK`, `ERROR`, `FAILED`, `REGRESSED` | 원인과 복구 또는 검토 Action을 함께 표시 |
-| neutral | `INACTIVE`, `UNCHANGED`, 데이터 없음 | 중립 텍스트와 약한 surface 사용 |
-| info | Refreshing, Scope 확인, 실행 안내 | 처리 중인 상태와 목적을 텍스트로 표시 |
+- 문서의 목표 Token 계약과 실제 CSS 현황을 구분합니다.
+- 현재 CSS에서 확인된 값과 목표 계약값을 새 정식 Token으로 선언하되, 기존 Selector에서는 사용하지 않습니다.
+- 새 Token은 선언만 하며 기존 Selector에서 참조하지 않습니다.
+- 기존 축약형 변수, literal, media query, focus-visible, reduced motion을 유지합니다.
+- 시각 결과를 바꾸지 않는 것이 설계 목표입니다.
+- 정적 검증 결과를 시각 동일성 검증 완료로 표현하지 않습니다.
 
-개별 평가의 `FAIL`은 실행 자체의 `FAILED`와 구분합니다. `BLOCK`과 `REGRESSED`는 평균 수치보다 먼저 사용자가 인식할 수 있어야 합니다.
+## Phase A2 이후 적용 범위
 
-## 접근성
+### Phase A2
+
+정확한 값과 Semantic 의미가 모두 일치하는 저위험 Selector만 작은 묶음으로 Token에 연결합니다.
+
+- 1120px container
+- 기본 Button의 44px control height
+- panel shadow
+- 정확히 일치하는 일부 font-size와 line-height
+- 각 묶음 적용 전후 Browser 비교
+
+### Phase A3
+
+계약 판단이 필요한 항목을 별도로 다룹니다.
+
+- neutral Text와 Surface
+- danger border와 divider
+- focus outline과 shadow Token의 관계
+- 7px과 10px radius
+- 문서 scale에 없는 spacing
+- 1.6 line-height
+- 현재 720px breakpoint의 변경 여부
+- 같은 색상을 사용하지만 의미가 다른 표현의 통합 여부
+
+Phase B의 공통 Navigation과 State Component 작업은 Phase A에 포함하지 않습니다.
+
+## 현재 구현에만 존재하는 미포괄 값
+
+아래 값은 실제 CSS에 존재하지만 현재 목표 Token scale만으로 안전하게 표현할 수 없습니다.
+
+| 범주 | 현재 값 | 대표 의미 | 처리 |
+|---|---|---|---|
+| Radius | 7px | Input, Form Error, Notice | Phase A3 판단 전 유지 |
+| Radius | 10px | Metric Card, Baseline Candidate | Phase A3 판단 전 유지 |
+| Line Height | 1.6 | Summary Copy | Phase A3 판단 전 유지 |
+| Spacing | 18px, 20px, 22px, 28px 등 | Gap, Padding, Margin | 가장 가까운 scale로 변경하지 않음 |
+| Control Height | 36px | Compact Pagination Button | 기본 44px과 별도로 유지 |
+| Neutral Surface | `#eef0f3` | Inactive, Neutral, Immutable Note | Phase A3에서 의미 분리 검토 |
+| Neutral Text | `#596579` | Inactive, Neutral, Immutable Note | Phase A3에서 의미 분리 검토 |
+| Divider | `#edf0f4` | Metadata와 List 경계 | Phase A3에서 계약 여부 검토 |
+| Danger Border | `#f0b8b3` | Error Panel 경계 | Phase A3에서 계약 여부 검토 |
+| Warning Text | `#694b00` | Warning List Text | 기본 warning Text와 의미 차이 검토 |
+| Selection Shadow | `0 0 0 2px rgba(36, 87, 214, 0.12)` | 선택된 Baseline 강조 | Phase A3 이후 검토 |
+
+`#fff7df` warning surface가 여러 Selector에서 같더라도 warning Text는 `#875d00`과 `#694b00`으로 다릅니다. 값이 같다는 것과 Semantic 의미가 같다는 것은 별개이므로, 동일 색상 또는 인접 값을 근거로 자동 통합하지 않습니다.
+
+## Token 치환 시 금지되는 임의 정규화
+
+- 7px과 10px radius를 8px 또는 12px로 변경하지 않습니다.
+- 1.6 line-height를 1.5 또는 1.65로 변경하지 않습니다.
+- 18px, 20px, 22px, 28px 등의 spacing을 가장 가까운 scale 값으로 변경하지 않습니다.
+- compact button 36px을 기본 control height 44px로 변경하지 않습니다.
+- 현재 720px breakpoint를 768px 또는 다른 목표 breakpoint로 자동 변경하지 않습니다.
+- 색상값이 같다는 이유만으로 서로 다른 상태 의미를 하나의 Token 사용처로 통합하지 않습니다.
+- focus-visible의 outline 구조를 shadow-only 표현으로 변경하지 않습니다.
+- 기존 축약형 변수와 새 정식 Token 사이 Alias를 검증 없이 추가하지 않습니다.
+
+## 접근성과 검증 원칙
 
 - Text와 Surface 조합은 실제 적용 시 WCAG contrast를 검증합니다.
-- focus ring 토큰을 사용하고 키보드 focus를 숨기지 않습니다.
+- 키보드 focus를 숨기지 않고 현재 outline 구조를 유지합니다.
 - 기존 reduced motion 대응을 유지합니다.
-- 상태 Badge에는 사람이 읽을 수 있는 상태 텍스트를 포함합니다.
+- 상태 Badge에는 사람이 읽을 수 있는 상태 Text를 포함합니다.
 - 색상만으로 성공, 실패, 차단, 회귀를 구분하지 않습니다.
-- Disabled control에는 가능한 경우 주변 텍스트로 이유를 제공합니다.
+- Disabled control에는 가능한 경우 주변 Text로 이유를 제공합니다.
 - 상태 갱신은 필요한 위치에서 `aria-live`를 사용합니다.
 - Light Mode를 먼저 안정화하며 Dark Mode는 현재 범위에 포함하지 않습니다.
+- typecheck, lint, production build는 정적 건전성을 확인하지만 시각 동일성을 증명하지 않습니다.
