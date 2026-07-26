@@ -99,60 +99,63 @@ Phase 0의 핵심 기능 공백(Pagination, 404 복귀, Project Scope 대조, Ab
 
 ### 목표
 
-회귀 Matrix 운영 규칙과 Design Token 계약을 확정하고, 시각 변화 없는 적용 기반을 만듭니다.
+회귀 Matrix 운영 규칙과 Design Token 계약을 확정하고, 선언과 적용을 분리해 시각 변화 없는 적용 기반을 만듭니다.
 
-### 포함 범위
+### Phase A1 — Contract Alignment and Unused Token Declarations
 
-- Matrix 상태와 증거 갱신 규칙
-- [Frontend Design Token Contract](DESIGN_TOKENS.md)
-- 기존 값과 같은 Token 선언
-- 작은 selector 단위 치환
+- 문서와 실제 `globals.css` 현황의 정합성을 보완합니다.
+- 현재 CSS에서 확인된 값과 목표 계약값을 새 정식 Token으로 선언하되, 기존 Selector에서는 사용하지 않습니다.
+- 기존 축약형 Custom Property, literal, media query와 Selector를 유지합니다.
+- Selector 치환, Alias 전환과 공통 Component 구현은 포함하지 않습니다.
+- 시각 결과를 바꾸지 않는 것이 설계 목표입니다.
+- typecheck, lint, production build 같은 정적 검증만으로 시각 동일성을 완료 처리하지 않습니다.
 
-### 제외 범위
+예상 파일은 [Frontend Design Token Contract](DESIGN_TOKENS.md), 이 Roadmap과 `globals.css`입니다. 문서 정합성과 미사용 선언의 위험도는 낮지만, Browser 비교를 수행하지 않은 상태는 시각 검증 완료로 기록하지 않습니다.
+
+### Phase A2 — Low-risk Token Adoption
+
+정확한 값과 Semantic 의미가 모두 일치하는 저위험 Selector만 제한적으로 Token에 연결합니다.
+
+- 1120px container
+- 기본 Button의 44px control height
+- panel shadow
+- 정확히 일치하는 일부 font-size와 line-height
+- 각 묶음별 적용 전후 Browser 비교
+
+Selector 치환은 작은 묶음으로 분리하며 네 viewport, keyboard focus, reduced motion과 상태 Badge의 Text·Surface를 관련 범위에서 확인합니다.
+
+### Phase A3 — Contract Decisions
+
+다음처럼 값 보존만으로 결정할 수 없는 항목의 계약을 확정합니다.
+
+- neutral Text와 Surface
+- danger border와 divider
+- focus outline과 Token 계약
+- radius와 spacing scale
+- 현재 720px breakpoint 변경 여부
+- 7px과 10px radius 처리
+- 1.6 line-height 처리
+- 의미가 다른 동일 색상 통합 여부
+
+### Phase A 공통 제외 범위
 
 - Dark Mode
 - Branding 전면 변경
 - 전체 CSS 재작성
-- 공통 컴포넌트 전면 교체
+- 공통 Navigation과 State Component 구현
+- Phase B Component의 선행 구현
 
-### 예상 파일
+### 선행 조건과 완료 조건
 
-- Frontend 회귀와 Token 문서
-- 후속 구현 시 `globals.css`
-
-### 위험도
-
-문서와 선언은 낮고 대량 치환은 중간입니다.
-
-### 선행 조건
-
-- Phase 0 기능 결함 범위 확정
-- 1440px, 1024px, 768px, 390px 기준 화면 확보
-
-### 회귀 범위
-
-- 색상
-- spacing
-- radius
-- focus
-- Semantic Status
-
-### Browser 검증
-
-- 네 viewport 시각 비교
-- 키보드 focus
-- reduced motion
-- 상태 Badge의 Text와 Surface
-
-### 완료 조건
-
-- Token 이름과 의미가 문서와 CSS에서 일치
-- 적용 전후 의도하지 않은 시각 변화 없음
-- WCAG contrast 검증 대상과 결과 구분
+- Phase 0 기능 결함 범위가 확정돼야 합니다.
+- Token 선언 상태와 Selector 적용 상태를 문서와 CSS에서 구분해야 합니다.
+- 적용한 범위는 1440px, 1024px, 768px, 390px에서 비교합니다.
+- WCAG contrast 검증 대상과 실제 결과를 구분합니다.
+- 자동 시각 회귀가 없는 동안 정적 검증 결과를 시각 동일성 증거로 표현하지 않습니다.
 
 ### 독립 Merge 가능 여부
 
-가능합니다. Token 선언과 selector 치환을 분리합니다.
+가능합니다. Phase A1의 문서·미사용 선언, Phase A2의 저위험 치환, Phase A3의 계약 판단을 분리합니다.
 
 ## Phase B — Common Navigation and State Components
 
