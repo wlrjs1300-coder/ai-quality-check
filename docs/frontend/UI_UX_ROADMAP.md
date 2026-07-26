@@ -37,7 +37,7 @@ Phase 0
 - Dataset Version 404 복귀 — 구현 및 정적 검증 완료, Browser 검증 완료(2026-07-25)
 - Dataset, Target, Evaluator Frontend Project Scope 대조 — 구현 및 정적 검증 완료, Browser 검증 완료(2026-07-25, Backend Authorization은 범위 밖)
 - Target와 Evaluator Version AbortSignal — 구현 및 정적 검증 완료, Browser 검증 완료(2026-07-25)
-- Dataset Evaluation Case / Snapshot Case 배열 필드 파서 회귀 — 2026-07-25 Browser 검증에서 발견(REGRESSION_REQUIRED), 별도 fix 브랜치 필요, Phase 0 완료 차단 요소
+- Dataset Evaluation Case / Snapshot Case 배열 필드 파서 회귀 — 2026-07-25 Browser 검증에서 발견 후 같은 날 `fix/v0.25.5-dataset-array-parser` 브랜치에서 수정하고 Browser 재검증까지 완료(VERIFIED_MANUAL). 더 이상 Phase 0 완료 차단 요소가 아님
 - 자동 Browser Test가 있는 것처럼 읽히는 문서 표현 정정
 
 ### 제외 범위
@@ -87,7 +87,9 @@ Phase 0
 - typecheck, lint, production build 통과
 - 기존 핵심 흐름 회귀 없음
 
-2026-07-25 세션에서 위 기능들의 Browser 회귀 검증을 수행했습니다. Projects 1페이지 표시·생성·Network 복구, Target/Evaluator 상세·Version 정상 표시, Target/Evaluator Version AbortSignal(요청 취소·최신 응답 반영·AbortError 미노출), Dataset/Target/Evaluator 상세 및 Version 6개 Route의 Project Scope 차단은 모두 VERIFIED_MANUAL로 확인됐습니다. 반면 Dataset 상세의 Evaluation Case 표시와 Dataset Version의 Snapshot Case 표시에서 배열 필드 파서 회귀(REGRESSION_REQUIRED)가 발견되어, 별도 fix 브랜치에서 파서를 수정하고 재검증하기 전까지 Phase 0을 완료로 선언하지 않습니다. Pagination 다중 페이지 이동은 Project·Dataset이 21건 미만이라 NOT_VERIFIED_DATA_LIMIT이며, Keyboard 전수 검증은 세션 시간 제약으로 BLOCKED_BY_TIME 처리해 Phase F 접근성 마감 단계로 이관합니다. Phase A 진입 여부는 Dataset 파서 수정과 두 화면 재검증 완료 후 다시 판단합니다.
+2026-07-25 세션에서 위 기능들의 Browser 회귀 검증을 수행했습니다. Projects 1페이지 표시·생성·Network 복구, Target/Evaluator 상세·Version 정상 표시, Target/Evaluator Version AbortSignal(요청 취소·최신 응답 반영·AbortError 미노출), Dataset/Target/Evaluator 상세 및 Version 6개 Route의 Project Scope 차단은 모두 VERIFIED_MANUAL로 확인됐습니다. 같은 세션에서 발견된 Dataset 상세 Evaluation Case 표시와 Dataset Version Snapshot Case 표시의 배열 필드 파서 회귀는 `fix/v0.25.5-dataset-array-parser` 브랜치에서 수정하고, 정적 검증(typecheck·lint·build)과 같은 날 Browser 재검증(Evaluation Case 5건 표시, Snapshot Case 5건과 Content Hash 표시, 객체 배열 Case 생성·편집 Form 역변환)까지 마쳐 VERIFIED_MANUAL로 확인했습니다.
+
+Phase 0의 핵심 기능 공백(Pagination, 404 복귀, Project Scope 대조, AbortSignal, Dataset 배열 파서)은 모두 수정과 Browser 재검증을 완료했습니다. Pagination 다중 페이지 이동·Empty 상태는 Project·Dataset이 21건 미만이고 기존 데이터를 삭제하지 않아 NOT_VERIFIED_DATA_LIMIT으로, Keyboard 전수 검증은 세션 시간 제약으로 BLOCKED_BY_TIME 처리해 Phase F 접근성 마감 단계로 이관합니다. 이 잔여 항목들은 Dataset 파서 수정을 막는 회귀가 아니라 데이터 제한·시간 제약으로 관리되는 별도 검증 항목이므로, Phase 0의 모든 시나리오가 전수 검증됐다고 과장하지 않되 핵심 기능 공백은 해결된 것으로 판단해 Phase A로 진입할 수 있습니다.
 
 ### 독립 Merge 가능 여부
 

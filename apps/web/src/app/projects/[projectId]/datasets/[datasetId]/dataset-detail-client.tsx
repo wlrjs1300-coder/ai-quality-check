@@ -45,8 +45,7 @@ const emptyForm = (): FormState => ({
   required: "", forbidden: "", tags: "", severity: "MEDIUM", requiredForRelease: false,
 });
 const lines = (value: string) => value.split(/\r?\n/).map((item) => item.trim()).filter(Boolean);
-const objectText = (items: Record<string, unknown>[], key: string) =>
-  items.map((item) => typeof item[key] === "string" ? item[key] : "").filter(Boolean).join("\n");
+const stringLines = (items: string[]) => items.filter(Boolean).join("\n");
 
 function payload(form: FormState): EvaluationCaseInput {
   const evidence = form.evidenceContent.trim()
@@ -73,9 +72,9 @@ function formFromCase(item: EvaluationCase): FormState {
     expectedSummary: item.expectedSummary ?? "",
     evidenceSource: typeof firstEvidence.source_id === "string" ? firstEvidence.source_id : "",
     evidenceContent: typeof firstEvidence.content === "string" ? firstEvidence.content : "",
-    required: objectText(item.requiredElements, "text"),
-    forbidden: objectText(item.forbiddenElements, "text"),
-    tags: objectText(item.tags, "name"),
+    required: stringLines(item.requiredElements),
+    forbidden: stringLines(item.forbiddenElements),
+    tags: stringLines(item.tags),
     severity: item.severity,
     requiredForRelease: item.requiredForRelease,
   };

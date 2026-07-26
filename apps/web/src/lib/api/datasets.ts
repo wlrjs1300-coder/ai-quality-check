@@ -27,9 +27,9 @@ export type EvaluationCase = {
   question: string;
   expectedSummary: string | null;
   evidence: JsonObject[];
-  requiredElements: JsonObject[];
-  forbiddenElements: JsonObject[];
-  tags: JsonObject[];
+  requiredElements: string[];
+  forbiddenElements: string[];
+  tags: string[];
   severity: CaseSeverity;
   requiredForRelease: boolean;
   status: CaseStatus;
@@ -65,9 +65,9 @@ export type SnapshotCase = {
   question: string;
   expectedSummary: string | null;
   evidence: JsonObject[];
-  requiredElements: JsonObject[];
-  forbiddenElements: JsonObject[];
-  tags: JsonObject[];
+  requiredElements: string[];
+  forbiddenElements: string[];
+  tags: string[];
   severity: CaseSeverity;
   requiredForRelease: boolean;
 };
@@ -89,6 +89,18 @@ function enumValue<T extends string>(value: unknown, values: readonly T[], label
 function objectArray(value: unknown, label: string): JsonObject[] {
   if (!Array.isArray(value) || !value.every(isRecord)) fail(label);
   return value.map((item) => ({ ...item }));
+}
+
+function normalizedStringArray(value: unknown, key: string, label: string): string[] {
+  if (!Array.isArray(value)) fail(label);
+  return value.map((item) => {
+    if (isString(item)) return item;
+    if (isRecord(item)) {
+      const candidate = item[key];
+      if (isString(candidate)) return candidate;
+    }
+    return fail(label);
+  });
 }
 
 function dateTime(value: unknown, label: string): string {
@@ -131,9 +143,9 @@ export function parseEvaluationCase(value: unknown): EvaluationCase {
     question: value.question,
     expectedSummary: value.expected_summary,
     evidence: objectArray(value.evidence, "Evaluation Case"),
-    requiredElements: objectArray(value.required_elements, "Evaluation Case"),
-    forbiddenElements: objectArray(value.forbidden_elements, "Evaluation Case"),
-    tags: objectArray(value.tags, "Evaluation Case"),
+    requiredElements: normalizedStringArray(value.required_elements, "text", "Evaluation Case"),
+    forbiddenElements: normalizedStringArray(value.forbidden_elements, "text", "Evaluation Case"),
+    tags: normalizedStringArray(value.tags, "name", "Evaluation Case"),
     severity: enumValue(value.severity, SEVERITIES, "Evaluation Case"),
     requiredForRelease: value.required_for_release,
     status: enumValue(value.status, STATUSES, "Evaluation Case"),
@@ -176,9 +188,9 @@ function parseSnapshotCase(value: unknown): SnapshotCase {
     question: value.question,
     expectedSummary: value.expected_summary,
     evidence: objectArray(value.evidence, "Snapshot Case"),
-    requiredElements: objectArray(value.required_elements, "Snapshot Case"),
-    forbiddenElements: objectArray(value.forbidden_elements, "Snapshot Case"),
-    tags: objectArray(value.tags, "Snapshot Case"),
+    requiredElements: normalizedStringArray(value.required_elements, "text", "Snapshot Case"),
+    forbiddenElements: normalizedStringArray(value.forbidden_elements, "text", "Snapshot Case"),
+    tags: normalizedStringArray(value.tags, "name", "Snapshot Case"),
     severity: enumValue(value.severity, SEVERITIES, "Snapshot Case"),
     requiredForRelease: value.required_for_release,
   };
