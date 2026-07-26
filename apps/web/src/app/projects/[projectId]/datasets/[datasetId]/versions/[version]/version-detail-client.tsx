@@ -11,10 +11,6 @@ import { formatLocalDateTime } from "@/src/lib/formatters";
 
 type Props = { projectId: string; datasetId: string; versionValue: string };
 
-function labels(items: Record<string, unknown>[], key: string): string[] {
-  return items.map((item) => typeof item[key] === "string" ? item[key] : "").filter(Boolean);
-}
-
 function datasetVersionNotFoundError(): ApiError {
   return new ApiError({
     kind: "application",
@@ -124,9 +120,9 @@ export function DatasetVersionDetailClient({ projectId, datasetId, versionValue 
       <section className="overview-section" aria-labelledby="snapshot-case-title"><div className="section-heading"><h2 id="snapshot-case-title">Snapshot Cases</h2><span>{version.cases.length}건</span></div>
         {version.cases.length === 0 ? <p className="empty-inline">Snapshot Case가 없습니다.</p> : null}
         <div className="case-grid">{version.cases.map((item) => {
-          const required = labels(item.requiredElements, "text");
-          const forbidden = labels(item.forbiddenElements, "text");
-          const tags = labels(item.tags, "name");
+          const required = item.requiredElements;
+          const forbidden = item.forbiddenElements;
+          const tags = item.tags;
           return <article className="case-card" key={item.id}><header><div><p className="eyebrow">{item.caseKey}</p><h3>{item.question}</h3></div><strong>{item.severity}</strong></header><p>{item.expectedSummary || "예상 요약 없음"}</p><dl className="compact-list"><div><dt>Source Case</dt><dd><code>{item.sourceEvaluationCaseId}</code></dd></div><div><dt>Release 필수</dt><dd>{item.requiredForRelease ? "예" : "아니요"}</dd></div><div><dt>필수 요소</dt><dd>{required.join(", ") || "없음"}</dd></div><div><dt>금지 요소</dt><dd>{forbidden.join(", ") || "없음"}</dd></div><div><dt>태그</dt><dd>{tags.join(", ") || "없음"}</dd></div></dl></article>;
         })}</div>
       </section>
