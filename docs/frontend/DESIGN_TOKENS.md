@@ -37,7 +37,7 @@
 - 기존 축약형 변수와 새 정식 Token 사이의 Alias 전환도 Phase A1에서 하지 않습니다.
 - 기존 Selector의 `var()` 참조, literal, 순서와 specificity를 유지합니다.
 - 현재 실제 반응형 규칙은 `@media (max-width: 720px)` 하나입니다.
-- 현재 `focus-visible`은 `outline: 3px solid rgba(36, 87, 214, 0.3)`와 `outline-offset: 2px` 구조입니다.
+- 현재 `focus-visible`은 세 outline Token을 통해 `3px solid rgba(36, 87, 214, 0.3)`와 `2px` offset을 유지합니다.
 - 현재 reduced motion 규칙은 loading marker의 animation을 제거합니다.
 
 ## 목표 Token 계약
@@ -148,7 +148,7 @@
 
 #### Phase A3 Focus 계약
 
-Primary Focus Indicator는 `outline`입니다. 기존 `:focus-visible` 동작과 computed style을 보존하면서 후속 CSS PR에서 다음처럼 세 outline Token만 연결합니다.
+Primary Focus Indicator는 `outline`입니다. 기존 `:focus-visible` 동작과 computed style을 보존하면서 다음처럼 세 outline Token을 연결했습니다.
 
 ```css
 outline: var(--focus-outline-width) solid var(--focus-ring-color);
@@ -159,17 +159,17 @@ outline-offset: var(--focus-outline-offset);
 - `--focus-outline-width`는 primary outline 두께입니다. 현재 literal과 같은 `3px`을 유지합니다.
 - `--focus-outline-offset`은 element 경계와 outline 사이 간격입니다. 현재 literal과 같은 `2px`을 유지합니다.
 - `--shadow-focus`는 outline 대체재가 아닌 선택적 보조 효과 후보입니다. 적용하면 기존 렌더링이 바뀌므로 이번 계약의 사용처에 포함하지 않으며 미적용 상태를 유지합니다.
-- `var()` fallback은 추가하지 않습니다. 네 Token은 `:root`의 필수 선언이며 후속 구현에서 undefined 참조 검사를 수행합니다.
+- `var()` fallback은 추가하지 않습니다. 네 Token은 `:root`의 필수 선언이며 이번 구현에서 undefined 참조가 없음을 확인했습니다. 후속 변경에서도 같은 검사를 유지합니다.
 
-현재 공통 Selector는 `button`, `a`, `input`, `textarea`, `select`의 `:focus-visible`에 적용됩니다. checkbox와 radio는 native `input`으로 같은 계약에 포함됩니다. Pagination, form submit, retry, text button과 Button 형태의 Link도 각각 native `button` 또는 `a`를 사용하므로 포함됩니다. 비네이티브 `role="button"`, 명시적 `tabIndex`, `aria-disabled` 사용처는 현재 없습니다.
+현재 공통 Selector는 `button`, `a`, `input`, `textarea`, `select`, `summary`의 `:focus-visible`에 적용됩니다. checkbox와 radio는 native `input`으로 같은 계약에 포함됩니다. Pagination, form submit, retry, text button과 Button 형태의 Link도 각각 native `button` 또는 `a`를 사용하므로 포함됩니다. 비네이티브 `role="button"`, 명시적 `tabIndex`, `aria-disabled` 사용처는 현재 없습니다.
 
-Native `summary`는 keyboard focus가 가능하지만 현재 공통 Selector에 포함되지 않아 Browser 기본 outline을 사용합니다. 후속 CSS PR에서는 `summary:focus-visible`을 공통 Selector에 포함할지 별도 검증합니다. 미래에 `role="button"`, 양수 또는 0인 `tabIndex`, `aria-disabled="true"`를 도입할 때는 native 요소와 동일하다고 가정하지 않고 별도 keyboard·activation 계약을 먼저 정의합니다.
+Native `summary`의 Chrome 기본 `1px auto` outline과 공통 Token outline을 비교한 결과, 네 viewport의 open·closed details에서 marker 정렬, border·shadow, overflow와 clipping 충돌이 없고 keyboard 표시가 더 명확했습니다. 따라서 `summary:focus-visible`을 공통 Selector 끝에 포함했습니다. 미래에 `role="button"`, 양수 또는 0인 `tabIndex`, `aria-disabled="true"`를 도입할 때는 native 요소와 동일하다고 가정하지 않고 별도 keyboard·activation 계약을 먼저 정의합니다.
 
-Native `disabled` control과 disabled fieldset 하위 control은 Tab 순서와 primary Focus 계약에서 제외합니다. Loading 중 native disabled로 전환되는 control은 기존 focus가 사라질 수 있으므로 후속 구현에서 상태 전환 전후의 focus 위치를 검증합니다. 향후 `aria-disabled`를 사용하면 focus를 유지할 수 있으므로 activation 차단과 안내 Text를 별도 계약으로 다룹니다.
+Native `disabled` control과 disabled fieldset 하위 control은 Tab 순서와 primary Focus 계약에서 제외합니다. 이번 Browser 검증에서 Loading 중 native disabled로 전환되는 control의 focus가 `body`로 이동할 수 있음을 확인했으며, Focus 복원 정책은 후속 UX 계약 대상으로 남깁니다. 향후 `aria-disabled`를 사용하면 focus를 유지할 수 있으므로 activation 차단과 안내 Text를 별도 계약으로 다룹니다.
 
 `:focus-visible`을 유지하고 일반 `:focus` 규칙은 추가하지 않습니다. Keyboard navigation에는 primary outline을 표시하고 일반적인 mouse click에는 강제로 표시하지 않습니다. Focus Indicator는 정적 신호이므로 reduced-motion에서 제거하지 않으며 현재 Focus 규칙에는 transition이나 animation이 없습니다.
 
-2026-07-27 headed Chrome에서 `/projects`, Project Overview, Dataset Detail, Experiment Create, Experiment Detail, History, Comparison Detail을 1440px, 1024px, 768px, 390px로 조사했습니다. button, link, input, textarea, select, checkbox와 radio는 keyboard focus에서 같은 3px outline을 사용했고 native disabled는 Tab 순서에서 제외됐습니다. Shift+Tab 복귀, `summary`의 Space 토글, mouse click 시 `:focus-visible` 미표시, ring 잘림 없음과 Console 오류 없음도 확인했습니다. CDP 환경에서 Button·Link의 Enter/Space activation은 재현하지 못해 `NOT_VERIFIED_TOOL_LIMIT`이며, forced-colors와 focus contrast ratio는 테스트하지 않았습니다. 이 결과는 접근성 기준을 고려한 명시적 Focus 표시를 확인한 것이며 WCAG 준수를 의미하지 않습니다.
+2026-07-27 headed Chrome에서 `/projects`, Project Overview, Dataset Detail, Experiment Create, Experiment Detail, History, Comparison Detail을 1440px, 1024px, 768px, 390px로 적용 전후 조사했습니다. button, link, input, textarea, select, checkbox, radio와 `summary`는 keyboard focus에서 `3px solid rgba(36, 87, 214, 0.3)`와 `2px` offset을 사용했고 box-shadow는 변하지 않았습니다. Native disabled와 disabled fieldset 하위 control은 Tab 순서에서 제외됐고, reduced-motion에서도 정적 outline은 유지됐습니다. Loading 중 control이 disabled로 바뀔 때 focus가 `body`로 이동하는 기존 동작은 이번 CSS 범위에서 복원하지 않고 후속 UX 위험으로 남깁니다. Shift+Tab 복귀, `summary`의 Space 토글, 일반 mouse click 시 강제 outline 미표시, ring 잘림 없음과 Console 오류 없음도 확인했습니다. CDP 환경에서 Button·Link의 Enter/Space activation은 재현하지 못해 `NOT_VERIFIED_TOOL_LIMIT`이며, forced-colors와 focus contrast ratio는 테스트하지 않았습니다. 이 결과는 접근성 기준을 고려한 명시적 Focus 표시를 확인한 것이며 WCAG 준수를 의미하지 않습니다.
 
 ### Typography와 Line Height Tokens
 
@@ -258,7 +258,7 @@ Demo Seed에 없는 Empty 상태와 정상 실행 환경의 Error·Loading 상�
 
 - neutral Text와 Surface
 - danger border와 divider
-- focus outline과 shadow Token의 관계 — 문서 계약 확정, 별도 CSS PR 구현 필요
+- focus outline과 shadow Token의 관계 — 계약 및 CSS 적용 완료
 - 7px과 10px radius
 - 문서 scale에 없는 spacing
 - 1.6 line-height

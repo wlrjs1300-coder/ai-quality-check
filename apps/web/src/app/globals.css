@@ -72,9 +72,9 @@ button, input, textarea, select { font: inherit; }
 
 a { color: inherit; }
 
-button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-visible {
-  outline: 3px solid rgba(36, 87, 214, 0.3);
-  outline-offset: 2px;
+button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-visible, summary:focus-visible {
+  outline: var(--focus-outline-width) solid var(--focus-ring-color);
+  outline-offset: var(--focus-outline-offset);
 }
 
 .app-shell { width: min(var(--container-width), calc(100% - 32px)); margin: 0 auto; padding: 56px 0 80px; }
