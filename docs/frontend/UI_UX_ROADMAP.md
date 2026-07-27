@@ -116,15 +116,15 @@ Phase 0의 핵심 기능 공백(Pagination, 404 복귀, Project Scope 대조, Ab
 
 정확한 값과 Semantic 의미가 모두 일치하는 저위험 Selector만 제한적으로 Token에 연결합니다.
 
-- 1120px container
-- 기본 Button의 44px control height
-- panel shadow
-- 정확히 일치하는 일부 font-size와 line-height
-- 각 묶음별 적용 전후 Browser 비교
+- 2026-07-27 첫 저위험 묶음에서 1120px container, 기본 Button의 44px control height, panel shadow, 정확히 일치하는 일부 font-size와 line-height를 Token에 연결했습니다.
+- `/projects`를 대표 Route로 선택해 Chrome Headless에서 1440px, 1024px, 768px, 390px의 적용 전후 computed style, 가로 overflow, Button hover·focus-visible·disabled와 compact 36px 유지를 확인했습니다.
+- Screenshot 육안 비교와 자동 Pixel Diff는 수행하지 않았으므로 Phase A2 전체는 진행 중입니다.
 
 Selector 치환은 작은 묶음으로 분리하며 네 viewport, keyboard focus, reduced motion과 상태 Badge의 Text·Surface를 관련 범위에서 확인합니다.
 
 ### Phase A3 — Contract Decisions
+
+Phase A3는 아직 시작하지 않았습니다.
 
 다음처럼 값 보존만으로 결정할 수 없는 항목의 계약을 확정합니다.
 
