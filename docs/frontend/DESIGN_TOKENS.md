@@ -221,7 +221,11 @@
 | `--font-size-heading-md` | `h2`의 `font-size` |
 | `--line-height-relaxed` | `.page-description`, `.card-description`, `.state-panel p`, `.coming-next p`의 `line-height` |
 
-Chrome Headless의 `/projects`에서 1440px, 1024px, 768px, 390px 적용 전후 computed style을 비교해 container width, 기본·compact Button 높이, panel shadow, font-size와 line-height가 같음을 확인했습니다. hover, focus-visible, disabled 상태와 가로 overflow도 같은 범위에서 확인했습니다. Screenshot 육안 비교와 자동 Pixel Diff는 수행하지 않았으므로 Phase A2 전체를 완료 상태로 기록하지 않습니다.
+Chrome Headless의 `/projects`에서 1440px, 1024px, 768px, 390px 적용 전후 computed style을 비교해 container width, 기본·compact Button 높이, panel shadow, font-size와 line-height가 같음을 확인했습니다. hover, focus-visible, disabled 상태와 가로 overflow도 같은 범위에서 확인했습니다.
+
+2026-07-27에는 같은 네 viewport와 공개 Demo Seed를 사용해 headed Chrome에서 `/projects`, Project Overview, Dataset Detail, Experiment Create, Experiment Detail, History, Comparison Detail을 육안 검증했습니다. Container 여백, Button 상태와 정렬, form·state·detail Panel, Typography, Badge, 긴 UUID, 모바일 단일 열과 줄바꿈에서 이상이나 가로 overflow가 없었고 Console 오류도 없었습니다. Screenshot은 작업 중 임시 증빙으로만 사용하고 저장소에는 포함하지 않았으며 자동 Pixel Diff는 수행하지 않았습니다.
+
+Demo Seed에 없는 Empty 상태와 정상 실행 환경의 Error·Loading 상태는 이번 육안 검증 범위에 포함하지 않았습니다. 우선 Route에 `.coming-next`가 없어 해당 Panel은 `NOT_PRESENT`이며, Selector 그룹의 동일 computed style은 앞선 비교 결과를 근거로 유지합니다. 이 제한을 제외한 Phase A2 저위험 Token 적용과 Browser 검증은 완료했습니다.
 
 위 표에 없는 Color, Spacing, Radius 등 선언은 아직 기존 Selector에 적용되지 않았습니다.
 
