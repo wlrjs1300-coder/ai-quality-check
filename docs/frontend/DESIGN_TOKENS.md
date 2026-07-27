@@ -193,7 +193,7 @@
 
 필수 수동 검토 폭은 1440px, 1024px, 768px, 390px입니다.
 
-## 이번 Phase A1 적용 범위
+## Phase A1 적용 범위
 
 - 문서의 목표 Token 계약과 실제 CSS 현황을 구분합니다.
 - 현재 CSS에서 확인된 값과 목표 계약값을 새 정식 Token으로 선언하되, 기존 Selector에서는 사용하지 않습니다.
@@ -208,11 +208,22 @@
 
 정확한 값과 Semantic 의미가 모두 일치하는 저위험 Selector만 작은 묶음으로 Token에 연결합니다.
 
-- 1120px container
-- 기본 Button의 44px control height
-- panel shadow
-- 정확히 일치하는 일부 font-size와 line-height
-- 각 묶음 적용 전후 Browser 비교
+2026-07-27에 첫 저위험 묶음을 다음 Selector에 적용했습니다.
+
+| Token | 적용 Selector와 속성 |
+|---|---|
+| `--container-width` | `.app-shell`의 기본·mobile `width` |
+| `--control-height` | `.button`의 `min-height` |
+| `--shadow-panel` | `.form-panel`, `.state-panel`, `.detail-panel`, `.coming-next`의 `box-shadow` |
+| `--font-size-xs` | `.eyebrow`, `.slug`, `.status-badge`의 `font-size` |
+| `--font-size-sm` | `.count-label`의 `font-size` |
+| `--font-size-heading-sm` | `h3`의 `font-size` |
+| `--font-size-heading-md` | `h2`의 `font-size` |
+| `--line-height-relaxed` | `.page-description`, `.card-description`, `.state-panel p`, `.coming-next p`의 `line-height` |
+
+Chrome Headless의 `/projects`에서 1440px, 1024px, 768px, 390px 적용 전후 computed style을 비교해 container width, 기본·compact Button 높이, panel shadow, font-size와 line-height가 같음을 확인했습니다. hover, focus-visible, disabled 상태와 가로 overflow도 같은 범위에서 확인했습니다. Screenshot 육안 비교와 자동 Pixel Diff는 수행하지 않았으므로 Phase A2 전체를 완료 상태로 기록하지 않습니다.
+
+위 표에 없는 Color, Spacing, Radius 등 선언은 아직 기존 Selector에 적용되지 않았습니다.
 
 ### Phase A3
 
