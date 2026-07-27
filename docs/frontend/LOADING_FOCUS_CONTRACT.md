@@ -139,6 +139,41 @@ native disabled 전환과 handler guard를 유지한다. Enter로 form을 제출
 
 ## 8. 정적 검증
 
+### 8.1 Browser 검증 기록 — 2026-07-27
+
+이번 검증은 Windows의 Chrome headed mode, 기본 Zoom 100%, device scale 1에서 기존 Backend와 Demo Seed를 사용했다. 요청한 `1440px` viewport로 Chrome window를 시작했으나 직접 확인된 내부 viewport는 `1424 × 905`였으며, `3000` 포트가 Windows에서 충돌해 동일 Web을 `3100` 포트로 실행했다. 따라서 요청한 기준 환경과 완전히 일치하는 Browser 검증으로 일반화하지 않는다. Screen Reader는 사용하지 않았다.
+
+대표 흐름은 최대 세 개 범위에서 다음과 같이 다뤘다.
+
+| 대표 흐름 | 재현 상태 | keyboard 결과 | mouse 결과 | 최종 분류 | 구현 필요 여부 |
+|---|---|---|---|---|---|
+| History CSV 다운로드 | `NOT_VERIFIED_TOOL_LIMIT` | Tab·Enter 입력과 Loading 전이 측정 중 Chrome DevTools 실행 컨텍스트가 시간 초과했다. Loading 전·직후·성공·실패 `activeElement`, 빠른 Enter 반복의 요청 수는 `NOT_VERIFIED_TOOL_LIMIT`이다. | headed Chrome에서 control DOM까지 확인했으나 click 전·직후·완료 후 `activeElement`와 focus-visible은 `NOT_VERIFIED_TOOL_LIMIT`이다. | `E` 유지 | `NOT_VERIFIED`; Focus 복원이나 status를 확정하지 않는다. |
+| Target·Evaluator 비활성화 | `BLOCKED` | 기존 Demo Seed의 활성 상태를 영구 변경하지 않고 성공 상태를 재현할 수 없어 실행하지 않았다. | `BLOCKED`; 실행하지 않았다. | `E` 유지 | `NOT_VERIFIED`; 구현을 확정하지 않는다. |
+| Experiment 생성 | `BLOCKED` | 기존 Demo Seed에 Experiment를 추가하지 않고 Route 이동 성공을 재현할 수 없어 실행하지 않았다. | `BLOCKED`; 실행하지 않았다. | `E` 유지 | `NOT_VERIFIED`; 구현을 확정하지 않는다. |
+
+History CSV 화면에서 직접 확인한 사실:
+
+- `PASS`: Chrome headed mode로 History Route를 열고 `CSV 다운로드` native `button`이 존재하며 초기 `disabled`가 `false`임을 DOM property로 확인했다.
+- `PASS`: 초기 `CSV 다운로드` Button에는 `aria-live`와 `aria-busy`가 없음을 DOM attribute로 확인했다.
+- `PASS`: device scale은 `1`이었고 실제 내부 viewport는 `1424 × 905`였다.
+- `NOT_PRESENT`: 초기 History 화면에는 `role="alert"`가 없었다.
+- `NOT_VERIFIED_TOOL_LIMIT`: Loading 직후 Button의 `disabled`, `document.activeElement`, Loading Text, 완료 후 상태, Network 요청 수는 DevTools 실행 컨텍스트 시간 초과로 측정하지 못했다.
+
+추론:
+
+- History CSV의 `downloading` 조건과 handler guard가 중복 실행을 제한할 것으로 예상되지만, 이번 Browser 세션의 Network 요청 수로 확인하지 못했으므로 개별 흐름의 확인된 사실로 취급하지 않는다.
+- native disabled 전환 시 focus가 `body`로 이동할 가능성은 공통 추론이며 이번 History CSV 실측 결과가 아니다.
+
+미검증:
+
+- 세 대표 흐름의 Loading 전·직후·성공·실패 `document.activeElement`
+- History CSV의 keyboard와 mouse 결과 차이, 완료 후 focus-visible, 빠른 이중 activation
+- 실패 상태의 안전한 재현과 `role="alert"` 전달
+- 접근성 트리와 Screen Reader announcement
+- 성공 후 영구 disabled, control unmount, Route 이동의 실제 Focus 전이
+- 요청한 정확한 `1440px` viewport와 추가 `390px` viewport
+
+이번 기록만으로 Focus 목적지, `aria-disabled`, status 또는 `aria-live` 추가를 확정하지 않는다. 후속 검증은 `1440px` 실제 viewport를 보장하고 안정적으로 `document.activeElement`와 Network 요청 수를 기록할 수 있는 headed Browser 도구에서 History CSV를 먼저 재검증해야 한다. 그 결과 필요한 경우에만 해당 한 흐름의 focus ref, 조건부 `.focus()`, 최소 status Text와 회귀 테스트를 후속 구현 PR의 허용 범위로 삼는다. Target 비활성화나 Experiment 생성은 폐기 가능한 전용 Fixture가 준비되기 전까지 검증 범위를 넓히지 않는다.
 후속 구현 PR은 다음을 검사한다.
 
 - Loading 상태가 포함된 모든 `disabled` 조건이 유지되는가.
