@@ -118,7 +118,9 @@ Phase 0의 핵심 기능 공백(Pagination, 404 복귀, Project Scope 대조, Ab
 
 - 2026-07-27 첫 저위험 묶음에서 1120px container, 기본 Button의 44px control height, panel shadow, 정확히 일치하는 일부 font-size와 line-height를 Token에 연결했습니다.
 - `/projects`를 대표 Route로 선택해 Chrome Headless에서 1440px, 1024px, 768px, 390px의 적용 전후 computed style, 가로 overflow, Button hover·focus-visible·disabled와 compact 36px 유지를 확인했습니다.
-- Screenshot 육안 비교와 자동 Pixel Diff는 수행하지 않았으므로 Phase A2 전체는 진행 중입니다.
+- 같은 날 공개 Demo Seed와 headed Chrome에서 `/projects`, Project Overview, Dataset Detail, Experiment Create, Experiment Detail, History, Comparison Detail을 네 viewport로 육안 검증했습니다. Container, Button, form·state·detail Panel, Typography, Badge, 긴 UUID와 모바일 Layout에 이상이나 가로 overflow가 없고 Console 오류도 없었습니다.
+- Screenshot은 임시 검증 자료로만 사용하고 저장소에 포함하지 않았으며 자동 Pixel Diff는 수행하지 않았습니다. Demo Seed에 없는 Empty와 정상 환경의 Error·Loading 상태는 미검증이고 `.coming-next`는 우선 Route에 존재하지 않았습니다.
+- 위 제한을 기록한 상태로 Phase A2를 완료합니다. Phase A3와 Phase B는 아직 시작하지 않았습니다.
 
 Selector 치환은 작은 묶음으로 분리하며 네 viewport, keyboard focus, reduced motion과 상태 Badge의 Text·Surface를 관련 범위에서 확인합니다.
 
