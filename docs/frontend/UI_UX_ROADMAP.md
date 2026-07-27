@@ -126,13 +126,20 @@ Selector 치환은 작은 묶음으로 분리하며 네 viewport, keyboard focus
 
 ### Phase A3 — Contract Decisions
 
-Phase A3는 아직 시작하지 않았습니다.
+Phase A3는 Focus 계약 결정부터 시작했습니다.
+
+- 2026-07-27 전수 조사에서 현재 primary Focus Indicator가 `:focus-visible`의 3px outline과 2px offset임을 확인했습니다.
+- `--focus-ring-color`, `--focus-outline-width`, `--focus-outline-offset`은 현재 literal과 같은 값으로 후속 CSS PR에서 연결합니다.
+- `--shadow-focus`는 outline 대체재가 아니며 시각 변경을 만들 수 있어 미적용 상태를 유지합니다.
+- 현재 native button, link, input, textarea, select, checkbox, radio와 native disabled 정책을 유지합니다. Browser 기본 outline을 사용하는 `summary`의 공통 Selector 편입 여부는 후속 CSS PR에서 검증합니다.
+- headed Chrome의 일곱 우선 Route와 네 viewport에서 keyboard focus, Shift+Tab, mouse focus-visible, disabled 제외, ring 잘림과 Console을 조사했습니다. Button·Link Enter/Space activation은 도구 한계로 미검증이며 forced-colors와 contrast ratio도 미검증입니다. WCAG 준수 상태로 기록하지 않습니다.
+- 이번 문서 PR과 값 보존 CSS 적용 PR을 분리합니다. Phase B는 아직 시작하지 않았습니다.
 
 다음처럼 값 보존만으로 결정할 수 없는 항목의 계약을 확정합니다.
 
 - neutral Text와 Surface
 - danger border와 divider
-- focus outline과 Token 계약
+- focus outline과 Token 계약 — 문서 결정 완료, CSS 적용 대기
 - radius와 spacing scale
 - 현재 720px breakpoint 변경 여부
 - 7px과 10px radius 처리
