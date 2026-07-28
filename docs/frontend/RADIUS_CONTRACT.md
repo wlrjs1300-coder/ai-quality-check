@@ -8,7 +8,7 @@
 - 조사 상태: `PASS`
 - 조사 범위: 저장소 전체 키워드 검색, `apps/web/src/app/globals.css`, `apps/web/src/**/*.tsx`, `docs/frontend/DESIGN_TOKENS.md`, `docs/frontend/UI_UX_ROADMAP.md`
 - 검색어: `border-radius`, `radius`, `--radius`, `7px`, `8px`, `10px`, `12px`, `999px`, `50%`, `rounded`, `pill`, `circle`
-- 구현 변경: `NOT_PRESENT`
+- 구현 변경: `PASS`
 - Browser 검증: `NOT_VERIFIED`
 
 검색 결과의 Dependency lockfile integrity 문자열과 일반 spacing 값은 radius 근거에서 제외했습니다. 실제 radius 선언은 `apps/web/src/app/globals.css` 한 파일에서 확인했습니다.
@@ -19,26 +19,26 @@
 
 | 값 | Selector | UI 의미 | 현재 Token 참조 | computed value 유지 |
 |---:|---|---|---|---|
-| `7px` | `input, textarea, select` | Text form control | literal | 예 |
+| `7px` | `input, textarea, select` | Text form control | `--radius-field` | 예 |
 | `7px` | `.form-error` | Form error message surface | literal | 예 |
 | `7px` | `.notice, .refreshing` | Success·refresh notice surface | literal | 예 |
 | `7px` | `.immutable-note` | Neutral immutable guidance surface | literal | 예 |
-| `8px` | `.button` | 기본·secondary·danger·compact Button과 Button 형태 Link | literal | 예 |
+| `8px` | `.button` | 기본·secondary·danger·compact Button과 Button 형태 Link | `--radius-control` | 예 |
 | `8px` | `.warning-list li` | Warning list item surface | literal | 예 |
 | `8px` | `.download-error` | Download error surface | literal | 예 |
 | `8px` | `.inline-fieldset` | Checkbox·radio option group container | literal | 예 |
 | `8px` | `.snapshot-value` | Code snapshot container | literal | 예 |
 | `10px` | `.metric-card` | Metric summary card | literal | 예 |
 | `10px` | `.baseline-candidate` | 선택 가능한 Baseline candidate card | literal | 예 |
-| `12px` | `.form-panel, .state-panel, .detail-panel, .coming-next` | Form·state·detail Panel | literal | 예 |
-| `12px` | `.project-card` | Project card | literal | 예 |
-| `12px` | `.filter-panel, .summary-panel` | Filter·summary Panel | literal | 예 |
-| `12px` | `.history-card` | History card | literal | 예 |
-| `12px` | `.dataset-card, .case-card, .version-card` | Registry·case·version card | literal | 예 |
-| `12px` | `.baseline-candidates` | Baseline candidate group Panel | literal | 예 |
-| `12px` | `.result-card` | Evaluation result card | literal | 예 |
-| `999px` | `.status-badge` | Active·inactive status pill | literal | 예 |
-| `999px` | `.semantic-badge` | Semantic status pill | literal | 예 |
+| `12px` | `.form-panel, .state-panel, .detail-panel, .coming-next` | Form·state·detail Panel | `--radius-card` | 예 |
+| `12px` | `.project-card` | Project card | `--radius-card` | 예 |
+| `12px` | `.filter-panel, .summary-panel` | Filter·summary Panel | `--radius-card` | 예 |
+| `12px` | `.history-card` | History card | `--radius-card` | 예 |
+| `12px` | `.dataset-card, .case-card, .version-card` | Registry·case·version card | `--radius-card` | 예 |
+| `12px` | `.baseline-candidates` | Baseline candidate group Panel | `--radius-card` | 예 |
+| `12px` | `.result-card` | Evaluation result card | `--radius-card` | 예 |
+| `999px` | `.status-badge` | Active·inactive status pill | `--radius-pill` | 예 |
+| `999px` | `.semantic-badge` | Semantic status pill | `--radius-pill` | 예 |
 | `50%` | `.state-marker` | 원형 loading marker | literal | 예 |
 
 `0`은 `.text-button`의 `border` 제거에만 나타나며 `border-radius` 선언이 아닙니다. `rounded`, `pill`, `circle` 이름의 class 또는 Component는 확인되지 않았습니다. Pill과 circle은 각각 `999px`과 `50%`의 형태로 구현되어 있습니다.
@@ -87,11 +87,12 @@ Checkbox와 radio는 `input` 공통 규칙의 선언상 `7px`입니다. 그러�
 
 | Token | 값 | 정확히 같은 literal 사용처 | 현재 연결 |
 |---|---:|---|---|
-| `--radius-control` | `8px` | `.button`, warning·download error surface, inline fieldset, snapshot code | 없음 |
-| `--radius-card` | `12px` | 일반 Panel과 Card | 없음 |
-| `--radius-pill` | `999px` | status·semantic Badge | 없음 |
+| `--radius-control` | `8px` | `.button`, warning·download error surface, inline fieldset, snapshot code | `.button` |
+| `--radius-field` | `7px` | `input, textarea, select` | `input, textarea, select` |
+| `--radius-card` | `12px` | 일반 Panel과 Card | 확정된 일반 Card·Panel selector |
+| `--radius-pill` | `999px` | status·semantic Badge | `.status-badge`, `.semantic-badge` |
 
-세 Token은 목표 계약이며 radius selector에서는 아직 `var()`로 참조하지 않습니다. `--radius-control: 8px`과 값이 같은 모든 `8px` 사용처가 control 의미인 것은 아닙니다. 따라서 `.warning-list li`, `.download-error`, `.inline-fieldset`, `.snapshot-value`를 값만 보고 `--radius-control`에 연결하지 않습니다.
+네 Token은 위 selector에서 `var()`로 참조합니다. `--radius-control: 8px`과 값이 같은 모든 `8px` 사용처가 control 의미인 것은 아닙니다. 따라서 `.warning-list li`, `.download-error`, `.inline-fieldset`, `.snapshot-value`는 literal을 유지합니다.
 
 ### 7px 계약
 
@@ -99,7 +100,7 @@ Checkbox와 radio는 `input` 공통 규칙의 선언상 `7px`입니다. 그러�
 
 - 현재 값을 유지합니다.
 - `--radius-control`은 `8px`이므로 연결하지 않습니다.
-- `--radius-field: 7px`을 Phase A3 Radius 계약으로 확정합니다. 후속 구현 PR에서 Token을 선언하고 `input, textarea, select`에 연결하며 computed value는 `7px`으로 유지합니다.
+- `--radius-field: 7px`을 선언하고 `input, textarea, select`에 연결했습니다. 목표 computed value는 기존과 같은 `7px`입니다.
 - `.form-error`, `.notice`, `.refreshing`, `.immutable-note`는 literal `7px`을 유지합니다. `--radius-field` 재사용을 금지하며 별도 message surface 계약 전까지 Token화하지 않습니다.
 - checkbox·radio의 native 렌더링은 별도 Browser 확인 전 field 계약의 시각 증거로 사용하지 않습니다.
 
@@ -115,9 +116,9 @@ Checkbox와 radio는 `input` 공통 규칙의 선언상 `7px`입니다. 그러�
 
 ### 기타 값 계약
 
-- `8px`: 후속 구현 PR에서 `.button`을 기존 `--radius-control`에 연결합니다. 다른 `8px` surface는 의미별 판단 전 literal을 유지합니다.
-- `12px`: 일반 Card와 Panel은 값과 반복 container 구조가 일치하므로 후속 구현 PR에서 기존 `--radius-card`에 연결합니다. Token 이름 변경이나 `--radius-panel` alias 추가는 이번 범위에서 하지 않습니다.
-- `999px`: 후속 구현 PR에서 `.status-badge`와 `.semantic-badge`를 기존 `--radius-pill`에 연결합니다.
+- `8px`: `.button`을 기존 `--radius-control`에 연결했습니다. 다른 `8px` surface는 literal을 유지합니다.
+- `12px`: 확정된 일반 Card와 Panel selector를 기존 `--radius-card`에 연결했습니다. Token 이름 변경이나 `--radius-panel` alias 추가는 하지 않았습니다.
+- `999px`: `.status-badge`와 `.semantic-badge`를 기존 `--radius-pill`에 연결했습니다.
 - `50%`: 고정 폭·높이가 같은 loading marker의 circle 예외입니다. 일반 corner 또는 pill Token에 연결하지 않습니다.
 
 Pill은 내용 길이에 따라 capsule 형태를 유지하는 `999px`, circle은 동일한 width·height에 적용되는 `50%`입니다. 두 값을 서로 대체하거나 일반 Card·Control radius에 포함하지 않습니다.
@@ -171,16 +172,16 @@ Pill은 내용 길이에 따라 capsule 형태를 유지하는 `999px`, circle�
 | nested radius와 overflow clipping | NOT_VERIFIED | 실제 구현 후 화면 검증 필요 |
 | modal·dialog와 icon-only control | NOT_PRESENT | 현재 코드 검색에서 없음 |
 
-## 후속 구현 PR의 최소 범위
+## 구현된 최소 범위
 
-Phase A3의 별도 구현 PR은 다음 작은 묶음만 허용합니다.
+이번 Phase A3 구현에서 다음 작은 묶음을 적용했습니다.
 
 1. `--radius-field: 7px` 선언
 2. `input, textarea, select`를 `--radius-field`에 연결
 3. `.button`을 `--radius-control`에 연결
 4. 일반 `12px` Card·Panel을 `--radius-card`에 연결
 5. `.status-badge`와 `.semantic-badge`를 `--radius-pill`에 연결
-6. 각 치환 전후 computed value와 네 viewport Browser 회귀 확인
+6. 각 치환 전후 computed value와 네 viewport Browser 회귀 확인은 `NOT_VERIFIED`
 
 다음 대상은 후속 구현에서 제외합니다.
 
@@ -190,7 +191,7 @@ Phase A3의 별도 구현 PR은 다음 작은 묶음만 허용합니다.
 - `10px` `.baseline-candidate`
 - `50%` loading marker
 
-제외 대상은 현재 literal을 유지합니다. 별도 의미 계약 전까지 Token을 추가하거나 기존 Token에 연결하지 않습니다.
+제외 대상은 현재 literal을 유지했습니다. 별도 의미 계약 전까지 Token을 추가하거나 기존 Token에 연결하지 않습니다.
 
 ## Browser 검증 계획
 
@@ -201,11 +202,11 @@ Phase A3의 별도 구현 PR은 다음 작은 묶음만 허용합니다.
 - 추가 항목: checkbox·radio native appearance, compact Pagination Button, Baseline Candidate 선택 상태, Snapshot `details` 내부 clipping, loading marker circle
 - 현재 결과: `NOT_VERIFIED`
 
-구현 전에는 시각적 동일성이나 Browser 결과를 `PASS`로 기록하지 않습니다. 정적 typecheck, lint와 build도 시각 동일성의 증거로 사용하지 않습니다.
+Browser 검증 전에는 시각적 동일성이나 Browser 결과를 `PASS`로 기록하지 않습니다. 정적 typecheck, lint와 build도 시각 동일성의 증거로 사용하지 않습니다.
 
 ## 변경하지 않는 범위와 Phase 경계
 
-- CSS 값, Token 실제 선언·연결, React Component, 테스트와 Layout은 변경하지 않습니다.
+- CSS의 radius 값은 변경하지 않고 확정 Token 선언·연결만 적용했습니다. React Component, 테스트와 Layout은 변경하지 않습니다.
 - `7px→8px`, `10px→12px` 정규화를 하지 않습니다.
 - 공통 Component를 만들거나 modal·icon-only control을 새로 추가하지 않습니다.
 - WCAG 준수 여부를 radius 계약으로 판단하지 않습니다.
