@@ -123,16 +123,31 @@
 ```css
 :root {
   --radius-control: 8px;
+  --radius-field: 7px;
   --radius-card: 12px;
   --radius-pill: 999px;
 }
 ```
 
 - `--radius-control`: Button과 8px radius를 사용하는 control
+- `--radius-field`: Input, Textarea, Select form field
 - `--radius-card`: 12px radius를 사용하는 Card, Form, Detail Panel
 - `--radius-pill`: Badge와 상태 Label
 
 현재 7px 또는 10px radius를 사용하는 Selector를 위 Token에 맞추기 위해 8px 또는 12px로 변경하지 않습니다.
+
+#### Phase A3 Radius 계약
+
+`RADIUS_CONTRACT.md`에서 실제 Selector와 Component 문맥을 조사해 후보 E인 의미별 일부 Token화와 예외 유지를 선택했습니다.
+
+- 후속 구현 PR에서 `.button`의 `8px`는 `--radius-control`, 일반 Card·Panel의 `12px`는 `--radius-card`, Badge의 `999px`는 `--radius-pill`에 연결합니다.
+- `--radius-field: 7px`을 Phase A3 Radius 계약으로 확정합니다. 후속 구현 PR에서 Token을 선언하고 `input, textarea, select`에 연결하며 computed value는 `7px`으로 유지합니다.
+- `.form-error`, `.notice`, `.refreshing`, `.immutable-note`는 literal `7px`을 유지하고 `--radius-field`를 재사용하지 않습니다. 별도 message surface 계약 전까지 Token화하지 않습니다.
+- `8px` non-control surface, `10px` Metric·Baseline Candidate, `50%` loading marker는 이번 후속 구현에서 제외하고 literal을 유지합니다.
+- `10px` 두 selector는 별도 의미 계약 전까지 변경하거나 하나의 compact card Token으로 통합하지 않습니다.
+- Token 이름 변경이나 `--radius-panel` alias 추가는 이번 범위에서 하지 않습니다.
+- 이번 브랜치에서는 문서 계약만 확정하며 CSS 선언과 Selector 연결은 변경하지 않습니다.
+- Browser computed style과 시각적 동일성은 후속 구현 전이므로 `NOT_VERIFIED`입니다.
 
 ### Shadow와 Focus Tokens
 
@@ -273,8 +288,8 @@ Phase B의 공통 Navigation과 State Component 작업은 Phase A에 포함하�
 
 | 범주 | 현재 값 | 대표 의미 | 처리 |
 |---|---|---|---|
-| Radius | 7px | Input, Form Error, Notice | Phase A3 판단 전 유지 |
-| Radius | 10px | Metric Card, Baseline Candidate | Phase A3 판단 전 유지 |
+| Radius | 7px | Input, Form Error, Notice | Phase A3 계약에 따라 값 유지, 의미별 Token 분리 |
+| Radius | 10px | Metric Card, Baseline Candidate | Phase A3 계약에 따라 값 유지, 단일 Token 통합 보류 |
 | Line Height | 1.6 | Summary Copy | Phase A3 판단 전 유지 |
 | Spacing | 18px, 20px, 22px, 28px 등 | Gap, Padding, Margin | 가장 가까운 scale로 변경하지 않음 |
 | Control Height | 36px | Compact Pagination Button | 기본 44px과 별도로 유지 |
