@@ -174,6 +174,52 @@ History CSV 화면에서 직접 확인한 사실:
 - 요청한 정확한 `1440px` viewport와 추가 `390px` viewport
 
 이번 기록만으로 Focus 목적지, `aria-disabled`, status 또는 `aria-live` 추가를 확정하지 않는다. 후속 검증은 `1440px` 실제 viewport를 보장하고 안정적으로 `document.activeElement`와 Network 요청 수를 기록할 수 있는 headed Browser 도구에서 History CSV를 먼저 재검증해야 한다. 그 결과 필요한 경우에만 해당 한 흐름의 focus ref, 조건부 `.focus()`, 최소 status Text와 회귀 테스트를 후속 구현 PR의 허용 범위로 삼는다. Target 비활성화나 Experiment 생성은 폐기 가능한 전용 Fixture가 준비되기 전까지 검증 범위를 넓히지 않는다.
+
+### 8.2 History CSV Focus 재검증 기록 — 2026-07-28
+
+이번 재검증은 Windows의 Chrome headed mode, Zoom 100%, device scale 1에서 History CSV 다운로드 한 흐름만 대상으로 시도했다. 기존 Web은 `3000` 포트의 `http://localhost:3000/projects`가 HTTP `200`으로 응답함을 확인했다. Chrome은 전용 임시 profile과 원격 디버깅 포트로 시작했으며, 초기 `about:blank`에서 확인된 내부 viewport는 `1440 × 944`였다. 목표 `1440 × 900`과 높이가 `44px` 달랐고 History Route에서 직접 재측정하지 못했으므로 viewport 상태는 `NOT_VERIFIED_TOOL_LIMIT`이며 PASS로 판정하지 않는다.
+
+| 검증 항목 | 상태 | 재검증 결과 |
+|---|---|---|
+| keyboard activation | `NOT_VERIFIED_TOOL_LIMIT` | History Route의 CSV Button으로 Tab 이동하거나 Enter·Space activation을 측정하기 전에 Chrome DevTools Protocol 연결이 종료됐다. |
+| mouse activation | `NOT_VERIFIED_TOOL_LIMIT` | 별도 새로고침 세션에서 click 전·직후·완료 후 상태와 focus-visible을 측정하지 못했다. |
+| Loading 전 `document.activeElement` | `NOT_VERIFIED_TOOL_LIMIT` | History Route에서 측정하지 못했다. |
+| activation 직후 `document.activeElement` | `NOT_VERIFIED_TOOL_LIMIT` | 측정하지 못했다. |
+| Loading 중 `document.activeElement` | `NOT_VERIFIED_TOOL_LIMIT` | 측정하지 못했다. |
+| 완료 후 `document.activeElement` | `NOT_VERIFIED_TOOL_LIMIT` | 측정하지 못했다. |
+| Button 존재·disabled 전환·해제 | `NOT_VERIFIED_TOOL_LIMIT` | 이번 세션에서는 History Route DOM에 연결하지 못해 존재 여부와 `false → true → false` 전환을 재확인하지 못했다. |
+| Network CSV 요청 수 | `NOT_VERIFIED_TOOL_LIMIT` | 요청 수를 기록하지 못했다. |
+| 중복 activation 방지 | `NOT_VERIFIED_TOOL_LIMIT` | 빠른 이중 click, Enter key repeat, Space key repeat를 실행하지 못했다. |
+| `aria-live` | `NOT_VERIFIED_TOOL_LIMIT` | 이번 세션에서 History Route DOM을 재확인하지 못했다. |
+| `aria-busy` | `NOT_VERIFIED_TOOL_LIMIT` | 이번 세션에서 History Route DOM을 재확인하지 못했다. |
+| `role="alert"` 또는 오류 전달 | `NOT_VERIFIED_TOOL_LIMIT` | 성공·오류 전달을 측정하지 못했다. |
+| 실패 흐름 | `BLOCKED` | Backend 중지, 데이터 변경, Network 차단, mock, offline 전환 또는 URL 변조 없이 안전하게 실패를 재현할 방법을 확인하지 못해 실행하지 않았다. |
+| 최종 분류 | `E` 유지 | History CSV의 native disabled 전환과 Focus 목적지를 결정할 실측 근거가 부족하다. |
+| 구현 필요 여부 | `NOT_VERIFIED` | 이번 브랜치에서 Focus 복원, status, aria 속성 또는 다른 구현을 추가하지 않는다. |
+
+확인된 사실:
+
+- `PASS`: `http://localhost:3000/projects`는 재검증 시점에 Web `3000` 포트에서 HTTP `200`으로 응답했다.
+- `PASS`: Chrome headed mode의 전용 임시 profile에서 device scale `1`과 초기 `about:blank` 내부 viewport `1440 × 944`를 직접 읽었다.
+- `NOT_VERIFIED_TOOL_LIMIT`: History Route의 실제 inner viewport, CSV Button DOM, Focus 전이, disabled 전환, Network 요청 수는 측정하지 못했다.
+
+추론:
+
+- 초기 Browser viewport의 높이 오차는 Chrome window decoration 또는 실행 환경의 가용 영역 영향일 수 있으나 History Route 실측이 아니므로 원인을 확정하지 않는다.
+- 정적 코드의 `downloading` 조건과 handler guard가 중복 activation을 제한할 것으로 예상되지만 이번 재검증의 확인된 사실로 취급하지 않는다.
+
+미검증:
+
+- keyboard와 mouse activation의 차이 및 focus-visible 표시
+- Loading 전·직후·중·완료 후 `document.activeElement`
+- CSV Button의 존재, native disabled 전환과 완료 후 해제
+- CSV Network 요청 수와 중복 activation 방지
+- `aria-live`, `aria-busy`, alert 또는 오류 전달
+- 안전한 실패 흐름과 Screen Reader announcement
+- History Route의 정확한 `1440 × 900` 내부 viewport
+
+이 기록은 기존 8.1의 History CSV `NOT_VERIFIED_TOOL_LIMIT`를 해소하지 못한 재검증 결과다. 확인되지 않은 값을 기존 대표 결과나 전체 25개 흐름에 일반화하지 않으며 최종 분류 `E`와 구현 미확정 상태를 유지한다. 이번 재검증은 History CSV 한 흐름만 다뤘고 전체 Phase A3 완료를 의미하지 않는다.
+
 후속 구현 PR은 다음을 검사한다.
 
 - Loading 상태가 포함된 모든 `disabled` 조건이 유지되는가.
