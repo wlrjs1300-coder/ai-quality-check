@@ -140,14 +140,13 @@
 
 `RADIUS_CONTRACT.md`에서 실제 Selector와 Component 문맥을 조사해 후보 E인 의미별 일부 Token화와 예외 유지를 선택했습니다.
 
-- 후속 구현 PR에서 `.button`의 `8px`는 `--radius-control`, 일반 Card·Panel의 `12px`는 `--radius-card`, Badge의 `999px`는 `--radius-pill`에 연결합니다.
-- `--radius-field: 7px`을 Phase A3 Radius 계약으로 확정합니다. 후속 구현 PR에서 Token을 선언하고 `input, textarea, select`에 연결하며 computed value는 `7px`으로 유지합니다.
+- `.button`의 `8px`는 `--radius-control`, 일반 Card·Panel의 `12px`는 `--radius-card`, Badge의 `999px`는 `--radius-pill`에 연결했습니다.
+- `--radius-field: 7px`을 선언하고 `input, textarea, select`에 연결했습니다. Token 값은 기존 literal과 같으므로 목표 computed value는 `7px`으로 유지됩니다.
 - `.form-error`, `.notice`, `.refreshing`, `.immutable-note`는 literal `7px`을 유지하고 `--radius-field`를 재사용하지 않습니다. 별도 message surface 계약 전까지 Token화하지 않습니다.
 - `8px` non-control surface, `10px` Metric·Baseline Candidate, `50%` loading marker는 이번 후속 구현에서 제외하고 literal을 유지합니다.
 - `10px` 두 selector는 별도 의미 계약 전까지 변경하거나 하나의 compact card Token으로 통합하지 않습니다.
 - Token 이름 변경이나 `--radius-panel` alias 추가는 이번 범위에서 하지 않습니다.
-- 이번 브랜치에서는 문서 계약만 확정하며 CSS 선언과 Selector 연결은 변경하지 않습니다.
-- Browser computed style과 시각적 동일성은 후속 구현 전이므로 `NOT_VERIFIED`입니다.
+- Radius Token CSS 적용은 완료했으며 Browser computed style과 시각적 동일성은 아직 `NOT_VERIFIED`입니다.
 
 ### Shadow와 Focus Tokens
 
