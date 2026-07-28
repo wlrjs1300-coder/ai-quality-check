@@ -9,7 +9,7 @@
 - 조사 범위: 저장소 전체 키워드 검색, `apps/web/src/app/globals.css`, `apps/web/src/**/*.tsx`, `docs/frontend/DESIGN_TOKENS.md`, `docs/frontend/UI_UX_ROADMAP.md`
 - 검색어: `border-radius`, `radius`, `--radius`, `7px`, `8px`, `10px`, `12px`, `999px`, `50%`, `rounded`, `pill`, `circle`
 - 구현 변경: `PASS`
-- Browser 검증: `NOT_VERIFIED`
+- Browser 검증: `NOT_VERIFIED_TOOL_LIMIT`
 
 검색 결과의 Dependency lockfile integrity 문자열과 일반 spacing 값은 radius 근거에서 제외했습니다. 실제 radius 선언은 `apps/web/src/app/globals.css` 한 파일에서 확인했습니다.
 
@@ -200,9 +200,94 @@ Pill은 내용 길이에 따라 capsule 형태를 유지하는 `999px`, circle�
 - Viewport: `1440px`, `1024px`, `768px`, `390px`
 - 항목: control corner, Card·Panel corner, border·shadow 정렬, nested radius 충돌, overflow clipping, focus outline clipping, Badge·pill 형태, mobile layout, Console 오류, computed `border-radius`
 - 추가 항목: checkbox·radio native appearance, compact Pagination Button, Baseline Candidate 선택 상태, Snapshot `details` 내부 clipping, loading marker circle
-- 현재 결과: `NOT_VERIFIED`
+- 현재 결과: `NOT_VERIFIED_TOOL_LIMIT`
 
 Browser 검증 전에는 시각적 동일성이나 Browser 결과를 `PASS`로 기록하지 않습니다. 정적 typecheck, lint와 build도 시각 동일성의 증거로 사용하지 않습니다.
+
+## 2026-07-28 Browser 검증 시도
+
+### 환경과 도구 상태
+
+| 항목 | 요청 환경 | 실제 확인 | 상태 |
+|---|---|---|---|
+| Browser | Chrome headed mode | Chrome 2회 실행, DevTools Protocol 포트 연결 실패 | `NOT_VERIFIED_TOOL_LIMIT` |
+| Zoom | 100% | DevTools 연결 실패로 측정 불가 | `NOT_VERIFIED_TOOL_LIMIT` |
+| Device scale | 1 | 실행 인자로 요청했으나 `window.devicePixelRatio` 측정 불가 | `NOT_VERIFIED_TOOL_LIMIT` |
+| Viewport | 1440px, 1024px, 768px, 390px | `window.innerWidth`, `window.innerHeight` 측정 불가 | `NOT_VERIFIED_TOOL_LIMIT` |
+| Frontend | 현재 저장소의 Next.js 개발 서버 | `http://localhost:3100/projects` HTTP 200 확인 | `PASS` |
+| Backend·Demo Seed | 기존 데이터 읽기 | Backend 응답 없음, Docker Engine 미실행 | `BLOCKED` |
+| 대체 Driver | 기존 설치 도구만 사용 | ChromeDriver, EdgeDriver, Playwright, Puppeteer, Selenium 없음 | `NOT_PRESENT` |
+
+Frontend HTTP 200은 서버 응답만 확인한 결과이며 Browser 렌더링, Route 동작 또는 시각 검증 `PASS`의 근거가 아닙니다. 데이터는 생성하거나 변경하지 않았습니다.
+
+### Route별 상태
+
+| Route | 실제 URL 또는 조건 | 상태 | 결과 |
+|---|---|---|---|
+| Projects | `http://localhost:3100/projects` | `NOT_VERIFIED_TOOL_LIMIT` | HTTP 200만 확인, Browser 렌더링 미확인 |
+| Project Overview | Demo Seed Project ID 필요 | `BLOCKED` | Backend·Demo Seed 미가동 |
+| Dataset Detail | Demo Seed Project·Dataset ID 필요 | `BLOCKED` | Backend·Demo Seed 미가동 |
+| Experiment Create | Demo Seed Project ID와 Registry 데이터 필요 | `BLOCKED` | Backend·Demo Seed 미가동 |
+| Experiment Detail | Demo Seed Project·Experiment ID 필요 | `BLOCKED` | Backend·Demo Seed 미가동 |
+| History | Demo Seed Project ID 필요 | `BLOCKED` | Backend·Demo Seed 미가동 |
+| Comparison Detail | Demo Seed Project·Comparison ID 필요 | `BLOCKED` | Backend·Demo Seed 미가동 |
+
+### Selector별 computed style 결과
+
+DevTools Protocol 연결 실패로 `getComputedStyle`을 실행하지 못했습니다. 아래 값은 계약 기대값이며 실제 Browser 측정값이 아닙니다.
+
+| Selector | 기대값 | 실제값 | 상태 |
+|---|---:|---:|---|
+| `.button` | `8px` | 미측정 | `NOT_VERIFIED_TOOL_LIMIT` |
+| `input`, `textarea`, `select` | `7px` | 미측정 | `NOT_VERIFIED_TOOL_LIMIT` |
+| 확정된 일반 Card·Panel selector | `12px` | 미측정 | `NOT_VERIFIED_TOOL_LIMIT` |
+| `.status-badge`, `.semantic-badge` | `999px` | 미측정 | `NOT_VERIFIED_TOOL_LIMIT` |
+| `.form-error`, `.notice`, `.refreshing`, `.immutable-note` | `7px` | 미측정 | `NOT_VERIFIED_TOOL_LIMIT` |
+| `.warning-list li`, `.download-error`, `.inline-fieldset`, `.snapshot-value` | `8px` | 미측정 | `NOT_VERIFIED_TOOL_LIMIT` |
+| `.metric-card`, `.baseline-candidate` | `10px` | 미측정 | `NOT_VERIFIED_TOOL_LIMIT` |
+| `.state-marker` | `50%` | 미측정 | `NOT_VERIFIED_TOOL_LIMIT` |
+
+### 시각·Focus·Console 결과
+
+| 검증 항목 | 상태 | 결과 |
+|---|---|---|
+| Button·Field corner | `NOT_VERIFIED_TOOL_LIMIT` | Browser 렌더링 미확인 |
+| Card·Panel border와 shadow 정렬 | `NOT_VERIFIED_TOOL_LIMIT` | Browser 렌더링 미확인 |
+| nested radius 충돌 | `NOT_VERIFIED_TOOL_LIMIT` | Browser 렌더링 미확인 |
+| overflow clipping과 가로 overflow | `NOT_VERIFIED_TOOL_LIMIT` | 실제 viewport 미확보 |
+| focus-visible outline clipping | `NOT_VERIFIED_TOOL_LIMIT` | keyboard·mouse 입력 자동화 불가 |
+| Badge·pill capsule 형태 | `NOT_VERIFIED_TOOL_LIMIT` | Browser 렌더링 미확인 |
+| checkbox·radio computed radius와 native appearance | `NOT_VERIFIED_TOOL_LIMIT` | 요소 접근·입력 자동화 불가 |
+| mobile layout | `NOT_VERIFIED_TOOL_LIMIT` | 실제 viewport 미확보 |
+| Console 오류 | `NOT_VERIFIED_TOOL_LIMIT` | Console event 수집 불가 |
+| 자동 Pixel Diff | `NOT_PRESENT` | 수행하지 않음 |
+
+### 확인된 사실, 추론과 미검증
+
+확인된 사실:
+
+- 현재 저장소 Frontend는 3100 포트의 `/projects` 요청에 HTTP 200을 반환했습니다.
+- Chrome headed 실행은 가능했지만 두 개의 별도 임시 profile과 DevTools Protocol 포트 모두 연결되지 않았습니다.
+- 기존 설치 대체 Driver는 확인되지 않았습니다.
+- Backend와 Docker Engine은 실행되지 않았고 Demo Seed 데이터는 변경하지 않았습니다.
+
+추론:
+
+- Token과 기존 literal 값이 같으므로 CSS 계약상 computed value 보존이 목표입니다.
+- 이 추론은 실제 `getComputedStyle`이나 시각적 동일성의 Browser 증거가 아닙니다.
+
+미검증:
+
+- 요청한 네 viewport의 실제 `window.innerWidth`, `window.innerHeight`, `window.devicePixelRatio`
+- 일곱 Route의 Browser 렌더링
+- 모든 대표 selector의 computed `border-radius`
+- nested radius, overflow, focus outline, Badge, native checkbox·radio, mobile layout과 Console
+
+### 도구 제한과 최종 판정
+
+긴 복합 스크립트나 반복 polling은 실행하지 않았습니다. Chrome DevTools Protocol 연결을 서로 다른 임시 profile과 포트로 두 번 시도한 뒤 같은 실패의 반복을 중단했습니다.
+
+Radius Browser 검증의 최종 판정은 `NOT_VERIFIED_TOOL_LIMIT`입니다. 핵심 computed style, 실제 viewport, 시각·Focus와 Console 측정을 수행하지 못했으므로 일부 또는 전체를 `PASS`로 기록하지 않습니다. Radius Token 구현 상태는 유지되지만 Radius Browser 검증 하위 작업은 완료되지 않았습니다. Phase A3 전체도 완료 상태가 아니며 Phase B는 시작하지 않습니다.
 
 ## 변경하지 않는 범위와 Phase 경계
 
