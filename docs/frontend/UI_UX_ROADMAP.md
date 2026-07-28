@@ -141,7 +141,7 @@ Phase A3는 Focus 계약 결정부터 시작했습니다.
 - danger border와 divider
 - focus outline과 Token 계약 — 문서 결정 및 CSS 적용 완료
 - radius와 Token 계약 — `--radius-field: 7px`과 확정 selector의 CSS 적용 완료, Browser 검증 미실시
-- spacing scale
+- spacing 계약 — 의미별 일부 Token화와 예외 유지 결정, CSS 적용·Browser 검증 미실시
 - 현재 720px breakpoint 변경 여부
 - 7px과 10px radius 처리 — field만 Token화하고 message surface와 10px 사용처는 후속 구현에서 제외
 - 1.6 line-height 처리

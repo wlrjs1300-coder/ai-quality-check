@@ -118,6 +118,19 @@
 
 작은 간격은 control 내부와 inline 요소에 사용하고, 큰 간격은 section과 page 구분에 사용합니다. 이 scale에 없는 현재 literal을 가장 가까운 값으로 바꾸지 않습니다.
 
+#### Phase A3 Spacing 계약
+
+`SPACING_CONTRACT.md`에서 실제 margin·padding·gap 선언과 Component 문맥을 조사해 후보 E인 저위험 공통값 Token화와 예외 유지를 선택했습니다.
+
+- 기존 `--space-1`~`--space-9`는 선언되어 있지만 spacing selector 참조는 현재 `NOT_PRESENT`입니다.
+- desktop page shell `56px`·`80px`, mobile top `32px`, section `40px`, 일반 Panel padding `24px`은 값과 의미가 일치하는 기존 Token의 후속 연결 대상으로 확정했습니다.
+- `--space-form-gap: 18px`, `--space-card-padding: 20px`, `--space-panel-margin-block: 28px`은 반복되는 의미를 값 변경 없이 연결할 신규 계약입니다.
+- 신규 Token은 `SPACING_CONTRACT.md`에 확정된 selector에만 연결합니다. `.project-grid`에는 `--space-form-gap`을 재사용하지 않습니다.
+- `16px`·`18px` 일반 Grid gap, Badge padding, `18px` Button·margin·container 예외, 일부 `20px`, 모든 `22px`, Pagination `28px`은 literal을 유지합니다.
+- 후속 구현 범위가 크면 기존 `--space-*` 연결과 신규 의미 Token 3개 연결을 두 PR로 분리하며, 한 PR에서도 두 묶음의 selector와 제외 범위를 섞지 않습니다.
+- 이번 브랜치에서는 문서 계약만 확정하며 CSS Token 선언과 selector 연결은 변경하지 않습니다.
+- Browser computed spacing과 Layout 동일성은 구현 전이므로 `NOT_VERIFIED`입니다.
+
 ### Radius Tokens
 
 ```css
@@ -290,7 +303,7 @@ Phase B의 공통 Navigation과 State Component 작업은 Phase A에 포함하�
 | Radius | 7px | Input, Form Error, Notice | Phase A3 계약에 따라 값 유지, 의미별 Token 분리 |
 | Radius | 10px | Metric Card, Baseline Candidate | Phase A3 계약에 따라 값 유지, 단일 Token 통합 보류 |
 | Line Height | 1.6 | Summary Copy | Phase A3 판단 전 유지 |
-| Spacing | 18px, 20px, 22px, 28px 등 | Gap, Padding, Margin | 가장 가까운 scale로 변경하지 않음 |
+| Spacing | 18px, 20px, 22px, 28px 등 | Gap, Padding, Margin | Phase A3 계약에 따라 의미별 일부 Token화와 예외 유지 |
 | Control Height | 36px | Compact Pagination Button | 기본 44px과 별도로 유지 |
 | Neutral Surface | `#eef0f3` | Inactive, Neutral, Immutable Note | Phase A3에서 의미 분리 검토 |
 | Neutral Text | `#596579` | Inactive, Neutral, Immutable Note | Phase A3에서 의미 분리 검토 |
