@@ -129,7 +129,7 @@ Inline style, CSS Module, styled component, React `style={{ lineHeight: ... }}`,
 `1.6`은 `.summary-copy` 한 selector에서만 사용한다. Summary는 `font-size: 1.15rem`, `font-weight: 700`인 강조된 다중 행 본문이며 일반 Body나 Notice와 다른 역할이다.
 
 - 결정: **C. 신규 역할 기반 Token 선언**
-- 제안 Token: `--line-height-summary: 1.6`
+- 제안 이름은 `--line-height-summary`이며 계약값은 `1.6`이다.
 - 허용 참조: `.summary-copy`만
 - 값 변경: 없음
 - `--line-height-body: 1.5` 또는 `--line-height-relaxed: 1.65`로 통합: 금지
