@@ -138,6 +138,24 @@ Selector 치환은 작은 묶음으로 분리하며 네 viewport, keyboard focus
 
 Token 계약과 정적 구현 상태는 유지한다. 그러나 neutral Text·Surface, danger border·divider, 현재 `720px` breakpoint, 역할이 다른 동일 색상 통합 여부가 남아 있고 Browser 통합 검증도 완료되지 않았으므로 Phase A3 전체를 완료로 처리하지 않는다.
 
+2026-07-29 기준 commit `db8b407`에서 환경 복구 후 Chrome `150.0.7871.187` headed CDP로 Radius·Spacing·Line-height 현재 상태를 재측정했다. 임시 same-origin rewrite를 사용한 `http://localhost:3002`에서 7개 우선 Route와 네 viewport의 총 28개 조합이 HTTP 200으로 렌더링됐다. 기존 `3001`은 Backend 직접 API 호출이 CORS로 차단됐으며, 임시 `3002`는 제품 파일을 바꾸지 않은 검증 전용 실행으로 정식 제품 설정이나 영구 해결책이 아니다.
+
+- Radius Browser 검증: `VERIFIED_CURRENT_STATE`
+- Spacing Browser 검증: `VERIFIED_CURRENT_STATE`
+- Line-height Browser 검증: `VERIFIED_CURRENT_STATE`
+- `.state-panel p`: `NOT_VERIFIED_STATE_NOT_RENDERED`
+- `.coming-next p`: `NOT_VERIFIED_ROUTE_NOT_PRESENT`
+- 적용 전 baseline: `BASELINE_NOT_CAPTURED`
+- 자동 Pixel Diff: `NOT_PRESENT`
+- Phase A3: `IN_PROGRESS`
+- Phase B: `NOT_STARTED`
+
+Radius는 field `7px`, 일반 Card·Panel `12px`, message surface `7px`, Metric·Baseline Candidate `10px`을 확인했다. Baseline Candidate의 native radio `0px`은 text field 계약과 구분했다. Spacing은 Card·Panel padding `20px`·`22px`·`24px`, Form gap `18px`·`20px`, Action gap `8px`·`10px`, Summary gap `24px`, List·Badge·Grid의 계약 범위를 확인했다. Line-height는 Summary `18.4px / 29.44px / 1.6`, Description `16px / 26.4px / 1.65`를 확인했고 Summary는 viewport 감소에 따라 2·2·3·4줄로 wrapping됐다.
+
+28개 조합에서 horizontal overflow, 비정상 overlap, text clipping과 focus outline clipping은 발견되지 않았다. 애플리케이션 Console Error·Runtime exception·API 실패·hydration 오류·실제 Next.js error overlay는 없었다. 단, `/favicon.ico` HTTP 404 1건과 Route 전환 중 canceled Fetch가 있었으며 모든 Console·Network 오류가 없었다고 일반화하지 않는다.
+
+측정 종료 시 Browser PID와 CDP listener가 이미 종료돼 명시적인 `Browser.close` 정상 종료는 확인하지 못했다. 저장소 밖 Temp의 전용 profile도 도구 정책상 남았다. 현재 상태 검증은 완료했지만 적용 전 baseline 비교는 수행하지 않았고, neutral Text·Surface, danger border·divider, 현재 `720px` breakpoint 변경 여부와 의미가 다른 동일 색상 통합 여부가 남아 있으므로 Phase A3 전체는 계속 `IN_PROGRESS`다.
+
 Phase A3는 Focus 계약 결정부터 시작했습니다.
 
 - 2026-07-27 전수 조사에서 현재 primary Focus Indicator가 `:focus-visible`의 3px outline과 2px offset임을 확인했습니다.

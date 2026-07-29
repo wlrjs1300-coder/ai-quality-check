@@ -18,6 +18,31 @@ Computed margin·padding·gap, Grid·Flex 간격, Card·Panel 여백, form과 Bu
 
 Spacing 계약과 구현 상태는 유지되지만 Browser 통합 검증은 미완료다. Baseline이 없으므로 시각적 동일성이나 visual regression을 PASS로 기록하지 않는다.
 
+## 2026-07-29 환경 복구 후 Spacing Browser 재측정
+
+기준 commit `db8b407`에서 Chrome `150.0.7871.187` headed CDP로 Projects, Project Overview, Dataset Detail, Experiment Create, Experiment Detail, History, Comparison Detail을 `1440×900`, `1024×900`, `768×900`, `390×900`에서 측정했다. 최종 origin은 제품 파일을 변경하지 않고 same-origin rewrite를 적용한 임시 `http://localhost:3002`이며 7개 Route가 모두 HTTP 200이었다. 기존 `3001`은 HTML Route를 반환했지만 Backend 직접 API 호출이 CORS로 차단돼 최종 측정에 사용하지 않았다. 임시 `3002` 실행은 정식 제품 설정이나 영구 해결책이 아니다.
+
+총 28개 조합에서 실제 `innerWidth`는 각각 1440, 1024, 768, 390이고 `innerHeight`는 900, DPR과 scale은 1이었다. 390px viewport의 `clientWidth`는 세로 scrollbar 영역을 제외한 375였다.
+
+| 역할 | Browser computed 범위 |
+|---|---|
+| Card·Panel padding | `20px`, `22px`, `24px` |
+| Form gap | `18px` |
+| Experiment Create Form gap | `20px` |
+| Action gap | `8px`, `10px` |
+| Summary Panel gap | `24px` |
+| List gap | `9px`, `12px`, `16px` |
+| Badge gap | `6px`, `10px` |
+| Grid gap | `14px`, `16px`, `18px` |
+
+네 viewport에서 responsive Grid wrapping이 적용됐고 sibling overlap, text clipping, horizontal overflow와 focus outline clipping은 각각 0건이었다. 긴 화면의 `scrollHeight` 증가는 콘텐츠가 세로로 이어진 결과이며 비정상 overlap으로 확인되지 않았다. 기존 literal 예외와 의미별 Token 경계도 위 computed 범위에서 유지됐다.
+
+애플리케이션 Console Error, Runtime exception, hydration 오류, 실제 Next.js error overlay와 애플리케이션 API 실패는 없었다. 최초 Projects Route에서 `/favicon.ico` HTTP 404가 1건 있었고, Route 전환 중 `canceled=true`인 `net::ERR_ABORTED` Fetch는 navigation 취소로 API 실패와 구분했다.
+
+적용 전 Browser baseline은 `BASELINE_NOT_CAPTURED`, 자동 Pixel Diff는 `NOT_PRESENT`다. 적용 전후 Layout 동일성을 판정하지 않으며 Spacing Browser 최종 상태는 `VERIFIED_CURRENT_STATE`다.
+
+측정 종료 확인 시 Browser PID와 CDP listener가 이미 종료돼 명시적인 `Browser.close` 정상 종료는 확인하지 못했다. 저장소 밖 Temp의 전용 Chrome profile도 도구 정책상 남았다. 이 제한과 기존 `3001` CORS 상태는 Spacing computed 계약 검증 결과와 분리한다.
+
 ## 조사 목적과 경계
 
 이 문서는 Phase A3에서 현재 Frontend의 `margin`, `padding`, `gap` 사용 현황과 UI 의미를 조사하고 후속 구현이 따라야 할 Spacing 계약을 정의합니다. 이번 브랜치는 문서 계약만 다루며 CSS, Selector, React Component와 Layout은 변경하지 않습니다.

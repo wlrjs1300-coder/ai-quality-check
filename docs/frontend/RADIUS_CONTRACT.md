@@ -18,6 +18,31 @@ Radius computed value, Input·Textarea·Select, message surface 예외, `10px` l
 
 Radius Token·selector 계약과 구현 상태는 유지되지만 Radius Browser 통합 검증은 미완료다. Baseline이 없으므로 `PASS`, `PIXEL_IDENTICAL`, `NO_VISUAL_CHANGE`, `VISUAL_REGRESSION_PASS`로 기록하지 않는다.
 
+## 2026-07-29 환경 복구 후 Radius Browser 재측정
+
+기준 commit `db8b407`에서 Google Chrome `150.0.7871.187` headed mode와 CDP Protocol `1.3`을 사용해 현재 적용 상태를 재측정했다. 기존 `3001` Frontend는 `/`가 HTTP 307, `/projects`가 HTTP 200이었지만 Backend 직접 API 호출이 CORS로 차단됐다. 제품 파일을 변경하지 않고 임시 Next.js same-origin rewrite를 적용한 `http://localhost:3002`를 최종 측정 origin으로 사용했으며, 이는 정식 제품 설정이나 영구 해결책이 아니다.
+
+Backend health는 HTTP 200이고 Migration은 `20260721170000 (head)`였다. 공식 Demo Seed는 두 번 모두 `already_seeded`와 종료 코드 0을 반환했다. Evaluation Case는 전체 6개, Seed 전용 5개, 일반 DRAFT 1개이며 Snapshot은 5개로 일반 데이터가 보존됐다.
+
+Projects, Project Overview, Dataset Detail, Experiment Create, Experiment Detail, History, Comparison Detail의 실제 7개 Route가 최종 origin에서 모두 HTTP 200이었다. 각 Route를 `1440×900`, `1024×900`, `768×900`, `390×900`에서 측정해 총 28개 조합을 확인했다. DPR과 `visualViewport.scale`은 모두 1이었다. `390×900`의 `innerWidth`는 390, scrollbar를 제외한 `clientWidth`는 375였다.
+
+| 대상 | Browser computed 값 | 결과 |
+|---|---:|---|
+| 계약 이름 `--radius-field` | `7px` | Text input·Textarea·Select와 일치 |
+| 계약 이름 `--radius-card` | `12px` | 일반 Card·Panel과 일치 |
+| Message surface | `7px` | literal 예외 유지 |
+| `.metric-card` | `10px` | literal 예외 유지 |
+| `.baseline-candidate` | `10px` | literal 예외 유지 |
+| Disabled field | `7px` | field 계약 유지 |
+| Disabled Button | `8px` | control 계약 유지 |
+| Baseline candidate 내부 `type="radio"` | `0px` | UUID 선택 native option control이며 text field corner 계약과 구분 |
+
+28개 조합에서 border·text·mobile corner clipping, horizontal overflow, focus outline clipping은 발견되지 않았다. 애플리케이션 Console Error, Runtime exception, hydration 오류, 실제 Next.js error overlay와 애플리케이션 API 실패는 없었다. 단, 최초 Projects Route의 `/favicon.ico` resource가 HTTP 404를 반환했고 Route 전환 중 `canceled=true`인 `net::ERR_ABORTED` Fetch가 수집됐다. 후자는 navigation 취소이며 API 실패로 판정하지 않았다.
+
+적용 전 Browser baseline은 `BASELINE_NOT_CAPTURED`, 자동 Pixel Diff는 `NOT_PRESENT`다. 따라서 적용 전후 동일성을 판정하지 않으며 Radius Browser 최종 상태는 `VERIFIED_CURRENT_STATE`다.
+
+측정 종료 확인 시 생성한 Browser PID `9524`와 CDP `9222` listener는 이미 종료돼 `Browser.close` 전송이 `ECONNREFUSED`로 끝났다. 기존 사용자 Chrome PID `16332`는 계속 실행됐다. 명시적인 Browser 정상 종료는 확인하지 못했고, 저장소 밖 임시 profile `C:\Users\User\AppData\Local\Temp\ai-quality-check-chrome-cdp-cbdbfc5f726a44b89c0f2749ef764969`은 도구 정책상 recursive 삭제하지 못해 남았다. 이 실행 환경 제한은 Radius 계약값 검증 결과와 분리한다.
+
 ## 조사 목적과 경계
 
 이 문서는 Phase A3에서 현재 Frontend의 `border-radius` 사용 의미를 조사하고 후속 구현이 따라야 할 계약을 정의합니다. 이번 작업은 문서 계약만 다루며 CSS 값, Selector, React Component와 Layout은 변경하지 않습니다.
