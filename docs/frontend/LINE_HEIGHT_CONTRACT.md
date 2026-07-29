@@ -255,70 +255,93 @@ Line-height는 font-size Token과 독립적으로 조사한다.
 - Body·compact Token 이름만으로 현재 명시되지 않은 selector에 적용할 수 없다.
 - 값 보존 치환도 실제 Browser visual 동일성의 증거는 아니다.
 
-## 20. 미검증
+## 20. 구현·정적 검증 상태
 
-- 모든 selector의 현재 Browser computed `normal` 값
-- `1.6` Token 치환 전후 computed line-height
-- Summary의 desktop·mobile wrapping과 높이
-- Description·Summary를 함께 포함한 Card·Panel 높이
-- Button·Badge 수직 정렬
-- 가로·세로 overflow
-- Focus outline clipping
-- Browser Console 오류
-- 자동 Pixel Diff
+계약 조사와 후속 최소 CSS 구현은 완료됐다. 구현은 PR #51에서 Repository Quality Checks를 통과했다.
 
-## 21. Browser 검증 계획
+| 항목 | 상태 | 근거 |
+|---|---|---|
+| Summary line-height Token 선언 | `IMPLEMENTED` | 제안 이름은 `--line-height-summary`이고 값은 `1.6`이다. |
+| `.summary-copy` Token 연결 | `IMPLEMENTED` | `line-height`가 `var(--line-height-summary)`를 참조한다. |
+| 기존 값 `1.6` 보존 | `STATICALLY_VERIFIED` | Token 값과 교체 전 literal이 동일하다. |
+| 기존 Line-height Token 보존 | `STATICALLY_VERIFIED` | compact `1.25`, body `1.5`, relaxed `1.65`가 유지된다. |
+| 기존 relaxed selector 연결 | `STATICALLY_VERIFIED` | `.page-description`, `.card-description`, `.state-panel p`, `.coming-next p`가 기존 Token을 계속 참조한다. |
+| Repository Policy | `PASS` | PR #51 Repository Quality Checks |
+| Frontend Typecheck | `PASS` | PR #51 Repository Quality Checks |
+| Frontend Lint | `PASS` | PR #51 Repository Quality Checks |
+| Frontend Build | `PASS` | PR #51 Repository Quality Checks |
 
-후속 구현 PR에서 다음 환경을 사용한다.
+정적 검증으로 Token 값과 소스 참조는 확인할 수 있다. 그러나 실제 computed pixel 값은 font-size, font metrics, Browser rendering과 상속 문맥의 영향을 받는다. 같은 unitless ratio라도 wrapping, block height와 subpixel rounding이 자동으로 동일하다고 단정할 수 없다. Build 통과도 visual 동일성을 증명하지 않는다.
+
+## 21. Browser 검증 상태와 한계
+
+이번 문서 작업에서는 실제 Browser 검증을 실행하지 않았다. 검증 절차는 정의돼 있지만 아직 수행되지 않은 상태이므로 도구 한계 상태가 아니라 `NOT_VERIFIED`를 사용한다.
+
+| Browser 항목 | 상태 | 현재 근거 |
+|---|---|---|
+| Computed line-height | `NOT_VERIFIED` | 실제 Browser 측정 없음 |
+| Summary text wrapping | `NOT_VERIFIED` | 적용 전후 줄바꿈 비교 없음 |
+| Summary component 높이 | `NOT_VERIFIED` | 적용 전후 block 높이 비교 없음 |
+| Desktop visual 동일성 | `NOT_VERIFIED` | Desktop baseline 비교 없음 |
+| `390px` mobile visual 동일성 | `NOT_VERIFIED` | Mobile baseline 비교 없음 |
+| 가로 overflow | `NOT_VERIFIED` | Browser `scrollWidth` 측정 없음 |
+| 세로 overflow | `NOT_VERIFIED` | Browser 높이·overflow 측정 없음 |
+| Focus outline clipping | `NOT_VERIFIED` | keyboard focus 확인 없음 |
+| Browser Console 오류 | `NOT_VERIFIED` | Console 수집 없음 |
+| 자동 Pixel Diff | `NOT_PRESENT` | 자동화와 비교 이미지 없음 |
+
+적용 전 Browser baseline을 캡처하지 않았으므로 baseline 상태는 `BASELINE_NOT_CAPTURED`다. Baseline이 없으면 적용 전후 Pixel 동일성을 증명할 수 없다. 현재 값 보존과 정적 검증 결과를 visual regression `PASS`로 대체하지 않는다.
+
+## 22. 후속 Browser 검증 계획
+
+검증 환경:
 
 - Chrome headed mode
 - Zoom 100%
 - Device scale 1
-- Route: `/projects`, Project Overview, Dataset Detail, Experiment Create, Experiment Detail, History, Comparison Detail
-- Viewport: `1440px`, `1024px`, `768px`, `390px`
+- Desktop: `1440px` 또는 프로젝트 기준 Desktop viewport
+- Mobile: `390px`
+- 우선 화면: Project Overview처럼 `.summary-copy`가 실제 렌더링되는 화면
 
-검증 항목:
+Desktop과 `390px`에서 다음을 각각 기록한다.
 
-- `.summary-copy`의 computed line-height `1.6` 대응값
-- Description의 기존 `1.65` 유지
-- Text wrapping과 heading·body·summary 높이
-- Helper·Error·Notice 높이
-- Button·Badge 수직 정렬
-- Card·Panel과 Form field 높이
-- Pagination 정렬
-- mobile text wrapping
-- 가로·세로 overflow
+- 실제 viewport와 device pixel ratio
+- 같은 Summary 문장과 줄 수
+- 각 줄의 wrapping 위치
+- `.summary-copy` computed line-height
+- Summary block의 bounding height
+- 인접 Card·Panel의 bounding height와 layout shift
+- 가로 overflow
+- 비정상 세로 overflow
 - Focus outline clipping
-- Console 오류
+- Browser Console 오류
 
-구현 전에는 Browser 결과나 visual 동일성을 `PASS`로 기록하지 않는다.
+Browser 검증 성공 기준:
 
-## 22. 후속 구현 PR 최소 범위
+- `.summary-copy` computed line-height가 적용 전과 동일
+- Desktop 줄바꿈 위치가 적용 전과 동일
+- `390px` 줄바꿈 위치가 적용 전과 동일
+- Summary block 높이가 적용 전과 동일
+- 인접 layout 변화 없음
+- 가로 overflow 없음
+- 비정상 세로 overflow 없음
+- Focus outline 잘림 없음
+- Console Error 없음
+- Summary Token 값 `1.6` 유지
+- `.summary-copy`에 계약 외 신규 line-height Token 참조 없음
 
-허용하는 최소 구현 묶음:
-
-1. `:root`에 `--line-height-summary: 1.6`을 선언한다.
-2. `.summary-copy`의 `line-height: 1.6`만 `line-height: var(--line-height-summary)`로 치환한다.
-3. selector 구조, 순서, specificity와 computed 값을 유지한다.
-4. 정적 검사와 Browser 검증을 별도 수행한다.
-
-후속 구현에서 변경하지 않는 범위:
-
-- `--line-height-compact`, `--line-height-body`, `--line-height-relaxed` 값
-- 기존 Description selector 묶음
-- Body, heading, helper, error, notice, metadata, Button, Badge line-height
-- font-size, font-weight, spacing, control height
-- mobile breakpoint와 layout
-- React Component
+Baseline을 새로 확보하지 못하면 Pixel 동일성을 `PASS`로 기록하지 않고 `BASELINE_NOT_CAPTURED`를 유지한다.
 
 ## 23. Phase A3·Phase B 경계
 
 ```text
-Line-height 계약 조사: 완료
-Line-height CSS 구현: 미진행
-Line-height Browser 검증: NOT_VERIFIED
-Phase A3 전체: 미완료
-Phase B: 미진행
+Line-height 계약: COMPLETE
+Line-height CSS 구현: COMPLETE
+정적 검증: COMPLETE
+Browser 검증: INCOMPLETE
+자동 Pixel Diff: NOT_PRESENT
+Phase A3: INCOMPLETE
+Phase B: NOT_STARTED
 ```
 
-Phase B의 Navigation·State Component 재설계, 공통 Typography Component와 전체 scale 정규화는 이 계약과 후속 최소 구현 범위에 포함하지 않는다.
+Browser 검증을 수행하지 않은 상태에서 Phase A3를 완료로 처리하지 않는다. Phase B의 Navigation·State Component 재설계, 공통 Typography Component, line-height 정규화와 새로운 시각 설계는 시작하지 않는다.
