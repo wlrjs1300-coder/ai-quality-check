@@ -18,6 +18,34 @@ Projects는 `BLOCKED_FRONTEND`, Project Overview·Dataset Detail·Experiment Cre
 
 Line-height 계약·CSS 구현·정적 검증은 유지되지만 Browser 검증은 `INCOMPLETE`다. Baseline이 없으므로 적용 전후 visual 동일성을 증명하지 않는다.
 
+## 2026-07-29 환경 복구 후 Line-height Browser 재측정
+
+기준 commit `db8b407`에서 Chrome `150.0.7871.187` headed CDP로 7개 우선 Route와 `1440×900`, `1024×900`, `768×900`, `390×900`을 측정했다. 최종 origin은 임시 same-origin rewrite를 사용한 `http://localhost:3002`이고 28개 조합의 Route가 모두 HTTP 200이었다. 기존 `3001`은 Backend 직접 API 호출이 CORS로 차단됐으며, `3002`는 제품 파일을 변경하지 않은 검증 전용 실행으로 정식 설정이나 영구 해결책이 아니다.
+
+| 계약 이름 | 정적 값 | Browser computed 근거 |
+|---|---:|---|
+| `--line-height-compact` | `1.25` | 선언값 확인 |
+| `--line-height-body` | `1.5` | 선언값 확인 |
+| `--line-height-relaxed` | `1.65` | Description selector에서 ratio 확인 |
+| `--line-height-summary` | `1.6` | `.summary-copy`에서 ratio 확인 |
+
+`.summary-copy`의 font-size는 `18.4px`, computed line-height는 `29.44px`, ratio는 `1.6`이었다. Viewport별 wrapping과 bounding height는 다음과 같다.
+
+| Viewport width | 줄 수 | Bounding height |
+|---:|---:|---:|
+| `1440px` | 2 | `58.88px` |
+| `1024px` | 2 | `58.88px` |
+| `768px` | 3 | `88.31px` |
+| `390px` | 4 | `117.75px` |
+
+`.page-description`과 `.card-description`은 font-size `16px`, computed line-height `26.4px`, ratio `1.65`로 relaxed 계약과 일치했다. 정상 데이터 상태에서 `.state-panel p`는 렌더링되지 않아 `NOT_VERIFIED_STATE_NOT_RENDERED`다. `.coming-next p`는 7개 검증 Route에 존재하지 않아 `NOT_VERIFIED_ROUTE_NOT_PRESENT`다.
+
+28개 조합에서 horizontal overflow, 비정상 overlap, text clipping과 focus outline clipping은 발견되지 않았다. 애플리케이션 Console Error, Runtime exception, hydration 오류, 실제 Next.js error overlay와 애플리케이션 API 실패는 없었다. 최초 Projects Route의 `/favicon.ico` HTTP 404 1건과 Route 전환 중 `canceled=true`인 `net::ERR_ABORTED` Fetch는 각각 resource 제한과 navigation 취소로 기록한다.
+
+적용 전 Browser baseline은 `BASELINE_NOT_CAPTURED`, 자동 Pixel Diff는 `NOT_PRESENT`다. 적용 전후 visual 동일성을 판정하지 않으며 Line-height Browser 최종 상태는 `VERIFIED_CURRENT_STATE`다. 단, `.state-panel p`와 `.coming-next p`는 위 제한 상태를 유지한다.
+
+측정 종료 확인 시 Browser PID와 CDP listener가 이미 종료돼 `Browser.close` 정상 종료는 확인하지 못했다. 저장소 밖 임시 Chrome profile은 도구 정책상 남았다. 이 실행 환경 제한은 computed line-height 계약 검증 결과와 분리한다.
+
 ## 1. 조사 목적
 
 이 문서는 Phase A3에서 현재 Frontend의 `line-height` 선언, Token, selector와 UI 역할을 실제 저장소 코드 기준으로 조사하고 후속 구현의 최소 계약을 결정한다.
