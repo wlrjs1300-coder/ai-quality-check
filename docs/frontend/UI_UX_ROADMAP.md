@@ -126,6 +126,18 @@ Selector 치환은 작은 묶음으로 분리하며 네 viewport, keyboard focus
 
 ### Phase A3 — Contract Decisions
 
+2026-07-29 기준 commit `26e05af`에서 Radius·Spacing·Line-height 통합 Browser 검증을 시도했다. Host `5433` PostgreSQL migration은 성공했지만 공식 Demo Seed가 기존 Evaluation Case graph 불일치로 `DEMO_SEED_CONFLICT`를 반환했고, `3000` 포트의 기존 `server.js`는 `/projects`에 HTTP 404를 반환했다. 현재 저장소 Frontend·정상 Demo Seed·Browser session 선행 조건이 함께 충족되지 않아 headed Chrome과 CDP 측정은 실행하지 않았다.
+
+- Radius Browser 검증: `NOT_VERIFIED_ENVIRONMENT`
+- Spacing Browser 검증: `NOT_VERIFIED_ENVIRONMENT`
+- Line-height Browser 검증: `NOT_VERIFIED_ENVIRONMENT`
+- 적용 전 baseline: `BASELINE_NOT_CAPTURED`
+- 자동 Pixel Diff: `NOT_PRESENT`
+- Phase A3: `IN_PROGRESS`
+- Phase B: `NOT_STARTED`
+
+Token 계약과 정적 구현 상태는 유지한다. 그러나 neutral Text·Surface, danger border·divider, 현재 `720px` breakpoint, 역할이 다른 동일 색상 통합 여부가 남아 있고 Browser 통합 검증도 완료되지 않았으므로 Phase A3 전체를 완료로 처리하지 않는다.
+
 Phase A3는 Focus 계약 결정부터 시작했습니다.
 
 - 2026-07-27 전수 조사에서 현재 primary Focus Indicator가 `:focus-visible`의 3px outline과 2px offset임을 확인했습니다.

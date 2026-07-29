@@ -1,5 +1,23 @@
 # Frontend Spacing Contract
 
+## 2026-07-29 Phase A3 Token Browser 통합 검증
+
+기준 commit `26e05af`에서 통합 Browser 검증을 시도했다. Host `5433`의 PostgreSQL migration은 성공했지만 공식 Demo Seed가 Evaluation Case graph 기대 5건, 실제 6건의 `DEMO_SEED_CONFLICT`로 종료됐다. `3000` 포트의 기존 `server.js`는 `/projects`에 HTTP 404를 반환해 현재 저장소 Frontend로 확인할 수 없었다.
+
+| 항목 | 상태 | 실제 결과 |
+|---|---|---|
+| Backend·Demo Seed | `BLOCKED_DEMO_SEED` | 공식 Demo Seed 정의와 기존 데이터 불일치 |
+| Frontend | `BLOCKED_FRONTEND` | 현재 저장소 Frontend 미기동 |
+| Browser session | `NOT_VERIFIED_ENVIRONMENT` | 선행 조건 불충족으로 headed Chrome·CDP 미실행 |
+| 적용 전 baseline | `BASELINE_NOT_CAPTURED` | 적용 전 Screenshot·computed spacing 없음 |
+| 자동 Pixel Diff | `NOT_PRESENT` | 기존 자동화와 비교 이미지 없음 |
+
+Projects는 `BLOCKED_FRONTEND`, 나머지 여섯 우선 Route는 `BLOCKED_DEMO_SEED`다. `1440px`, `1024px`, `768px`, `390px`의 실제 viewport와 device pixel ratio는 측정하지 않았다.
+
+Computed margin·padding·gap, Grid·Flex 간격, Card·Panel 여백, form과 Button row 간격, Summary·List·Badge 간격, wrapping, layout shift, 가로·비정상 세로 overflow, focus outline clipping과 Console은 모두 `NOT_VERIFIED_ENVIRONMENT`다. 정적 값 보존은 실제 wrapping과 component 높이의 Browser 증거가 아니다.
+
+Spacing 계약과 구현 상태는 유지되지만 Browser 통합 검증은 미완료다. Baseline이 없으므로 시각적 동일성이나 visual regression을 PASS로 기록하지 않는다.
+
 ## 조사 목적과 경계
 
 이 문서는 Phase A3에서 현재 Frontend의 `margin`, `padding`, `gap` 사용 현황과 UI 의미를 조사하고 후속 구현이 따라야 할 Spacing 계약을 정의합니다. 이번 브랜치는 문서 계약만 다루며 CSS, Selector, React Component와 Layout은 변경하지 않습니다.
