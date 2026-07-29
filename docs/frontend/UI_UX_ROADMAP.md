@@ -177,6 +177,16 @@ Phase A3는 Focus 계약 결정부터 시작했습니다.
 - 1.6 line-height 처리
 - 의미가 다른 동일 색상 통합 여부
 
+2026-07-29 기준 commit `62a395c`에서 위 남은 네 계약을 [Phase A3 Remaining Contracts](REMAINING_PHASE_A3_CONTRACTS.md)로 확정했다. Neutral은 일반 muted Text와 중립 상태·immutable guidance를 분리하고 상태 selector만 신규 semantic Text·Surface Token 대상으로 정했다. Error container의 `#f0b8b3`는 danger border 역할로, `#edf0f4` row separator는 divider 역할로 각각 분리하며 strong validation·interactive border와 일반 control border에는 통합하지 않는다. 같은 물리 색상은 역할별 semantic 경계를 유지하고 일부만 통합한다.
+
+현재 Layout의 유일한 width media query는 `max-width: 720px`으로 유지하고 Token화하지 않는다. 768px 변경, Custom Media, Dependency·Build 설정 추가는 근거와 범위를 벗어나므로 제외한다. 후속 CSS 구현은 신규 semantic Token 4개와 확정 selector의 값 보존 치환으로 제한하고, `721px`, `720px`, `719px` Browser 경계 검증을 요구한다.
+
+- 남은 네 계약 조사·결정: `COMPLETE`
+- 남은 계약 CSS 구현: `INCOMPLETE`
+- Breakpoint 경계 Browser 검증: `NOT_VERIFIED`
+- Phase A3: `IN_PROGRESS`
+- Phase B: `NOT_STARTED`
+
 ### Phase A 공통 제외 범위
 
 - Dark Mode
