@@ -916,7 +916,12 @@ class DemoSeedService:
         )
         for model, predicate, expected in checks:
             actual = int(
-                await self.db.scalar(select(func.count()).select_from(model).where(predicate)) or 0
+                await self.db.scalar(
+                    select(func.count())
+                    .select_from(model)
+                    .where(predicate, model.id.in_(id_sets[model]))
+                )
+                or 0
             )
             if actual != expected:
                 raise self._conflict(f"{model.__tablename__} graph count", expected, actual)
