@@ -4,7 +4,7 @@ import asyncio
 import os
 import subprocess
 import sys
-from uuid import UUID
+from uuid import UUID, uuid4
 
 import pytest
 from sqlalchemy import func, select
@@ -151,6 +151,101 @@ def test_demo_seed_second_run_is_noop_and_dashboard_is_ready_for_demo(client):
     history = client.get(f"/api/v1/projects/{first.project_id}/experiment-history?sort=created_at_asc")
     assert history.status_code == 200
     assert [item["pass_rate"] for item in history.json()["data"]] == ["0.6", "0.8", "0.8", "0.4"]
+
+
+def test_demo_seed_second_run_preserves_non_seed_case_in_demo_dataset(client):
+    first = _seed()
+    engine = create_async_engine(os.environ["DATABASE_URL"], future=True)
+    session_factory = async_sessionmaker(engine, expire_on_commit=False)
+    user_case_id = uuid4()
+
+    async def _add_and_verify_user_case() -> tuple[str, str, int, int, int, bool]:
+        try:
+            async with session_factory() as session:
+                session.add(
+                    EvaluationCase(
+                        id=user_case_id,
+                        dataset_id=demo_uuid("dataset:release-policy"),
+                        case_key="user-created-case",
+                        question="User-created question",
+                        expected_summary="User-created summary",
+                        evidence=[],
+                        required_elements=[],
+                        forbidden_elements=[],
+                        tags=[],
+                        severity="LOW",
+                        required_for_release=False,
+                        status="DRAFT",
+                    )
+                )
+                await session.commit()
+            async with session_factory() as session:
+                second = await DemoSeedService(session).seed()
+                third = await DemoSeedService(session).seed()
+                total_case_count = int(
+                    await session.scalar(
+                        select(func.count())
+                        .select_from(EvaluationCase)
+                        .where(EvaluationCase.dataset_id == demo_uuid("dataset:release-policy"))
+                    )
+                    or 0
+                )
+                seed_case_count = int(
+                    await session.scalar(
+                        select(func.count())
+                        .select_from(EvaluationCase)
+                        .where(
+                            EvaluationCase.dataset_id == demo_uuid("dataset:release-policy"),
+                            EvaluationCase.id.in_(
+                                {demo_uuid(f"case:{spec['key']}") for spec in CASE_SPECS}
+                            ),
+                        )
+                    )
+                    or 0
+                )
+                snapshot_count = int(
+                    await session.scalar(
+                        select(func.count())
+                        .select_from(DatasetVersionCase)
+                        .where(
+                            DatasetVersionCase.dataset_version_id
+                            == demo_uuid("dataset-version:release-policy:1")
+                        )
+                    )
+                    or 0
+                )
+                user_case = await session.get(EvaluationCase, user_case_id)
+                user_case_unchanged = user_case is not None and (
+                    user_case.case_key,
+                    user_case.status,
+                    user_case.question,
+                    user_case.expected_summary,
+                ) == (
+                    "user-created-case",
+                    "DRAFT",
+                    "User-created question",
+                    "User-created summary",
+                )
+                return (
+                    second.status,
+                    third.status,
+                    total_case_count,
+                    seed_case_count,
+                    snapshot_count,
+                    user_case_unchanged,
+                )
+        finally:
+            await engine.dispose()
+
+    assert first.status == "created"
+    assert asyncio.run(_add_and_verify_user_case()) == (
+        "already_seeded",
+        "already_seeded",
+        6,
+        5,
+        5,
+        True,
+    )
 
 
 def test_demo_seed_conflict_rolls_back_without_mutating_existing_data(client):
