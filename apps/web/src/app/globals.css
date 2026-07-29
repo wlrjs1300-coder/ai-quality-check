@@ -78,7 +78,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
   outline-offset: var(--focus-outline-offset);
 }
 
-.app-shell { width: min(var(--container-width), calc(100% - 32px)); margin: 0 auto; padding: 56px 0 80px; }
+.app-shell { width: min(var(--container-width), calc(100% - 32px)); margin: 0 auto; padding: var(--space-8) 0 var(--space-9); }
 .page-header, .detail-header, .section-heading, .card-heading { display: flex; justify-content: space-between; gap: 24px; align-items: flex-start; }
 h1, h2, h3, p { margin-top: 0; }
 h1 { margin-bottom: 10px; font-size: clamp(2rem, 5vw, 3rem); letter-spacing: -0.04em; }
@@ -91,7 +91,7 @@ h3 { margin-bottom: 0; font-size: var(--font-size-heading-sm); }
 .button:disabled { cursor: not-allowed; opacity: 0.55; }
 .button-secondary { background: var(--surface); color: var(--accent); }
 .text-button { border: 0; background: transparent; color: var(--accent); cursor: pointer; }
-.form-panel, .state-panel, .detail-panel, .coming-next { margin: 28px 0; padding: 24px; border: 1px solid var(--border); border-radius: var(--radius-card); background: var(--surface); box-shadow: var(--shadow-panel); }
+.form-panel, .state-panel, .detail-panel, .coming-next { margin: 28px 0; padding: var(--space-5); border: 1px solid var(--border); border-radius: var(--radius-card); background: var(--surface); box-shadow: var(--shadow-panel); }
 .form-panel form { display: grid; gap: 18px; }
 .form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
 label { display: grid; gap: 7px; color: var(--text); font-weight: 700; }
@@ -129,7 +129,7 @@ dd { margin: 0; overflow-wrap: anywhere; }
 code { font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: 0.86em; }
 .header-actions, .filter-actions, .badge-row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
 .header-actions { margin-top: 22px; }
-.overview-section { margin-top: 40px; }
+.overview-section { margin-top: var(--space-7); }
 .filter-panel, .summary-panel { margin: 28px 0; padding: 22px; border: 1px solid var(--border); border-radius: var(--radius-card); background: var(--surface); }
 .filter-panel legend { padding: 0 8px; font-weight: 800; }
 .filter-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 220px)) auto; gap: 16px; align-items: end; }
@@ -219,7 +219,7 @@ code { font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size
 .metadata-error .text-button { width: fit-content; padding: 0; }
 
 @media (max-width: 720px) {
-  .app-shell { width: min(100% - 24px, var(--container-width)); padding-top: 32px; }
+  .app-shell { width: min(100% - 24px, var(--container-width)); padding-top: var(--space-6); }
   .page-header, .detail-header { align-items: stretch; flex-direction: column; }
   .form-grid, .project-grid { grid-template-columns: 1fr; }
   .metric-grid, .overview-grid, .history-grid, .summary-panel, .history-filter-grid, .filter-fields, .dataset-grid, .case-grid, .version-card, .registry-grid { grid-template-columns: 1fr; }
