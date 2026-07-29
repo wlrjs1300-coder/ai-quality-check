@@ -1,5 +1,23 @@
 # Frontend Line-height Contract
 
+## 2026-07-29 Phase A3 Token Browser 통합 검증
+
+기준 commit `26e05af`에서 통합 Browser 검증을 시도했다. PostgreSQL migration은 host `5433`에서 성공했지만 공식 Demo Seed는 Evaluation Case graph가 기대 5건, 실제 6건인 `DEMO_SEED_CONFLICT`로 종료됐다. `3000` 포트의 기존 `server.js`는 `/projects`에 HTTP 404를 반환해 현재 저장소 Frontend로 확인할 수 없었다.
+
+| 항목 | 상태 | 실제 결과 |
+|---|---|---|
+| Backend·Demo Seed | `BLOCKED_DEMO_SEED` | 공식 Demo Seed conflict |
+| Frontend | `BLOCKED_FRONTEND` | 현재 저장소 Frontend 미기동 |
+| Browser session | `NOT_VERIFIED_ENVIRONMENT` | headed Chrome·CDP 미실행 |
+| 적용 전 baseline | `BASELINE_NOT_CAPTURED` | 적용 전 computed line-height·Screenshot 없음 |
+| 자동 Pixel Diff | `NOT_PRESENT` | 기존 자동화와 비교 이미지 없음 |
+
+Projects는 `BLOCKED_FRONTEND`, Project Overview·Dataset Detail·Experiment Create·Experiment Detail·History·Comparison Detail은 `BLOCKED_DEMO_SEED`다. 네 요청 viewport의 실제 값, zoom과 device pixel ratio는 측정하지 않았다.
+
+`.summary-copy`, `.page-description`, `.card-description`, `.state-panel p`의 computed line-height와 Summary 줄 수·wrapping·block 높이·인접 layout, overflow, focus clipping과 Console은 모두 `NOT_VERIFIED_ENVIRONMENT`다. `.coming-next p`는 우선 Route에 사용처가 확인되지 않은 기존 계약에 따라 `NOT_VERIFIED_ROUTE_NOT_PRESENT`를 유지한다.
+
+Line-height 계약·CSS 구현·정적 검증은 유지되지만 Browser 검증은 `INCOMPLETE`다. Baseline이 없으므로 적용 전후 visual 동일성을 증명하지 않는다.
+
 ## 1. 조사 목적
 
 이 문서는 Phase A3에서 현재 Frontend의 `line-height` 선언, Token, selector와 UI 역할을 실제 저장소 코드 기준으로 조사하고 후속 구현의 최소 계약을 결정한다.

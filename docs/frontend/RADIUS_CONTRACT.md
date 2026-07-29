@@ -1,5 +1,23 @@
 # Frontend Radius Contract
 
+## 2026-07-29 Phase A3 Token Browser 통합 검증
+
+이번 통합 검증은 기준 commit `26e05af`에서 Radius·Spacing·Line-height를 함께 확인하려고 시도했다. PostgreSQL migration은 host `5433`의 `evalops_local`에 정상 적용됐지만 공식 Demo Seed는 Evaluation Case graph가 기대 5건, 실제 6건인 `DEMO_SEED_CONFLICT`로 종료됐다. `3000` 포트의 기존 `server.js`는 `/projects`에 HTTP 404를 반환해 현재 저장소 Frontend로 확인되지 않았다.
+
+| 항목 | 상태 | 실제 결과 |
+|---|---|---|
+| Backend 준비 | `BLOCKED_DEMO_SEED` | Migration 성공, 공식 Demo Seed conflict로 Backend Browser 세션 미기동 |
+| Frontend 준비 | `BLOCKED_FRONTEND` | 기존 `3000` 프로세스의 `/projects`가 404; 현재 저장소 Frontend 미기동 |
+| Chrome | `NOT_VERIFIED_ENVIRONMENT` | Chrome 설치는 확인했으나 선행 조건 불충족으로 headed session·CDP 미실행 |
+| 적용 전 baseline | `BASELINE_NOT_CAPTURED` | Screenshot·computed style baseline 없음 |
+| 자동 Pixel Diff | `NOT_PRESENT` | 기존 자동화와 비교 이미지 없음 |
+
+Projects는 `BLOCKED_FRONTEND`, Project Overview·Dataset Detail·Experiment Create·Experiment Detail·History·Comparison Detail은 `BLOCKED_DEMO_SEED`다. 요청한 `1440px`, `1024px`, `768px`, `390px` viewport의 실제 크기, zoom과 device pixel ratio는 측정하지 않았다.
+
+Radius computed value, Input·Textarea·Select, message surface 예외, `10px` literal, Card·Panel corner, border·background·focus clipping, disabled control, mobile corner, overflow와 Console은 모두 `NOT_VERIFIED_ENVIRONMENT`다. 현재 상태의 정상 여부도 Browser에서 확인하지 않았으므로 `VERIFIED_CURRENT_STATE`를 사용하지 않는다.
+
+Radius Token·selector 계약과 구현 상태는 유지되지만 Radius Browser 통합 검증은 미완료다. Baseline이 없으므로 `PASS`, `PIXEL_IDENTICAL`, `NO_VISUAL_CHANGE`, `VISUAL_REGRESSION_PASS`로 기록하지 않는다.
+
 ## 조사 목적과 경계
 
 이 문서는 Phase A3에서 현재 Frontend의 `border-radius` 사용 의미를 조사하고 후속 구현이 따라야 할 계약을 정의합니다. 이번 작업은 문서 계약만 다루며 CSS 값, Selector, React Component와 Layout은 변경하지 않습니다.
