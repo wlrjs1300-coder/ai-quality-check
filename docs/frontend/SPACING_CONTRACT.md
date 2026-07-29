@@ -315,3 +315,129 @@ responsive spacing은 desktop 값을 mobile 값으로 자동 통합하지 않습
 - 현재 상태: `NOT_VERIFIED`
 
 구현 전에는 Browser 결과나 Layout 동일성을 `PASS`로 기록하지 않습니다. 자동 Pixel Diff는 현재 `NOT_PRESENT`입니다.
+
+## Phase A3 Spacing Browser 검증 결과
+
+### 검증 기준과 환경
+
+- 목적: 구현 묶음 A·B의 spacing token이 실제 Chrome computed style과 네 viewport의 layout에서 계약값을 유지하는지 확인
+- 기준 commit: `59849c8`
+- 검증 날짜: `2026-07-29`
+- 요청 환경: Windows, Chrome headed mode, Zoom 100%, device scale 1
+- 요청 viewport: `1440px`, `1024px`, `768px`, `390px`
+- 최종 상태: `NOT_VERIFIED_TOOL_LIMIT`
+
+| 환경 항목 | 상태 | 확인 결과 |
+|---|---|---|
+| Frontend | `NOT_VERIFIED` | 검증용 Frontend HTTP 서버를 시작하지 못해 응답과 렌더링을 확인하지 못함 |
+| Backend | `BLOCKED` | `localhost:5432` 연결 시도가 실패했으며 정확한 연결 실패 원인은 `NOT_VERIFIED`; Backend를 시작하지 못함 |
+| Docker | `PASS` | Docker Desktop과 `evalops-postgres`, `evalops-redis`, `evalops-minio` 실행 확인; 컨테이너 실행은 Backend 또는 Demo Seed 준비 완료를 의미하지 않음 |
+| Demo Seed | `BLOCKED` | migration이 완료되지 않아 공식 `seed_demo`를 실행하지 못함 |
+| Browser 자동화 도구 | `NOT_PRESENT` | Playwright, Puppeteer, Selenium, ChromeDriver가 설치되어 있지 않음 |
+| Chrome 설치 | `PASS` | `C:\Program Files\Google\Chrome\Application\chrome.exe` 확인 |
+| Chrome headed 실행 | `NOT_VERIFIED` | 기존 사용자 Chrome 프로세스는 있었으나 검증 전용 Chrome은 시작하지 않음 |
+| CDP 연결 | `NOT_VERIFIED` | Backend·Demo Seed 선행 조건이 충족되지 않아 페이지 측정을 시도하지 않음 |
+
+첫 번째 Compose 기동은 기존 `evalops-postgres` 컨테이너 이름 충돌로 중단됐다. 이후 Docker Desktop과 `evalops-postgres`, `evalops-redis`, `evalops-minio`의 실행을 확인했다. Migration 명령은 `localhost:5432`를 대상으로 실행됐지만 `evalops-postgres`는 host `5433`에서 container `5432`로 매핑돼 있었다. 두 endpoint가 일치하지 않으므로 실패한 endpoint가 `evalops-postgres`였는지는 확인되지 않으며, endpoint 불일치 또는 다른 PostgreSQL 인스턴스 연결 가능성이 있다. 정확한 연결 실패 원인은 `NOT_VERIFIED`다. 추가 재시도, 인증정보 추측, 데이터 변경, 임의 ID 또는 Mock 응답 생성은 수행하지 않았다.
+
+### 실제 viewport와 Route
+
+실제 Browser page에서 측정한 `window.innerWidth`, `window.innerHeight`, `window.devicePixelRatio`는 없다.
+
+| Route | 상태 | 사유 |
+|---|---|---|
+| `/projects` | `BLOCKED` | Frontend와 Backend HTTP 응답 및 Browser 렌더링을 확인하지 못함 |
+| Project Overview | `BLOCKED` | Demo Seed Project ID와 Backend가 필요함 |
+| Dataset Detail | `BLOCKED` | Demo Seed Project·Dataset ID와 Backend가 필요함 |
+| Experiment Create | `BLOCKED` | Demo Seed Project ID와 Registry 응답이 필요함 |
+| Experiment Detail | `BLOCKED` | Demo Seed Experiment ID와 Backend가 필요함 |
+| History | `BLOCKED` | Demo Seed Project ID와 Backend가 필요함 |
+| Comparison Detail | `BLOCKED` | Demo Seed Comparison ID와 Backend가 필요함 |
+
+### Token 선언값
+
+아래 값은 구현 계약과 CSS 소스에서 확인된 값이며 Browser computed style 측정값이 아니다.
+
+| Token | Expected | Browser actual | 상태 |
+|---|---:|---:|---|
+| `--space-5` | `24px` | 측정 없음 | `NOT_VERIFIED` |
+| `--space-6` | `32px` | 측정 없음 | `NOT_VERIFIED` |
+| `--space-7` | `40px` | 측정 없음 | `NOT_VERIFIED` |
+| `--space-8` | `56px` | 측정 없음 | `NOT_VERIFIED` |
+| `--space-9` | `80px` | 측정 없음 | `NOT_VERIFIED` |
+| `--space-form-gap` | `18px` | 측정 없음 | `NOT_VERIFIED` |
+| `--space-card-padding` | `20px` | 측정 없음 | `NOT_VERIFIED` |
+| `--space-panel-margin-block` | `28px` | 측정 없음 | `NOT_VERIFIED` |
+
+### Selector별 expected·actual
+
+| Selector | Expected | Browser actual | 상태 |
+|---|---|---|---|
+| desktop `.app-shell` | padding `56px 0 80px` | 측정 없음 | `NOT_VERIFIED` |
+| mobile `.app-shell` | padding-top `32px` | 측정 없음 | `NOT_VERIFIED` |
+| `.overview-section` | margin-top `40px` | 측정 없음 | `NOT_VERIFIED` |
+| `.form-panel`, `.state-panel`, `.detail-panel`, `.coming-next` | margin `28px 0`, padding `24px` | 측정 없음 | `NOT_VERIFIED` |
+| `.filter-panel`, `.summary-panel` | margin `28px 0` | 측정 없음 | `NOT_VERIFIED` |
+| `.form-panel form`, `.form-grid`, `.case-form`, `.gate-form`, `.comparison-form` | gap `18px` | 측정 없음 | `NOT_VERIFIED` |
+| `.history-card`, `.dataset-card`, `.case-card`, `.version-card`, `.result-card` | padding `20px` | 측정 없음 | `NOT_VERIFIED` |
+
+제외 literal인 `.project-grid` gap `18px`, Button horizontal padding `18px`, `.metric-card`와 `.baseline-candidates` padding `18px`, `.experiment-create-form` gap `20px`, `.card-description` margin `20px`, `22px` 사용처, `.pagination` margin-top `28px`, `.status-badge` padding `5px 9px`, `.semantic-badge` padding `4px 8px`도 Browser actual을 측정하지 못했으므로 `NOT_VERIFIED`다.
+
+### Visual·interaction 결과
+
+| 검증 항목 | 상태 | 결과 |
+|---|---|---|
+| Page vertical rhythm·Section 간격 | `NOT_VERIFIED_TOOL_LIMIT` | 실제 page 렌더링 없음 |
+| Card·Panel 크기 | `NOT_VERIFIED_TOOL_LIMIT` | 실제 page 렌더링 없음 |
+| Form field 간격 | `NOT_VERIFIED_TOOL_LIMIT` | 실제 page 렌더링 없음 |
+| Grid wrapping·nested layout | `NOT_VERIFIED_TOOL_LIMIT` | 실제 viewport 측정 없음 |
+| Button·Text 정렬 | `NOT_VERIFIED_TOOL_LIMIT` | 실제 page 렌더링 없음 |
+| Badge 크기 | `NOT_VERIFIED_TOOL_LIMIT` | 실제 page 렌더링 없음 |
+| Pagination 정렬 | `NOT_VERIFIED_TOOL_LIMIT` | 실제 page 렌더링 없음 |
+| Mobile layout | `NOT_VERIFIED_TOOL_LIMIT` | `390px` viewport 측정 없음 |
+| 가로 overflow | `NOT_VERIFIED_TOOL_LIMIT` | `scrollWidth`와 `clientWidth` 측정 없음 |
+| Focus outline clipping | `NOT_VERIFIED_TOOL_LIMIT` | keyboard focus와 clipping 확인 없음 |
+| Browser Console 오류 | `NOT_VERIFIED_TOOL_LIMIT` | 검증 page Console 수집 없음 |
+| 자동 Pixel Diff | `NOT_PRESENT` | 기준 이미지와 기존 자동화 도구 없음 |
+
+### 사실·추론·미검증
+
+확인된 사실:
+
+- branch와 기준 commit은 각각 `docs/v0.29.3-phase-a3-spacing-browser-verification`, `59849c8`이다.
+- Chrome과 Docker Desktop은 설치·실행 상태였다.
+- 초기 Compose 서비스 목록은 비어 있었다.
+- Playwright, Puppeteer, Selenium, ChromeDriver는 설치되어 있지 않았다.
+- 첫 Compose 기동은 기존 PostgreSQL 컨테이너 이름 충돌로 중단됐다.
+- Docker Desktop과 `evalops-postgres`, `evalops-redis`, `evalops-minio`의 실행을 확인했다.
+- Migration은 `localhost:5432`를 대상으로 실행됐고 `evalops-postgres`는 host `5433`에 매핑돼 있었다.
+- 두 endpoint가 일치하지 않아 실패 대상은 확인되지 않으며 정확한 연결 실패 원인은 `NOT_VERIFIED`다.
+- Demo Seed, Backend, Frontend, CDP 측정은 완료되지 않았다.
+
+추론:
+
+- CSS token 선언값이 교체 전 literal과 같으므로 computed spacing 보존이 구현 목표다.
+- 이 추론은 실제 Browser computed style과 visual 동일성의 증거가 아니므로 PASS 근거로 사용하지 않는다.
+
+미검증:
+
+- 모든 대상 selector의 computed margin·padding·gap
+- 네 viewport의 실제 내부 크기와 device pixel ratio
+- visual 동일성, wrapping, overflow, Console 오류, focus clipping
+- 제외 literal의 실제 Browser 값
+
+### 잔여 위험과 Phase 경계
+
+- 올바른 PostgreSQL endpoint와 연결 조건이 확인되지 않으면 Demo Route 검증을 재현할 수 없다.
+- Screenshot 또는 자동 Pixel Diff 증거가 없다.
+- 실제 Browser 측정이 없으므로 Spacing Browser 검증을 완료로 처리할 수 없다.
+
+```text
+Spacing 구현 묶음 A: 완료
+Spacing 구현 묶음 B: 완료
+Spacing Browser 검증: NOT_VERIFIED_TOOL_LIMIT
+Phase A3 전체: 미완료
+Phase B: 미진행
+```
+
+다음 경계는 올바른 endpoint와 인증 설정이 확인된 PostgreSQL 및 공식 Demo Seed를 준비한 뒤, 동일 route와 네 viewport에서 headed Chrome computed style·visual·overflow·Console·focus 검증을 다시 수행하는 것이다.
