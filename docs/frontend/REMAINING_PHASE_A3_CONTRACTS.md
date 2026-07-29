@@ -251,3 +251,84 @@ Legacy 이름 전체를 design 이름으로 교체하는 대규모 migration은 
 - Phase A3: `IN_PROGRESS`
 - Phase B: `NOT_STARTED`
 - 최종 판정: 계약은 `STATICALLY_VERIFIED`, 제품 변경은 `NO_CODE_CHANGE`
+
+## 22. Semantic Color Token Browser Runtime 검증 결과 (2026-07-29)
+
+### 22.1 환경과 데이터 준비
+
+- 기준 commit: `84364d9`
+- Browser: 공식 Google Chrome `150.0.7871.187`, headed, CDP Protocol `1.3`
+- CDP: `127.0.0.1:9222`, WMI `Win32_Process.Create`, 고유 `user-data-dir` 사용
+- Backend health: `HTTP 200`
+- Migration: `20260721170000 (head)`
+- 공식 Demo Seed: 동일 `evalops_local` Database에서 2회 모두 `already_seeded`, 종료 코드 `0`
+- Row count: Evaluation Case 전체 `6`, Seed 전용 `5`, 일반 DRAFT `1`, Snapshot `5`
+- 기존 `3001`: HTML Route는 `HTTP 200`이었으나 Chrome에서 Next.js chunk `404`와 canceled Fetch가 재현되어 최종 측정에서 제외
+- 최종 origin: 저장소 밖 임시 same-origin proxy `http://127.0.0.1:3002` (`/api/v1`은 Backend `8000`, UI는 임시 Frontend `3003`으로 전달)
+- 제품 파일, `package.json`, Next 설정과 Dependency 변경: 없음
+
+### 22.2 Route와 viewport
+
+다음 7개 Route를 `1440×900`, `1024×900`, `768×900`, `390×900`, `721×900`, `720×900`, `719×900`에서 측정해 총 `49`개 조합을 확인했다.
+
+1. Projects
+2. Project Overview
+3. Dataset Detail
+4. Experiment Create
+5. Experiment Detail
+6. History
+7. Comparison Detail
+
+49개 조합은 모두 Document `HTTP 200`, 예상 URL navigation 성공과 핵심 UI 렌더링을 확인했다. `390px`에서는 scrollbar가 있는 Route의 실제 `clientWidth`가 `375px`였고, 나머지 경계 폭에서도 scrollbar가 있는 Route는 요청 폭보다 `15px` 작은 실제 `clientWidth`를 기록했다.
+
+### 22.3 Semantic Color computed style
+
+| Selector | Runtime 상태 | 측정값 | 판정 |
+|---|---|---|---|
+| `.status-inactive` | 7개 Route에서 렌더링되지 않음 | 없음 | `NOT_VERIFIED_STATE_NOT_RENDERED` |
+| `.semantic-neutral` | Project Overview, Experiment Detail, History, Comparison Detail에서 28개 조합 측정 | `color: rgb(89, 101, 121)`, `background-color: rgb(238, 240, 243)` | `VERIFIED_CURRENT_STATE` |
+| `.immutable-note` | Dataset Detail, Experiment Detail에서 14개 조합 측정 | `color: rgb(89, 101, 121)`, `background-color: rgb(238, 240, 243)` | 기존 literal 유지 확인; 신규 Neutral State Token 대상 아님 |
+| `.state-panel-error` | 정상 Demo 상태에서 렌더링되지 않음 | 없음 | `NOT_VERIFIED_STATE_NOT_RENDERED` |
+| `.download-error` | 정상 Demo 상태에서 렌더링되지 않음 | 없음 | `NOT_VERIFIED_STATE_NOT_RENDERED` |
+| `.card-meta div` | Projects 7개 조합 | `border-top: 1px solid rgb(237, 240, 244)` | `VERIFIED_CURRENT_STATE` |
+| `.detail-list div` | Experiment Detail, Comparison Detail 14개 조합 | `border-top: 1px solid rgb(237, 240, 244)` | `VERIFIED_CURRENT_STATE` |
+| `.compact-list div` | 4개 Route 28개 조합 | `border-top: 1px solid rgb(237, 240, 244)` | `VERIFIED_CURRENT_STATE` |
+| `.trend-values div` | Project Overview 7개 조합 | `border-top: 1px solid rgb(237, 240, 244)` | `VERIFIED_CURRENT_STATE` |
+
+Neutral Runtime 전체는 `.semantic-neutral`만 실제 측정됐으므로 `PARTIALLY_VERIFIED_STATE_NOT_RENDERED`다. Danger Runtime은 두 대상 모두 렌더링되지 않아 `NOT_VERIFIED_STATE_NOT_RENDERED`다. Divider Runtime은 네 selector가 모두 실제 Route에서 기대값과 일치해 `VERIFIED_CURRENT_STATE`다. Color contrast와 WCAG 준수는 측정하지 않아 `NOT_VERIFIED`다.
+
+### 22.4 `720px` 경계
+
+- `721×900`: media query 미적용. App top padding `56px`, Header `row`, Project·Form·Overview·History·Summary Grid는 해당 Route에서 다열, metadata row는 `120px + content`, pagination은 `row`였다.
+- `720×900`: media query 적용. App top padding `32px`, Header `column`, 대상 Grid와 metadata row는 단일 열, pagination은 `column`이었다.
+- `719×900`: `720px`과 동일하게 media query가 적용됐다.
+- 경계 판정: `KEEP_720PX`, `VERIFIED_CURRENT_STATE`.
+- 49개 조합에서 document horizontal overflow, 조사 대상 구조의 비정상 overlap과 text clipping은 `0`건이었다.
+- Focus outline 자체를 순회하며 캡처한 검증은 아니므로 focus outline clipping은 `NOT_VERIFIED_METHOD_LIMIT`다.
+
+### 22.5 Console, Network와 증거 제한
+
+- Console Error: `0`
+- Runtime exception: `0`
+- React hydration 오류: `0`
+- Failed application API request: `0`
+- Resource `404`: `favicon.ico` 1종 재현
+- Route 전환 중 canceled Fetch: `35`; 모두 `net::ERR_ABORTED`, `canceled=true`로 navigation 취소와 구분
+- Next.js dev `nextjs-portal` host는 49개 조합에 존재했으나 visible error overlay 여부를 별도로 캡처하지 않았으므로 `NOT_VERIFIED_VISIBLE_STATE`다. Console·exception·API 실패 근거는 없었다.
+- 적용 전 Browser baseline: `BASELINE_NOT_CAPTURED`
+- 자동 Pixel Diff: `NOT_PRESENT`
+- `PIXEL_IDENTICAL`, `NO_VISUAL_CHANGE`, `VISUAL_REGRESSION_PASS`, 수동 전후 비교 주장은 하지 않는다.
+
+### 22.6 종료와 Phase 판정
+
+Browser-level WebSocket에 `Browser.close`를 전송한 뒤 생성 Browser PID와 CDP listener가 종료됐다. 기존 사용자 Chrome, 기존 Frontend `3001`, Backend `8000`은 종료하지 않았다. 임시 profile은 저장소 밖 Temp에 생성됐다.
+
+- Semantic Color CSS 구현: `COMPLETE`
+- Neutral Runtime: `PARTIALLY_VERIFIED_STATE_NOT_RENDERED`
+- Danger Runtime: `NOT_VERIFIED_STATE_NOT_RENDERED`
+- Divider Runtime: `VERIFIED_CURRENT_STATE`
+- `720px` 경계: `KEEP_720PX`, `VERIFIED_CURRENT_STATE`
+- Phase A3: `IN_PROGRESS`
+- Phase B: `NOT_STARTED`
+
+Danger Runtime과 `.status-inactive`가 실제 제품 상태로 렌더링되지 않았으므로 Phase A3를 완료로 판정하지 않는다.

@@ -565,3 +565,26 @@ Playwright 도입은 별도 Dependency PR로 판단하며 현재 구현 완료�
 - README와 화면 용어 일치
 - 측정하지 않은 수치 표시 금지
 - Critical 또는 필수 실패로 Gate가 BLOCK되는 Demo 재현
+
+### Phase A3 Semantic Color Browser Runtime 결과 (2026-07-29)
+
+기준 commit `84364d9`에서 공식 Google Chrome `150.0.7871.187` headed CDP와 임시 same-origin origin `http://127.0.0.1:3002`를 사용해 7개 Route × 7개 viewport, 총 49개 조합을 측정했습니다. Backend health는 `HTTP 200`, Migration은 `20260721170000 (head)`, 공식 Demo Seed 2회는 모두 종료 코드 `0`과 `already_seeded`였으며 Evaluation Case 전체 6, Seed Case 5, 일반 DRAFT 1, Snapshot 5를 유지했습니다.
+
+- Semantic Color CSS 구현: `COMPLETE`
+- Neutral Runtime: `.semantic-neutral`의 `rgb(89, 101, 121)` / `rgb(238, 240, 243)`는 `VERIFIED_CURRENT_STATE`; `.status-inactive`는 `NOT_VERIFIED_STATE_NOT_RENDERED`; 전체 `PARTIALLY_VERIFIED_STATE_NOT_RENDERED`
+- Immutable Note: 같은 computed 값이 확인됐지만 기존 literal 역할을 유지하며 신규 Neutral State Token 대상이 아님
+- Danger Runtime: `.state-panel-error`, `.download-error` 모두 `NOT_VERIFIED_STATE_NOT_RENDERED`
+- Divider Runtime: 네 selector 모두 `1px solid rgb(237, 240, 244)`, `VERIFIED_CURRENT_STATE`
+- `720px` 경계: 721px에서 미적용, 720px·719px에서 적용된 computed Layout을 확인해 `KEEP_720PX`, `VERIFIED_CURRENT_STATE`
+- Horizontal overflow·조사 대상 overlap·text clipping: 49개 조합 `0`건
+- Focus outline clipping: `NOT_VERIFIED_METHOD_LIMIT`
+- Console Error·Runtime exception·Hydration 오류·application API 실패: 수집 결과 `0`
+- Resource 404: 기존 `favicon.ico` 재현
+- canceled Fetch: Route 전환 중 `net::ERR_ABORTED`, `canceled=true` 35건으로 navigation 취소와 구분
+- Next.js overlay: dev portal host는 존재했으나 visible error overlay 별도 캡처가 없어 `NOT_VERIFIED_VISIBLE_STATE`
+- 적용 전 Browser baseline: `BASELINE_NOT_CAPTURED`
+- 자동 Pixel Diff: `NOT_PRESENT`
+- Phase A3: `IN_PROGRESS`
+- Phase B: `NOT_STARTED`
+
+Danger Runtime과 `.status-inactive`의 실제 렌더링 근거가 없으므로 Phase A3를 `COMPLETE`로 올리지 않습니다. 상세 환경, Route, viewport, computed style과 종료 결과는 [Phase A3 Remaining Contracts](REMAINING_PHASE_A3_CONTRACTS.md)에 기록합니다.
