@@ -1,9 +1,14 @@
-﻿'use client';
+'use client';
 
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import { EmptyState, ErrorState, LoadingState } from "@/src/components/AsyncStates";
+import {
+  InlineActionError,
+  EmptyState,
+  ErrorState,
+  LoadingState,
+} from "@/src/components/AsyncStates";
 import { ProjectCreateForm } from "@/src/components/ProjectCreateForm";
 import { StatusBadge } from "@/src/components/StatusBadge";
 import { toApiError, type ApiError } from "@/src/lib/api/errors";
@@ -126,13 +131,11 @@ export function ProjectsPageClient() {
         />
       ) : null}
       {error && projects !== null ? (
-        <div className="download-error" role="alert">
-          <strong>Project 목록을 갱신하지 못했습니다.</strong>
-          <p>{error.message}</p>
-          <button className="text-button" type="button" onClick={() => void load(page, true)}>
-            다시 시도
-          </button>
-        </div>
+        <InlineActionError
+          title="Project 목록을 갱신하지 못했습니다."
+          message={error.message}
+          onRetry={() => void load(page, true)}
+        />
       ) : null}
       {projects?.length === 0 && !error ? <EmptyState onCreate={() => setCreateOpen(true)} /> : null}
       {projects && projects.length > 0 ? (

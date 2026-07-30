@@ -1,4 +1,4 @@
-﻿export function LoadingState({ title = "로딩 중입니다" }: { title?: string }) {
+export function LoadingState({ title = "로딩 중입니다" }: { title?: string }) {
   return (
     <section className="state-panel" aria-live="polite" aria-busy="true">
       <span className="state-marker" aria-hidden="true" />
@@ -36,6 +36,30 @@ export function ErrorState({ title, message, retryable = false, onRetry }: Error
 type EmptyStateProps = {
   onCreate: () => void;
 };
+
+type InlineActionErrorProps = {
+  message: string;
+  title?: string;
+  onRetry?: () => void;
+};
+
+export function InlineActionError({
+  message,
+  title = "CSV 다운로드 실패",
+  onRetry,
+}: InlineActionErrorProps) {
+  return (
+    <div className="download-error" role="alert">
+      <strong>{title}</strong>
+      <p>{message}</p>
+      {onRetry ? (
+        <button className="text-button" type="button" onClick={onRetry}>
+          다시 시도
+        </button>
+      ) : null}
+    </div>
+  );
+}
 
 export function EmptyState({ onCreate }: EmptyStateProps) {
   return (
