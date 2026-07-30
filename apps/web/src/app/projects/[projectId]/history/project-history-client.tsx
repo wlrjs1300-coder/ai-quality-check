@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { ExperimentCard } from "@/src/components/AnalyticsUi";
-import { ErrorState, LoadingState } from "@/src/components/AsyncStates";
+import { ErrorState, InlineActionError, LoadingState } from "@/src/components/AsyncStates";
 import {
   getHistory,
   historyQuery,
@@ -240,7 +240,7 @@ export function ProjectHistoryClient({ projectId, initial }: ProjectHistoryClien
       </fieldset>
 
       {refreshing ? <p className="refreshing" aria-live="polite">기존 목록을 유지하며 새 조건을 조회하고 있습니다.</p> : null}
-      {downloadError ? <div className="download-error" role="alert"><strong>CSV 다운로드 실패</strong><p>{downloadError.message}</p></div> : null}
+      {downloadError ? <InlineActionError message={downloadError.message} /> : null}
       {loading && items.length === 0 ? <LoadingState title="History를 불러오고 있습니다" /> : null}
       {error && items.length === 0 ? (
         error.status === 404 || error.code === "PROJECT_NOT_FOUND" ? (

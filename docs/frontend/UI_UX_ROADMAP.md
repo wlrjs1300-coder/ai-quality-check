@@ -588,3 +588,16 @@ Playwright 도입은 별도 Dependency PR로 판단하며 현재 구현 완료�
 - Phase B: `NOT_STARTED`
 
 Danger Runtime과 `.status-inactive`의 실제 렌더링 근거가 없으므로 Phase A3를 `COMPLETE`로 올리지 않습니다. 상세 환경, Route, viewport, computed style과 종료 결과는 [Phase A3 Remaining Contracts](REMAINING_PHASE_A3_CONTRACTS.md)에 기록합니다.
+
+### Phase A3 Runtime 상태 보강 (2026-07-30)
+
+- Runtime validation route: 구현 완료, Production 기본 비활성
+- Neutral Runtime `.status-inactive`: `VERIFIED_CURRENT_STATE`
+- Danger Runtime `.state-panel-error`, `.download-error`: `VERIFIED_CURRENT_STATE`
+- Harness focus clipping: 3개 viewport에서 `VERIFIED_NO_FOCUS_CLIPPING`
+- Harness visible overlay: `VERIFIED_NO_VISIBLE_ERROR_OVERLAY`
+- 제품 7개 Route focus·overlay 재검증: `BLOCKED_DEMO_SEED_ENVIRONMENT`
+- Phase A3: `IN_PROGRESS`
+- Phase B: `NOT_STARTED`
+
+상세 computed style, 차단 원인과 미검증 범위는 [Phase A3 Remaining Contracts](REMAINING_PHASE_A3_CONTRACTS.md)의 2026-07-30 결과를 기준으로 합니다.

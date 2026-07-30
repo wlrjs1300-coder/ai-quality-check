@@ -332,3 +332,27 @@ Browser-level WebSocket에 `Browser.close`를 전송한 뒤 생성 Browser PID�
 - Phase B: `NOT_STARTED`
 
 Danger Runtime과 `.status-inactive`가 실제 제품 상태로 렌더링되지 않았으므로 Phase A3를 완료로 판정하지 않는다.
+
+## 23. 남은 Runtime 상태 검증 결과 (2026-07-30)
+
+- 기준 commit: `674e22b`
+- 선택 경로: `RUNTIME_VALIDATION_ENABLED=true`에서만 열리는 `/runtime-validation`
+- 재사용 Component: `StatusBadge`, `ErrorState`, `InlineActionError`
+- 기본값·`false`: Server-side `notFound()`로 `HTTP 404`
+- Navigation 노출, API 호출·Mutation, Database 접근·변경, Dependency 변경: 없음
+- Browser: 공식 Google Chrome `150.0.7871.187`, headed, CDP Protocol `1.3`
+- 측정: Harness 1 Route × `1440×900`, `720×900`, `390×900` = 3개 조합
+
+| Selector | 실제 Component | computed 결과 | Runtime 판정 |
+|---|---|---|---|
+| `.status-inactive` | `StatusBadge active={false}` | `color: rgb(89, 101, 121)`, `background-color: rgb(238, 240, 243)` | `VERIFIED_CURRENT_STATE` |
+| `.state-panel-error` | retry Action이 있는 `ErrorState` | `border: 1px solid rgb(240, 184, 179)`, `background-color: rgb(255, 241, 240)` | `VERIFIED_CURRENT_STATE` |
+| `.download-error` | retry Action이 있는 `InlineActionError` | `border: 1px solid rgb(240, 184, 179)`, `background-color: rgb(255, 241, 240)` | `VERIFIED_CURRENT_STATE` |
+
+세 viewport에서 selector count는 각각 1, horizontal overflow와 text clipping은 0건이었다. 두 retry Button은 실제 focus에서 `outline: 3px solid`, `outline-offset: 2px`였고 viewport clipping은 0건이었다. Dev `nextjs-portal`은 존재하고 shadow root에 접근할 수 있었지만 visible portal과 error dialog는 0건이며 Runtime exception도 0건이었다. Resource 404 console entry는 기존 `favicon.ico` 요청으로 구분했다.
+
+전체 7개 제품 Route의 Tab·Shift+Tab 순회는 `BLOCKED_DEMO_SEED_ENVIRONMENT`다. 검증 시작 시 `8000`, `3001`, EvalOps PostgreSQL listener가 없었고, 기존 EvalOps PostgreSQL container는 다른 프로젝트가 점유한 `5432`·`5433`과 충돌해 시작할 수 없었다. 인증 정보나 다른 프로젝트 process/container를 변경하지 않았다. 따라서 migration, row count, 21개 제품 Route·viewport focus 조합은 검증하지 않았고 PASS로 기록하지 않는다.
+
+- 남은 미검증: Demo Seed row count, 7개 제품 Route의 Tab·Shift+Tab focus clipping, 제품 Route overlay·console·network
+- Phase A3: `IN_PROGRESS`
+- Phase B: `NOT_STARTED`
