@@ -51,3 +51,56 @@ git pull
 
 # PR 또는 develop 브랜치 push 시 자동 실행
 ```
+
+## Playwright Browser Smoke Test
+
+Frontend Browser 검증 기반은 `apps/web`의 Playwright Test를 사용합니다.
+
+현재 Foundation 범위는 Test 전용 `/runtime-validation` Route에서 실제 Keyboard Focus 이동을 확인하는 Smoke Test입니다.
+
+검증 순서:
+
+```text
+Tab → 첫 번째 다시 시도 Button
+Tab → 두 번째 다시 시도 Button
+Shift+Tab → 첫 번째 다시 시도 Button
+```
+
+Playwright는 개발 Dependency로만 설치되며 기존 Google Chrome Channel을 사용합니다. 별도의 Playwright Browser Binary는 설치하지 않습니다.
+
+Headless 실행:
+
+```powershell
+cd apps/web
+npm.cmd run test:browser:smoke
+```
+
+Headed 실행:
+
+```powershell
+cd apps/web
+npm.cmd run test:browser:smoke:headed
+```
+
+전체 Browser Test 실행:
+
+```powershell
+cd apps/web
+npm.cmd run test:browser
+```
+
+Playwright의 Test 전용 Web Server에만 `RUNTIME_VALIDATION_ENABLED=true`가 전달됩니다. 일반 실행과 Production 환경에서는 `/runtime-validation` Route가 계속 `HTTP 404`로 차단됩니다.
+
+생성 Artifact:
+
+```text
+apps/web/test-results/
+apps/web/playwright-report/
+apps/web/blob-report/
+```
+
+위 Artifact는 Git 추적 대상이 아닙니다.
+
+이번 Foundation은 Runtime Validation Route의 Keyboard Focus Smoke Test만 포함합니다. 제품 7개 Route × 3 Viewport 검증과 Phase A3 최종 판정은 후속 작업에서 수행합니다.
+
+CI와 GitHub Actions에는 아직 Playwright를 추가하지 않습니다.
