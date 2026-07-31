@@ -98,9 +98,13 @@ export function DatasetDetailClient({ projectId, datasetId }: Props) {
   const [versionError, setVersionError] = useState<ApiError | null>(null);
   const [formError, setFormError] = useState<ApiError | null>(null);
   const [loading, setLoading] = useState(true);
+  const [caseRefreshing, setCaseRefreshing] = useState(false);
+  const [versionRefreshing, setVersionRefreshing] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [creatingVersion, setCreatingVersion] = useState(false);
   const controllerRef = useRef<AbortController | null>(null);
+  const caseRequestIdRef = useRef(0);
+  const versionRequestIdRef = useRef(0);
 
   const loadDataset = useCallback(async (signal?: AbortSignal) => {
     try {
@@ -115,18 +119,36 @@ export function DatasetDetailClient({ projectId, datasetId }: Props) {
     catch (error) { if (!(error instanceof DOMException && error.name === "AbortError")) setDatasetError(toApiError(error)); }
   }, [datasetId, projectId]);
   const loadCases = useCallback(async (page: number, signal?: AbortSignal) => {
+    const requestId = ++caseRequestIdRef.current;
+    setCaseRefreshing(true);
     try {
       setCaseError(null);
       const result = await listEvaluationCases(datasetId, page, signal);
+      if (requestId !== caseRequestIdRef.current) return;
       setCases(result.data); setCaseTotal(result.pagination.total);
-    } catch (error) { if (!(error instanceof DOMException && error.name === "AbortError")) setCaseError(toApiError(error)); }
+    } catch (error) {
+      if (requestId === caseRequestIdRef.current && !(error instanceof DOMException && error.name === "AbortError")) {
+        setCaseError(toApiError(error));
+      }
+    } finally {
+      if (requestId === caseRequestIdRef.current) setCaseRefreshing(false);
+    }
   }, [datasetId]);
   const loadVersions = useCallback(async (page: number, signal?: AbortSignal) => {
+    const requestId = ++versionRequestIdRef.current;
+    setVersionRefreshing(true);
     try {
       setVersionError(null);
       const result = await listDatasetVersions(datasetId, page, signal);
+      if (requestId !== versionRequestIdRef.current) return;
       setVersions(result.data); setVersionTotal(result.pagination.total);
-    } catch (error) { if (!(error instanceof DOMException && error.name === "AbortError")) setVersionError(toApiError(error)); }
+    } catch (error) {
+      if (requestId === versionRequestIdRef.current && !(error instanceof DOMException && error.name === "AbortError")) {
+        setVersionError(toApiError(error));
+      }
+    } finally {
+      if (requestId === versionRequestIdRef.current) setVersionRefreshing(false);
+    }
   }, [datasetId]);
 
   useEffect(() => {
@@ -306,7 +328,13 @@ export function DatasetDetailClient({ projectId, datasetId }: Props) {
                 </article>
               ))}
             </div>
-            <Pagination page={casePage} total={caseTotal} onChange={setCasePage} />
+            <Pagination
+              page={casePage}
+              total={caseTotal}
+              isLoading={caseRefreshing}
+              ariaLabel="Evaluation cases pagination"
+              onChange={setCasePage}
+            />
           </section>
 
           <section className="overview-section" aria-labelledby="version-title">
@@ -326,7 +354,13 @@ export function DatasetDetailClient({ projectId, datasetId }: Props) {
               ))}
             </div>
             <p className="immutable-note">Dataset Version은 생성 후 수정하거나 삭제할 수 없습니다.</p>
-            <Pagination page={versionPage} total={versionTotal} onChange={setVersionPage} />
+            <Pagination
+              page={versionPage}
+              total={versionTotal}
+              isLoading={versionRefreshing}
+              ariaLabel="Dataset versions pagination"
+              onChange={setVersionPage}
+            />
           </section>
         </>
       ) : null}
@@ -334,8 +368,20 @@ export function DatasetDetailClient({ projectId, datasetId }: Props) {
   );
 }
 
-function Pagination({ page, total, onChange }: { page: number; total: number; onChange: (page: number) => void }) {
+function Pagination({
+  page,
+  total,
+  isLoading,
+  ariaLabel,
+  onChange,
+}: {
+  page: number;
+  total: number;
+  isLoading: boolean;
+  ariaLabel: string;
+  onChange: (page: number) => void;
+}) {
   const totalPages = total === 0 ? 0 : Math.ceil(total / 20);
   if (totalPages <= 1) return null;
-  return <nav className="pagination" aria-label="Pagination"><button className="button button-secondary" disabled={page <= 1} onClick={() => onChange(page - 1)}>이전</button><span>{page} / {totalPages}</span><button className="button button-secondary" disabled={page >= totalPages} onClick={() => onChange(page + 1)}>다음</button></nav>;
+  return <nav className="pagination" aria-label={ariaLabel}><button className="button button-secondary" disabled={page <= 1 || isLoading} onClick={() => onChange(page - 1)}>이전</button><span>{page} / {totalPages}</span><button className="button button-secondary" disabled={page >= totalPages || isLoading} onClick={() => onChange(page + 1)}>다음</button></nav>;
 }

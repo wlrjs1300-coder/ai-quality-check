@@ -84,7 +84,7 @@
 
 `Decimal` 기반 비율과 변화량은 JSON 문자열(예: `"0.8"`, `"-0.2"`)입니다. datetime은 timezone 정보를 포함할 수 있는 ISO 8601 문자열입니다. 기간 필터는 `created_from <= created_to`이며 양 끝을 포함합니다.
 
-목록 API는 기본 `page=1`, `size=20`이고 대부분 `page >= 1`, `1 <= size <= 100`입니다. 현재 Dataset Version 목록만 OpenAPI에 이 범위 제약이 선언되어 있지 않습니다. `total_pages`, `has_next`, `has_previous`는 응답하지 않습니다.
+목록 API는 기본 `page=1`, `size=20`이고 `page >= 1`, `1 <= size <= 100`입니다. 범위를 벗어난 값은 HTTP 422를 반환합니다. `total_pages`, `has_next`, `has_previous`는 응답하지 않습니다.
 
 ## 핵심 생성 흐름
 

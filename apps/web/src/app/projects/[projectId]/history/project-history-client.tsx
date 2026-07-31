@@ -68,13 +68,39 @@ function initialQuery(initial: InitialValues): HistoryQuery {
 
 export function ProjectHistoryClient({ projectId, initial }: ProjectHistoryClientProps) {
   const router = useRouter();
-  const [query, setQuery] = useState<HistoryQuery>(() => initialQuery(initial));
-  const [from, setFrom] = useState(initial.from);
-  const [to, setTo] = useState(initial.to);
-  const [experimentStatus, setExperimentStatus] = useState<ExperimentStatus | "">(member(initial.experimentStatus, EXPERIMENT_STATUSES) ?? "");
-  const [gateStatus, setGateStatus] = useState<GateStatus | "">(member(initial.gateStatus, GATE_STATUSES) ?? "");
-  const [comparisonStatus, setComparisonStatus] = useState<ComparisonStatus | "">(member(initial.comparisonStatus, COMPARISON_STATUSES) ?? "");
-  const [sort, setSort] = useState<HistorySort>(initial.sort === "created_at_asc" ? "created_at_asc" : "created_at_desc");
+  const {
+    comparisonStatus: initialComparisonStatus,
+    experimentStatus: initialExperimentStatus,
+    from: initialFrom,
+    gateStatus: initialGateStatus,
+    page: initialPage,
+    sort: initialSort,
+    to: initialTo,
+  } = initial;
+  const normalizedInitial = useMemo(() => initialQuery({
+    comparisonStatus: initialComparisonStatus,
+    experimentStatus: initialExperimentStatus,
+    from: initialFrom,
+    gateStatus: initialGateStatus,
+    page: initialPage,
+    sort: initialSort,
+    to: initialTo,
+  }), [
+    initialComparisonStatus,
+    initialExperimentStatus,
+    initialFrom,
+    initialGateStatus,
+    initialPage,
+    initialSort,
+    initialTo,
+  ]);
+  const [query, setQuery] = useState<HistoryQuery>(() => normalizedInitial);
+  const [from, setFrom] = useState(initialFrom);
+  const [to, setTo] = useState(initialTo);
+  const [experimentStatus, setExperimentStatus] = useState<ExperimentStatus | "">(member(initialExperimentStatus, EXPERIMENT_STATUSES) ?? "");
+  const [gateStatus, setGateStatus] = useState<GateStatus | "">(member(initialGateStatus, GATE_STATUSES) ?? "");
+  const [comparisonStatus, setComparisonStatus] = useState<ComparisonStatus | "">(member(initialComparisonStatus, COMPARISON_STATUSES) ?? "");
+  const [sort, setSort] = useState<HistorySort>(initialSort === "created_at_asc" ? "created_at_asc" : "created_at_desc");
   const [items, setItems] = useState<ExperimentHistoryItem[]>([]);
   const [pagination, setPagination] = useState<Pagination>({ total: 0, page: 1, size: 20 });
   const [error, setError] = useState<ApiError | null>(null);
@@ -86,6 +112,8 @@ export function ProjectHistoryClient({ projectId, initial }: ProjectHistoryClien
   const controllerRef = useRef<AbortController | null>(null);
   const requestIdRef = useRef(0);
   const hasItemsRef = useRef(false);
+  const filterInputRef = useRef({ from, to });
+  filterInputRef.current = { from, to };
 
   const syncUrl = useCallback((next: HistoryQuery, nextFrom: string, nextTo: string) => {
     const params = new URLSearchParams();
@@ -103,6 +131,7 @@ export function ProjectHistoryClient({ projectId, initial }: ProjectHistoryClien
     controllerRef.current?.abort();
     const controller = new AbortController();
     const requestId = ++requestIdRef.current;
+    let canonicalizing = false;
     controllerRef.current = controller;
     setError(null);
     if (hasItemsRef.current) setRefreshing(true);
@@ -110,6 +139,17 @@ export function ProjectHistoryClient({ projectId, initial }: ProjectHistoryClien
     try {
       const result = await getHistory(projectId, next, controller.signal);
       if (requestId !== requestIdRef.current) return;
+      const totalPages = result.pagination.total === 0
+        ? 0
+        : Math.ceil(result.pagination.total / Math.max(1, result.pagination.size));
+      const canonicalPage = totalPages === 0 ? 1 : Math.min(next.page, totalPages);
+      if (canonicalPage !== next.page) {
+        const canonicalQuery = { ...next, page: canonicalPage };
+        const currentFilter = filterInputRef.current;
+        canonicalizing = true;
+        syncUrl(canonicalQuery, currentFilter.from, currentFilter.to);
+        return;
+      }
       setItems(result.data);
       hasItemsRef.current = result.data.length > 0;
       setPagination(result.pagination);
@@ -119,11 +159,29 @@ export function ProjectHistoryClient({ projectId, initial }: ProjectHistoryClien
     } finally {
       if (requestId === requestIdRef.current) {
         controllerRef.current = null;
-        setLoading(false);
-        setRefreshing(false);
+        if (!canonicalizing) {
+          setLoading(false);
+          setRefreshing(false);
+        }
       }
     }
-  }, [projectId]);
+  }, [projectId, syncUrl]);
+
+  useEffect(() => {
+    const next = normalizedInitial;
+    setQuery((current) => (
+      current.page === next.page
+      && current.size === next.size
+      && current.experimentStatus === next.experimentStatus
+      && current.gateStatus === next.gateStatus
+      && current.comparisonStatus === next.comparisonStatus
+      && current.createdFrom === next.createdFrom
+      && current.createdTo === next.createdTo
+      && current.sort === next.sort
+        ? current
+        : next
+    ));
+  }, [normalizedInitial]);
 
   useEffect(() => {
     void load(query);

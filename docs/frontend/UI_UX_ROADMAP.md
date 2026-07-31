@@ -251,6 +251,19 @@ Phase A3는 Focus 계약 결정부터 시작했습니다.
 - 완료 조건: 서버 pagination과 기존 상태 보존
 - 독립 Merge: 가능
 
+2026-07-31 `feat/v0.33.0-phase-b2-pagination`에서 공통 Component 추출 전 선행 결함을 B2-0으로 분리해 수정하고 자동 회귀를 완료했습니다.
+
+- Dataset Version 목록의 `page`와 `size`를 다른 목록 API와 같은 FastAPI Query 계약(`page >= 1`, `1 <= size <= 100`)으로 통일했습니다. 정상 pagination envelope는 유지하며 범위 밖 값은 HTTP 422를 반환합니다.
+- History가 `total > 0`인 범위 초과 page를 받으면 Empty 상태로 확정하지 않고 마지막 유효 page로 `router.replace`한 뒤 다시 조회합니다. 기존 filter와 sort query, page 1 Empty, 마지막 유효 page, CSV와 Abort/request ID 계약은 유지합니다.
+- Dataset Detail의 Evaluation Case와 Dataset Version Pagination은 각 목록 요청 중 이전·다음 Button을 disabled 처리합니다. 두 landmark는 각각 `Evaluation cases pagination`, `Dataset versions pagination`으로 구분합니다.
+- B2-0 Playwright는 DB를 변경하지 않고 interception으로 41건을 구성해 1440×900, 720×900, 390×900에서 URL canonicalization, Empty, 마지막 page, 실제 Tab·Shift+Tab·Enter·Space, 연속 activation 차단, overflow, focus clipping, visible overlay, Console·Page·Network 오류를 검증합니다.
+- `npm run test:browser:b2-0`과 headed 실행은 각각 15 passed입니다. B1은 headless·headed 각각 49 passed/2 skipped, Product Focus는 각각 21 passed, Runtime Focus Smoke는 각각 1 passed로 유지됐습니다.
+- Backend 관련 Test는 9 passed, 전체 Backend는 124 passed/7 skipped이며 ruff, Frontend typecheck·lint·production build가 통과했습니다.
+- 공통 Pagination Component, 전체 화면 JSX 공통화, total 표시, URL 정책 전면 통일은 B2-0 범위에서 제외했습니다.
+- Phase B2-0: `COMPLETE`
+- Phase B2: `IN_PROGRESS`
+- Phase B2-1 common Pagination: `NOT_STARTED`
+
 Phase 0 Pagination은 실제 접근 불가 결함을 해결하고, B2는 검증된 화면별 구현을 공통 계약으로 정리합니다.
 
 ### B3 Empty + Partial Error
