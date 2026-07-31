@@ -245,7 +245,26 @@ def test_dataset_version_list_includes_pagination_meta(client):
     assert listing.status_code == 200
     body = listing.json()
     assert body["meta"]["pagination"]["total"] >= 2
+    assert body["meta"]["pagination"]["page"] == 1
+    assert body["meta"]["pagination"]["size"] == 1
     assert len(body["data"]) == 1
+
+
+def test_dataset_version_list_validates_pagination_query(client):
+    _, dataset_id = _create_project_dataset(client)
+    endpoint = f"/api/v1/datasets/{dataset_id}/versions"
+
+    for query in ("page=0", "page=-1", "size=0", "size=101"):
+        assert client.get(f"{endpoint}?{query}").status_code == 422
+
+    for size in (1, 100):
+        response = client.get(f"{endpoint}?page=1&size={size}")
+        assert response.status_code == 200
+        assert response.json()["meta"]["pagination"] == {
+            "total": 0,
+            "page": 1,
+            "size": size,
+        }
 
 
 def test_dataset_version_endpoints_have_no_update_or_delete(client):
