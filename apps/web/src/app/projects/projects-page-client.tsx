@@ -11,6 +11,7 @@ import {
 } from "@/src/components/AsyncStates";
 import { ProjectCreateForm } from "@/src/components/ProjectCreateForm";
 import { PageHeader } from "@/src/components/PageHeader";
+import { Pagination } from "@/src/components/Pagination";
 import { StatusBadge } from "@/src/components/StatusBadge";
 import { toApiError, type ApiError } from "@/src/lib/api/errors";
 import { listProjects, type Project } from "@/src/lib/api/projects";
@@ -94,8 +95,6 @@ export function ProjectsPageClient() {
   }
 
   const isNetworkFailure = error?.kind === "network";
-  const totalPages = total === 0 ? 0 : Math.ceil(total / size);
-
   function movePage(nextPage: number) {
     void load(nextPage, hasLoadedRef.current);
   }
@@ -165,25 +164,14 @@ export function ProjectsPageClient() {
               </article>
             ))}
           </div>
-          <nav className="pagination" aria-label="Project 목록 페이지 이동">
-            <button
-              className="button button-secondary"
-              type="button"
-              disabled={page <= 1 || refreshing}
-              onClick={() => movePage(page - 1)}
-            >
-              이전
-            </button>
-            <span>{`전체 ${total}건 · ${page} / ${totalPages} 페이지`}</span>
-            <button
-              className="button button-secondary"
-              type="button"
-              disabled={page >= totalPages || refreshing}
-              onClick={() => movePage(page + 1)}
-            >
-              다음
-            </button>
-          </nav>
+          <Pagination
+            page={page}
+            pageSize={size}
+            total={total}
+            isLoading={refreshing}
+            ariaLabel="Projects pagination"
+            onPageChange={movePage}
+          />
         </section>
       ) : null}
     </main>

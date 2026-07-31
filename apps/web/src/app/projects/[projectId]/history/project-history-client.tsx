@@ -8,6 +8,7 @@ import { ExperimentCard } from "@/src/components/AnalyticsUi";
 import { ErrorState, InlineActionError, LoadingState } from "@/src/components/AsyncStates";
 import { Breadcrumb } from "@/src/components/Breadcrumb";
 import { PageHeader } from "@/src/components/PageHeader";
+import { Pagination } from "@/src/components/Pagination";
 import {
   getHistory,
   historyQuery,
@@ -20,7 +21,7 @@ import {
 } from "@/src/lib/api/analytics";
 import { downloadCsv } from "@/src/lib/api/client";
 import { toApiError, type ApiError } from "@/src/lib/api/errors";
-import type { Pagination } from "@/src/lib/api/types";
+import type { Pagination as ApiPagination } from "@/src/lib/api/types";
 
 type InitialValues = {
   from: string;
@@ -102,7 +103,7 @@ export function ProjectHistoryClient({ projectId, initial }: ProjectHistoryClien
   const [comparisonStatus, setComparisonStatus] = useState<ComparisonStatus | "">(member(initialComparisonStatus, COMPARISON_STATUSES) ?? "");
   const [sort, setSort] = useState<HistorySort>(initialSort === "created_at_asc" ? "created_at_asc" : "created_at_desc");
   const [items, setItems] = useState<ExperimentHistoryItem[]>([]);
-  const [pagination, setPagination] = useState<Pagination>({ total: 0, page: 1, size: 20 });
+  const [pagination, setPagination] = useState<ApiPagination>({ total: 0, page: 1, size: 20 });
   const [error, setError] = useState<ApiError | null>(null);
   const [downloadError, setDownloadError] = useState<ApiError | null>(null);
   const [filterError, setFilterError] = useState<string | null>(null);
@@ -357,11 +358,14 @@ export function ProjectHistoryClient({ projectId, initial }: ProjectHistoryClien
       ) : null}
 
       {items.length > 0 ? (
-        <nav className="pagination" aria-label="History pagination">
-          <button className="button button-secondary" type="button" disabled={query.page <= 1 || refreshing} onClick={() => movePage(query.page - 1)}>이전</button>
-          <span>전체 {pagination.total}건 · {pagination.page} / {totalPages || 0} 페이지</span>
-          <button className="button button-secondary" type="button" disabled={totalPages === 0 || query.page >= totalPages || refreshing} onClick={() => movePage(query.page + 1)}>다음</button>
-        </nav>
+        <Pagination
+          page={pagination.page}
+          pageSize={pagination.size}
+          total={pagination.total}
+          isLoading={refreshing}
+          ariaLabel="History pagination"
+          onPageChange={movePage}
+        />
       ) : null}
     </main>
   );
