@@ -16,7 +16,9 @@
     "test:browser:b1": "playwright test --config=playwright.b1.config.ts",
     "test:browser:b1:headed": "playwright test --config=playwright.b1.config.ts --headed",
     "test:browser:b2-0": "playwright test --config=playwright.b2-0.config.ts",
-    "test:browser:b2-0:headed": "playwright test --config=playwright.b2-0.config.ts --headed"
+    "test:browser:b2-0:headed": "playwright test --config=playwright.b2-0.config.ts --headed",
+    "test:browser:b2-1": "playwright test --config=playwright.b2-1.config.ts",
+    "test:browser:b2-1:headed": "playwright test --config=playwright.b2-1.config.ts --headed"
   },
   "dependencies": {
     "next": "^15.5.18",

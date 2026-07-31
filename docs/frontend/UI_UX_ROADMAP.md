@@ -262,7 +262,17 @@ Phase A3는 Focus 계약 결정부터 시작했습니다.
 - 공통 Pagination Component, 전체 화면 JSX 공통화, total 표시, URL 정책 전면 통일은 B2-0 범위에서 제외했습니다.
 - Phase B2-0: `COMPLETE`
 - Phase B2: `IN_PROGRESS`
-- Phase B2-1 common Pagination: `NOT_STARTED`
+- Phase B2-1 common Pagination: `COMPLETE`
+- Phase B2-2 remaining Pagination adoption: `NOT_STARTED`
+
+2026-07-31 `feat/v0.33.1-phase-b2-1-pagination-component`에서 공통 Pagination Component를 추가하고 Projects와 History에 우선 적용했습니다.
+
+- 공통 Component는 이전·다음 Button, 전체 건수, 현재 page와 전체 page 수, loading 및 첫·마지막 page Disabled 상태를 하나의 계약으로 제공합니다. Empty 목록에서는 숨기고, 1건과 20건처럼 한 page인 목록에서도 현재 상태를 표시합니다.
+- Projects는 기존 Client state와 API pagination을 유지한 채 중복 JSX만 공통 Component로 교체했습니다. History는 B2-0의 범위 초과 page canonicalization, filter·sort query, Abort와 최신 응답 보호 계약을 그대로 유지했습니다.
+- B2-1 Playwright는 Backend와 DB를 변경하지 않고 API interception으로 Projects의 0·1·20·21·41건과 History의 범위 초과 page를 구성합니다. 1440×900, 720×900, 390×900에서 첫·중간·마지막 page, Empty, loading 중 연속 activation 차단, 실제 Tab·Shift+Tab·Enter·Space, request 중복, URL·filter 보존, overflow, focus clipping, visible overlay, Console·Page·Network 오류를 검증합니다.
+- `npm run test:browser:b2-1`과 `npm run test:browser:b2-1:headed`는 각각 6 passed입니다. B2-0은 headless·headed 각각 15 passed, B1은 각각 49 passed/2 skipped, Product Focus는 각각 21 passed, Runtime Focus Smoke는 각각 1 passed로 유지됐습니다.
+- Frontend typecheck, lint, production build와 Repository Policy가 통과했습니다.
+- Dataset Detail, Dataset Version과 나머지 pagination 화면의 공통 Component 적용은 B2-2로 남깁니다. 따라서 Phase B2 전체 상태는 `IN_PROGRESS`입니다.
 
 Phase 0 Pagination은 실제 접근 불가 결함을 해결하고, B2는 검증된 화면별 구현을 공통 계약으로 정리합니다.
 
