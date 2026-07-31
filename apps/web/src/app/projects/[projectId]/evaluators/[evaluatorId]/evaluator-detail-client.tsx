@@ -4,6 +4,8 @@ import Link from "next/link";
 import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
 
 import { ErrorState, LoadingState } from "@/src/components/AsyncStates";
+import { Breadcrumb } from "@/src/components/Breadcrumb";
+import { PageHeader } from "@/src/components/PageHeader";
 import { StatusBadge } from "@/src/components/StatusBadge";
 import {
   configInput,
@@ -192,10 +194,21 @@ export function EvaluatorDetailClient({
   }
 
   const totalPages = versionTotal === 0 ? 0 : Math.ceil(versionTotal / versionSize);
+  const breadcrumb = (
+    <Breadcrumb
+      items={[
+        { label: "Projects", href: "/projects" },
+        { label: "Project Overview", href: `/projects/${projectId}` },
+        { label: item?.name ?? "Evaluator" },
+      ]}
+    />
+  );
 
   if (loading && !item) {
     return (
       <main className="app-shell">
+        {breadcrumb}
+        <PageHeader title="Evaluator" />
         <LoadingState />
       </main>
     );
@@ -205,6 +218,8 @@ export function EvaluatorDetailClient({
     const isNotFound = error.status === 404 || error.code === "EVALUATOR_NOT_FOUND";
     return (
       <main className="app-shell">
+        {breadcrumb}
+        <PageHeader title="Evaluator" />
         <ErrorState
           title={error.kind === "network" ? "서버에 연결할 수 없습니다" : undefined}
           message={isNotFound ? "Evaluator를 찾을 수 없습니다." : error.message}
@@ -224,22 +239,16 @@ export function EvaluatorDetailClient({
 
   return (
     <main className="app-shell">
-      <nav className="breadcrumb">
-        <Link href={`/projects/${projectId}`}>Project Overview</Link>
-        <span>/</span>
-        <span>Evaluator</span>
-      </nav>
+      {breadcrumb}
 
       {item ? (
         <>
-          <header className="detail-header">
-            <div>
-              <p className="eyebrow">{item.evaluatorType}</p>
-              <h1>{item.name}</h1>
-              <p>결정론적 설정과 불변 Version Snapshot을 관리합니다.</p>
-            </div>
-            <StatusBadge active={item.isActive} />
-          </header>
+          <PageHeader
+            eyebrow={item.evaluatorType}
+            title={item.name}
+            description="결정론적 설정과 불변 Version Snapshot을 관리합니다."
+            status={<StatusBadge active={item.isActive} />}
+          />
 
           <form className="form-panel case-form" onSubmit={(event) => void save(event)}>
             <label>

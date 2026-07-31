@@ -4,6 +4,8 @@ import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { ErrorState, LoadingState } from "@/src/components/AsyncStates";
+import { Breadcrumb } from "@/src/components/Breadcrumb";
+import { PageHeader } from "@/src/components/PageHeader";
 import {
   fixedResponse,
   getTarget,
@@ -103,11 +105,27 @@ export function TargetVersionDetailClient({
     };
   }, [load]);
 
+  const breadcrumb = (
+    <Breadcrumb
+      items={[
+        { label: "Projects", href: "/projects" },
+        { label: "Project Overview", href: `/projects/${projectId}` },
+        {
+          label: target?.name ?? "Target",
+          href: `/projects/${projectId}/targets/${targetId}`,
+        },
+        { label: item ? `Version ${item.version}` : "Version" },
+      ]}
+    />
+  );
+
   if (error) {
     const isNotFound = error.status === 404 || error.code === "TARGET_VERSION_NOT_FOUND";
 
     return (
       <main className="app-shell">
+        {breadcrumb}
+        <PageHeader title="Target Version" />
         <ErrorState
           message={isNotFound ? "Target Version을 찾을 수 없습니다." : error.message}
           retryable={!isNotFound && Boolean(error.retryable)}
@@ -127,6 +145,8 @@ export function TargetVersionDetailClient({
   if (loading || isInitialLoad) {
     return (
       <main className="app-shell">
+        {breadcrumb}
+        <PageHeader title="Target Version" />
         <LoadingState />
       </main>
     );
@@ -135,6 +155,8 @@ export function TargetVersionDetailClient({
   if (!item || !target) {
     return (
       <main className="app-shell">
+        {breadcrumb}
+        <PageHeader title="Target Version" />
         <ErrorState message="목표 데이터를 로드하지 못했습니다." retryable={false} />
       </main>
     );
@@ -142,18 +164,12 @@ export function TargetVersionDetailClient({
 
   return (
     <main className="app-shell">
-      <nav className="breadcrumb">
-        <Link href={`/projects/${projectId}/targets/${targetId}`}>{target.name}</Link>
-        <span>/</span>
-        <span>Version {item.version}</span>
-      </nav>
-      <header className="detail-header">
-        <div>
-          <p className="eyebrow">Immutable FIXED Snapshot</p>
-          <h1>Target Version {item.version}</h1>
-          <p>원본 Target 설정이 변경되거나 비활성화돼도 이 Snapshot은 유지됩니다.</p>
-        </div>
-      </header>
+      {breadcrumb}
+      <PageHeader
+        eyebrow="Immutable FIXED Snapshot"
+        title={`Target Version ${item.version}`}
+        description="원본 Target 설정이 변경되거나 비활성화돼도 이 Snapshot은 유지됩니다."
+      />
       <section className="detail-panel">
         <dl className="detail-list">
           <div>

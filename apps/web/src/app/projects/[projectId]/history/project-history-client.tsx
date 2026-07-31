@@ -6,6 +6,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { ExperimentCard } from "@/src/components/AnalyticsUi";
 import { ErrorState, InlineActionError, LoadingState } from "@/src/components/AsyncStates";
+import { Breadcrumb } from "@/src/components/Breadcrumb";
+import { PageHeader } from "@/src/components/PageHeader";
 import {
   getHistory,
   historyQuery,
@@ -208,19 +210,33 @@ export function ProjectHistoryClient({ projectId, initial }: ProjectHistoryClien
     () => pagination.total === 0 ? 0 : Math.ceil(pagination.total / pagination.size),
     [pagination],
   );
+  const projectNotFound = Boolean(
+    error && (error.status === 404 || error.code === "PROJECT_NOT_FOUND"),
+  );
 
   return (
     <main className="app-shell">
-      <nav className="breadcrumb" aria-label="Breadcrumb">
-        <Link href="/projects">Projects</Link><span aria-hidden="true">/</span>
-        <Link href={`/projects/${encodeURIComponent(projectId)}`}>Overview</Link><span aria-hidden="true">/</span><span>History</span>
-      </nav>
-      <header className="page-header">
-        <div><p className="eyebrow">Experiment</p><h1>History</h1><p className="page-description">기간과 판정 상태별 실행 이력을 조회하고 같은 조건으로 CSV를 내보냅니다.</p></div>
-        <button className="button" type="button" disabled={downloading || loading} onClick={() => void exportCsv()}>
-          {downloading ? "다운로드 중…" : "CSV 다운로드"}
-        </button>
-      </header>
+      <Breadcrumb
+        items={[
+          { label: "Projects", href: "/projects" },
+          { label: "Project Overview", href: `/projects/${encodeURIComponent(projectId)}` },
+          { label: "History" },
+        ]}
+      />
+      <PageHeader
+        eyebrow="Experiment"
+        title="History"
+        description="기간과 판정 상태별 실행 이력을 조회하고 같은 조건으로 CSV를 내보냅니다."
+        actions={projectNotFound ? (
+          <Link className="button button-secondary" href="/projects">
+            Projects로 돌아가기
+          </Link>
+        ) : (
+          <button className="button" type="button" disabled={downloading || loading} onClick={() => void exportCsv()}>
+            {downloading ? "다운로드 중…" : "CSV 다운로드"}
+          </button>
+        )}
+      />
 
       <fieldset className="filter-panel">
         <legend>History 필터</legend>
@@ -243,12 +259,9 @@ export function ProjectHistoryClient({ projectId, initial }: ProjectHistoryClien
       {downloadError ? <InlineActionError message={downloadError.message} /> : null}
       {loading && items.length === 0 ? <LoadingState title="History를 불러오고 있습니다" /> : null}
       {error && items.length === 0 ? (
-        error.status === 404 || error.code === "PROJECT_NOT_FOUND" ? (
+        projectNotFound ? (
           <>
             <ErrorState message="Project를 찾을 수 없습니다." />
-            <Link className="button button-secondary back-action" href="/projects">
-              Projects로 돌아가기
-            </Link>
           </>
         ) : (
           <ErrorState

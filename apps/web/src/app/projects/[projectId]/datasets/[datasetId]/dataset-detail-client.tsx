@@ -5,6 +5,8 @@ import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
 
 import { SemanticBadge } from "@/src/components/AnalyticsUi";
 import { ErrorState, LoadingState } from "@/src/components/AsyncStates";
+import { Breadcrumb } from "@/src/components/Breadcrumb";
+import { PageHeader } from "@/src/components/PageHeader";
 import { StatusBadge } from "@/src/components/StatusBadge";
 import {
   createDatasetVersion,
@@ -201,21 +203,30 @@ export function DatasetDetailClient({ projectId, datasetId }: Props) {
           : versionError?.message;
 
   const breadcrumb = (
-    <nav className="breadcrumb" aria-label="Breadcrumb">
-      <Link href="/projects">Projects</Link>
-      <span aria-hidden="true">/</span>
-      <Link href={`/projects/${projectId}`}>Overview</Link>
-      <span aria-hidden="true">/</span>
-      <span>Dataset</span>
-    </nav>
+    <Breadcrumb
+      items={[
+        { label: "Projects", href: "/projects" },
+        { label: "Project Overview", href: `/projects/${projectId}` },
+        { label: dataset?.name ?? "Dataset" },
+      ]}
+    />
   );
   const isDatasetNotFound = datasetError?.status === 404 || datasetError?.code === "DATASET_NOT_FOUND";
 
-  if (loading && !dataset && !datasetError) return <main className="app-shell"><LoadingState title="Dataset을 불러오고 있습니다" /></main>;
+  if (loading && !dataset && !datasetError) {
+    return (
+      <main className="app-shell">
+        {breadcrumb}
+        <PageHeader title="Dataset" />
+        <LoadingState title="Dataset을 불러오고 있습니다" />
+      </main>
+    );
+  }
   if (datasetError && !dataset) {
     return (
       <main className="app-shell">
         {breadcrumb}
+        <PageHeader title="Dataset" />
         <ErrorState
           title={datasetError.kind === "network" ? "서버에 연결할 수 없습니다" : undefined}
           message={isDatasetNotFound ? "Dataset을 찾을 수 없습니다." : datasetError.message}
@@ -241,10 +252,13 @@ export function DatasetDetailClient({ projectId, datasetId }: Props) {
       {breadcrumb}
       {dataset ? (
         <>
-          <header className="detail-header">
-            <div><p className="eyebrow">Dataset</p><h1>{dataset.name}</h1><p className="page-description">{dataset.description || "설명이 없습니다."}</p><code>{dataset.id}</code></div>
-            <StatusBadge active={dataset.isActive} />
-          </header>
+          <PageHeader
+            eyebrow="Dataset"
+            title={dataset.name}
+            description={dataset.description || "설명이 없습니다."}
+            metadata={<code>{dataset.id}</code>}
+            status={<StatusBadge active={dataset.isActive} />}
+          />
           <p className="notice">생성·수정 시각은 현재 Dataset API가 제공하지 않습니다. 이름·설명 수정과 비활성화 UI는 이번 Slice에서 제외했습니다.</p>
 
           <section className="overview-section" aria-labelledby="case-title">

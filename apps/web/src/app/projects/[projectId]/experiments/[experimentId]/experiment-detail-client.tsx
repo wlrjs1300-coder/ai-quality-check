@@ -4,6 +4,8 @@ import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { ErrorState, LoadingState } from "@/src/components/AsyncStates";
+import { Breadcrumb } from "@/src/components/Breadcrumb";
+import { PageHeader } from "@/src/components/PageHeader";
 import {
   listDatasets,
   listDatasetVersions,
@@ -371,48 +373,71 @@ export function ExperimentDetailClient({
 
   const experimentNotFound = experimentError?.status === 404
     || experimentError?.code === "EXPERIMENT_NOT_FOUND";
+  const breadcrumb = (
+    <Breadcrumb
+      items={[
+        { label: "Projects", href: "/projects" },
+        { label: "Project Overview", href: `/projects/${encodeURIComponent(projectId)}` },
+        {
+          label: "History",
+          href: `/projects/${encodeURIComponent(projectId)}/history`,
+        },
+        { label: "Experiment" },
+      ]}
+    />
+  );
+  const backActions = (
+    <>
+      <Link className="button button-secondary" href={`/projects/${encodeURIComponent(projectId)}/history`}>
+        History로 돌아가기
+      </Link>
+      <Link className="button button-secondary" href={`/projects/${encodeURIComponent(projectId)}`}>
+        Project Overview로 돌아가기
+      </Link>
+    </>
+  );
 
   if (initialLoading && !experiment && !experimentError) {
-    return <main className="app-shell"><LoadingState title="Experiment를 불러오고 있습니다" /></main>;
+    return (
+      <main className="app-shell">
+        {breadcrumb}
+        <PageHeader title="Experiment" />
+        <LoadingState title="Experiment를 불러오고 있습니다" />
+      </main>
+    );
   }
 
   if (experimentError && !experiment) {
     return (
       <main className="app-shell">
+        {breadcrumb}
+        <PageHeader title="Experiment" actions={backActions} />
         <ErrorState
           title={experimentError.kind === "network" ? "서버에 연결할 수 없습니다" : undefined}
           message={experimentNotFound ? "Experiment를 찾을 수 없습니다." : experimentError.message}
           retryable={!experimentNotFound && experimentError.retryable}
           onRetry={() => void loadExperiment(false, true)}
         />
-        <div className="header-actions">
-          <Link className="button button-secondary" href={`/projects/${encodeURIComponent(projectId)}/history`}>
-            History로 돌아가기
-          </Link>
-          <Link className="button button-secondary" href={`/projects/${encodeURIComponent(projectId)}`}>
-            Project Overview로 돌아가기
-          </Link>
-        </div>
       </main>
     );
   }
 
   if (experiment && scopeChecking && !scopeVerified) {
-    return <main className="app-shell"><LoadingState title="Experiment의 Project 범위를 확인하고 있습니다" /></main>;
+    return (
+      <main className="app-shell">
+        {breadcrumb}
+        <PageHeader title="Experiment" />
+        <LoadingState title="Experiment의 Project 범위를 확인하고 있습니다" />
+      </main>
+    );
   }
 
   if (experiment && scopeNotFound) {
     return (
       <main className="app-shell">
+        {breadcrumb}
+        <PageHeader title="Experiment" actions={backActions} />
         <ErrorState message="Experiment를 찾을 수 없습니다." />
-        <div className="header-actions">
-          <Link className="button button-secondary" href={`/projects/${encodeURIComponent(projectId)}/history`}>
-            History로 돌아가기
-          </Link>
-          <Link className="button button-secondary" href={`/projects/${encodeURIComponent(projectId)}`}>
-            Project Overview로 돌아가기
-          </Link>
-        </div>
       </main>
     );
   }
@@ -420,15 +445,21 @@ export function ExperimentDetailClient({
   if (experiment && scopeError && !scopeVerified) {
     return (
       <main className="app-shell">
+        {breadcrumb}
+        <PageHeader
+          title="Experiment"
+          actions={(
+            <Link className="button button-secondary" href={`/projects/${encodeURIComponent(projectId)}/history`}>
+              History로 돌아가기
+            </Link>
+          )}
+        />
         <ErrorState
           title={scopeError.kind === "network" ? "서버에 연결할 수 없습니다" : "Project 범위를 확인하지 못했습니다"}
           message={scopeError.message}
           retryable={scopeError.retryable}
           onRetry={() => void verifyScope(experiment)}
         />
-        <Link className="button button-secondary back-action" href={`/projects/${encodeURIComponent(projectId)}/history`}>
-          History로 돌아가기
-        </Link>
       </main>
     );
   }
@@ -438,29 +469,21 @@ export function ExperimentDetailClient({
 
   return (
     <main className="app-shell">
-      <nav className="breadcrumb" aria-label="Breadcrumb">
-        <Link href={`/projects/${encodeURIComponent(projectId)}`}>Project Overview</Link>
-        <span aria-hidden="true">/</span>
-        <Link href={`/projects/${encodeURIComponent(projectId)}/history`}>History</Link>
-        <span aria-hidden="true">/</span>
-        <span>Experiment</span>
-      </nav>
+      {breadcrumb}
 
       {experiment && scopeVerified ? (
         <>
-          <header className="detail-header">
-            <div>
-              <p className="eyebrow">Inline Experiment</p>
-              <h1>Experiment 상세</h1>
-              <code title={experiment.id}>{experiment.id}</code>
-              <div className="header-actions">
-                <Link className="button button-secondary" href={`/projects/${encodeURIComponent(projectId)}/history`}>
-                  History로 돌아가기
-                </Link>
-              </div>
-            </div>
-            <ExperimentBadge status={experiment.status} />
-          </header>
+          <PageHeader
+            eyebrow="Inline Experiment"
+            title="Experiment 상세"
+            metadata={<code title={experiment.id}>{experiment.id}</code>}
+            actions={(
+              <Link className="button button-secondary" href={`/projects/${encodeURIComponent(projectId)}/history`}>
+                History로 돌아가기
+              </Link>
+            )}
+            status={<ExperimentBadge status={experiment.status} />}
+          />
 
           {refreshing ? <p className="refreshing">Experiment 상태를 다시 확인하고 있습니다.</p> : null}
           {experimentError ? (

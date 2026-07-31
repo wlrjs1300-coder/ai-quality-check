@@ -1,20 +1,17 @@
 "use client";
 
 import { ErrorState, InlineActionError } from "@/src/components/AsyncStates";
+import { PageHeader } from "@/src/components/PageHeader";
 import { StatusBadge } from "@/src/components/StatusBadge";
 
 export function RuntimeValidationClient() {
   return (
     <main className="app-shell">
-      <header className="page-header">
-        <div>
-          <p className="eyebrow">Development / test only</p>
-          <h1>Phase A3 Runtime 상태 검증</h1>
-          <p className="page-description">
-            실제 제품 컴포넌트의 정상 seed 미렌더링 상태만 재현합니다.
-          </p>
-        </div>
-      </header>
+      <PageHeader
+        eyebrow="Development / test only"
+        title="Phase A3 Runtime 상태 검증"
+        description="실제 제품 컴포넌트의 정상 seed 미렌더링 상태만 재현합니다."
+      />
 
       <section aria-labelledby="inactive-state-title">
         <div className="section-heading">

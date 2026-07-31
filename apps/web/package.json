@@ -12,7 +12,9 @@
     "test:browser:smoke": "playwright test runtime-focus-smoke.spec.ts",
     "test:browser:smoke:headed": "playwright test runtime-focus-smoke.spec.ts --headed",
     "test:browser:product-focus": "playwright test --config=playwright.product.config.ts",
-    "test:browser:product-focus:headed": "playwright test --config=playwright.product.config.ts --headed"
+    "test:browser:product-focus:headed": "playwright test --config=playwright.product.config.ts --headed",
+    "test:browser:b1": "playwright test --config=playwright.b1.config.ts",
+    "test:browser:b1:headed": "playwright test --config=playwright.b1.config.ts --headed"
   },
   "dependencies": {
     "next": "^15.5.18",

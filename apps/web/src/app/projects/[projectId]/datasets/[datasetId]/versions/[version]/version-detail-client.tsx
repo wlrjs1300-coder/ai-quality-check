@@ -5,6 +5,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 import { SemanticBadge } from "@/src/components/AnalyticsUi";
 import { ErrorState, LoadingState } from "@/src/components/AsyncStates";
+import { Breadcrumb } from "@/src/components/Breadcrumb";
+import { PageHeader } from "@/src/components/PageHeader";
 import { getDataset, getDatasetVersion, type Dataset, type DatasetVersionDetail } from "@/src/lib/api/datasets";
 import { ApiError, toApiError } from "@/src/lib/api/errors";
 import { formatLocalDateTime } from "@/src/lib/formatters";
@@ -63,15 +65,17 @@ export function DatasetVersionDetailClient({ projectId, datasetId, versionValue 
   useEffect(() => { void load(); return () => controllerRef.current?.abort(); }, [load]);
 
   const breadcrumb = (
-    <nav className="breadcrumb" aria-label="Breadcrumb">
-      <Link href="/projects">Projects</Link>
-      <span aria-hidden="true">/</span>
-      <Link href={`/projects/${projectId}`}>Overview</Link>
-      <span aria-hidden="true">/</span>
-      <Link href={`/projects/${projectId}/datasets/${datasetId}`}>{dataset ? dataset.name : "Dataset"}</Link>
-      <span aria-hidden="true">/</span>
-      <span>{version ? `Version ${version.version}` : "Version"}</span>
-    </nav>
+    <Breadcrumb
+      items={[
+        { label: "Projects", href: "/projects" },
+        { label: "Project Overview", href: `/projects/${projectId}` },
+        {
+          label: dataset?.name ?? "Dataset",
+          href: `/projects/${projectId}/datasets/${datasetId}`,
+        },
+        { label: version ? `Version ${version.version}` : "Version" },
+      ]}
+    />
   );
   const backActions = (
     <div className="header-actions">
@@ -88,19 +92,29 @@ export function DatasetVersionDetailClient({ projectId, datasetId, versionValue 
     return (
       <main className="app-shell">
         {breadcrumb}
+        <PageHeader title="Dataset Version" />
         <ErrorState message="잘못된 Version 번호입니다." retryable={false} />
         {backActions}
       </main>
     );
   }
 
-  if (loading) return <main className="app-shell">{breadcrumb}<LoadingState title="Dataset Version을 불러오고 있습니다" /></main>;
+  if (loading) {
+    return (
+      <main className="app-shell">
+        {breadcrumb}
+        <PageHeader title="Dataset Version" />
+        <LoadingState title="Dataset Version을 불러오고 있습니다" />
+      </main>
+    );
+  }
 
   if (error || !dataset || !version) {
     const isVersionNotFound = error?.status === 404 || error?.code === "DATASET_VERSION_NOT_FOUND";
     return (
       <main className="app-shell">
         {breadcrumb}
+        <PageHeader title="Dataset Version" />
         <ErrorState
           title={error?.kind === "network" ? "서버에 연결할 수 없습니다" : undefined}
           message={isVersionNotFound ? "Dataset Version을 찾을 수 없습니다." : error?.message ?? "응답 데이터가 없습니다."}
@@ -115,7 +129,12 @@ export function DatasetVersionDetailClient({ projectId, datasetId, versionValue 
   return (
     <main className="app-shell">
       {breadcrumb}
-      <header className="detail-header"><div><p className="eyebrow">Immutable Snapshot</p><h1>Dataset Version {version.version}</h1><p className="page-description">생성 당시 승인된 Case 내용을 보존합니다. 원본 Case가 변경되거나 폐기돼도 이 Snapshot에는 영향을 주지 않습니다.</p></div><SemanticBadge status="APPROVED" /></header>
+      <PageHeader
+        eyebrow="Immutable Snapshot"
+        title={`Dataset Version ${version.version}`}
+        description="생성 당시 승인된 Case 내용을 보존합니다. 원본 Case가 변경되거나 폐기돼도 이 Snapshot에는 영향을 주지 않습니다."
+        status={<SemanticBadge status="APPROVED" />}
+      />
       <section className="detail-panel"><dl className="detail-list"><div><dt>Dataset</dt><dd>{dataset.name}</dd></div><div><dt>Version ID</dt><dd><code>{version.id}</code></dd></div><div><dt>Content Hash</dt><dd><code>{version.contentHash}</code></dd></div><div><dt>Case Count</dt><dd>{version.caseCount}</dd></div><div><dt>생성</dt><dd>{formatLocalDateTime(version.createdAt)}</dd></div></dl></section>
       <section className="overview-section" aria-labelledby="snapshot-case-title"><div className="section-heading"><h2 id="snapshot-case-title">Snapshot Cases</h2><span>{version.cases.length}건</span></div>
         {version.cases.length === 0 ? <p className="empty-inline">Snapshot Case가 없습니다.</p> : null}

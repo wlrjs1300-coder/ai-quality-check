@@ -4,6 +4,8 @@ import Link from "next/link";
 import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
 
 import { ErrorState, LoadingState } from "@/src/components/AsyncStates";
+import { Breadcrumb } from "@/src/components/Breadcrumb";
+import { PageHeader } from "@/src/components/PageHeader";
 import { StatusBadge } from "@/src/components/StatusBadge";
 import { createTargetVersion, fixedResponse, getTarget, listTargetVersions, updateTarget, type Target, type TargetVersion } from "@/src/lib/api/targets";
 import { ApiError, toApiError } from "@/src/lib/api/errors";
@@ -181,10 +183,21 @@ export function TargetDetailClient({
   }
 
   const totalPages = versionTotal === 0 ? 0 : Math.ceil(versionTotal / versionSize);
+  const breadcrumb = (
+    <Breadcrumb
+      items={[
+        { label: "Projects", href: "/projects" },
+        { label: "Project Overview", href: `/projects/${projectId}` },
+        { label: target?.name ?? "Target" },
+      ]}
+    />
+  );
 
   if (loading && !target) {
     return (
       <main className="app-shell">
+        {breadcrumb}
+        <PageHeader title="Target" />
         <LoadingState title="Target을 불러오고 있습니다" />
       </main>
     );
@@ -194,6 +207,8 @@ export function TargetDetailClient({
     const isNotFound = error.status === 404 || error.code === "TARGET_NOT_FOUND";
     return (
       <main className="app-shell">
+        {breadcrumb}
+        <PageHeader title="Target" />
         <ErrorState
           title={error.kind === "network" ? "서버에 연결할 수 없습니다" : undefined}
           message={isNotFound ? "Target을 찾을 수 없습니다." : error.message}
@@ -213,21 +228,15 @@ export function TargetDetailClient({
 
   return (
     <main className="app-shell">
-      <nav className="breadcrumb">
-        <Link href={`/projects/${projectId}`}>Project Overview</Link>
-        <span>/</span>
-        <span>Target</span>
-      </nav>
+      {breadcrumb}
       {target ? (
         <>
-          <header className="detail-header">
-            <div>
-              <p className="eyebrow">MOCK Target</p>
-              <h1>{target.name}</h1>
-              <p className="page-description">FIXED 응답 설정과 불변 Version Snapshot을 관리합니다.</p>
-            </div>
-            <StatusBadge active={target.isActive} />
-          </header>
+          <PageHeader
+            eyebrow="MOCK Target"
+            title={target.name}
+            description="FIXED 응답 설정과 불변 Version Snapshot을 관리합니다."
+            status={<StatusBadge active={target.isActive} />}
+          />
 
           <form className="form-panel case-form" onSubmit={(event) => void save(event)}>
             <label>
