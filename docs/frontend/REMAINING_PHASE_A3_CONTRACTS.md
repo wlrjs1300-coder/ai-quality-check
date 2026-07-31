@@ -250,6 +250,7 @@ Legacy 이름 전체를 design 이름으로 교체하는 대규모 migration은 
 - Browser 경계 검증: `NOT_VERIFIED`
 - Phase A3: `IN_PROGRESS`
 - Phase B: `NOT_STARTED`
+
 - 최종 판정: 계약은 `STATICALLY_VERIFIED`, 제품 변경은 `NO_CODE_CHANGE`
 
 ## 22. Semantic Color Token Browser Runtime 검증 결과 (2026-07-29)
@@ -355,4 +356,36 @@ Danger Runtime과 `.status-inactive`가 실제 제품 상태로 렌더링되지 
 
 - 남은 미검증: Demo Seed row count, 7개 제품 Route의 Tab·Shift+Tab focus clipping, 제품 Route overlay·console·network
 - Phase A3: `IN_PROGRESS`
+- Phase B: `NOT_STARTED`
+
+## 24. Product Route Focus 최종 검증 (2026-07-31)
+
+실제 키보드 Tab 순회에서 7개 제품 Route와 `1440×900`, `720×900`, `390×900`의 21개 조합을 Playwright로 검증했다. 최초 검증에서 viewport 하단을 넘는 focus ring 11건을 확인했다. overflow ancestor clipping과 fixed·sticky obstruction은 없었으며, 3px outline과 2px offset을 포함한 실제 ring 하단이 visual viewport를 초과한 제품 CSS/Layout 결함이었다.
+
+- 공통 focusable selector: `:where(a[href], button, input, textarea, select, summary, [tabindex])`
+- 적용값: `scroll-margin-block: calc(var(--focus-outline-width) + var(--focus-outline-offset))`
+- textarea 공통 보정: `min-height: calc(var(--control-height) + var(--space-6))` (`76px`)
+- focus outline `3px`, offset `2px`, 허용 오차 최대 `1px`: 유지
+- `720px` breakpoint: `KEEP_720PX`
+
+5px scroll margin은 link, button, select, summary의 네이티브 focus scroll에 focus ring 여유를 제공했다. 모바일 Dataset의 66px textarea는 중심점이 viewport 안에 남아 부분 노출 상태에서 네이티브 scroll이 멈췄으므로, 제품 공통 textarea 최소 높이를 10px 보정했다. 보정 후 해당 focus에서 다음 scroll 구간으로 이동했고 viewport clipping이 해소됐다. 테스트 assertion, tolerance, Harness 계산, JavaScript scroll 호출은 변경하지 않았다.
+
+검증 결과:
+
+- 대표 6개 조합: `6/6 PASS`
+- Product focus headless: `21/21 PASS`
+- Product focus headed: `21/21 PASS`
+- viewport focus clipping: `0`
+- overflow ancestor focus clipping: `0`
+- fixed·sticky obstruction: `0`
+- visible Next.js error overlay: `0`
+- 수집된 Console error·Runtime exception·실패한 application API response: `0`
+- Route 전환 중 취소된 request는 navigation abort로 분리했으며 실패로 숨기지 않았다.
+- Runtime focus smoke headless: `1/1 PASS`
+- Runtime focus smoke headed: `1/1 PASS`
+- Typecheck, Lint, Production Build, Repository Policy: `PASS`
+
+최종 판정:
+
+- Phase A3: `COMPLETE`
 - Phase B: `NOT_STARTED`

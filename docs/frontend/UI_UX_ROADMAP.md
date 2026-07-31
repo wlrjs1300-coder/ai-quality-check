@@ -601,3 +601,18 @@ Danger Runtime과 `.status-inactive`의 실제 렌더링 근거가 없으므로 
 - Phase B: `NOT_STARTED`
 
 상세 computed style, 차단 원인과 미검증 범위는 [Phase A3 Remaining Contracts](REMAINING_PHASE_A3_CONTRACTS.md)의 2026-07-30 결과를 기준으로 합니다.
+
+### Phase A3 Product Route Focus 완료 (2026-07-31)
+
+7개 제품 Route × `1440×900`, `720×900`, `390×900`의 21개 조합을 실제 keyboard Tab·Shift+Tab으로 검증했습니다. 최초 확인된 viewport focus-ring clipping 11건은 공통 focusable 요소의 5px `scroll-margin-block`과 textarea의 공통 최소 높이 `76px`로 해소했습니다. 3px outline, 2px offset, 최대 1px tolerance와 `720px` breakpoint 계약은 유지했으며 테스트 assertion과 Harness 계산은 완화하지 않았습니다.
+
+- Product focus headless: `21/21 PASS`
+- Product focus headed: `21/21 PASS`
+- viewport·overflow ancestor clipping, fixed·sticky obstruction, visible error overlay: `0`
+- Console error·Runtime exception·실패한 application API response: `0`
+- Runtime smoke headless·headed: 각각 `1/1 PASS`
+- Typecheck, Lint, Production Build, Repository Policy: `PASS`
+- Phase A3: `COMPLETE`
+- Phase B: `NOT_STARTED`
+
+상세 결함 목록과 CSS 선택 근거는 [Phase A3 Remaining Contracts](REMAINING_PHASE_A3_CONTRACTS.md)의 2026-07-31 최종 검증 결과를 기준으로 합니다.

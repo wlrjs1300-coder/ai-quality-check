@@ -10,7 +10,9 @@
     "typecheck": "tsc --noEmit",
     "test:browser": "playwright test",
     "test:browser:smoke": "playwright test runtime-focus-smoke.spec.ts",
-    "test:browser:smoke:headed": "playwright test runtime-focus-smoke.spec.ts --headed"
+    "test:browser:smoke:headed": "playwright test runtime-focus-smoke.spec.ts --headed",
+    "test:browser:product-focus": "playwright test --config=playwright.product.config.ts",
+    "test:browser:product-focus:headed": "playwright test --config=playwright.product.config.ts --headed"
   },
   "dependencies": {
     "next": "^15.5.18",
