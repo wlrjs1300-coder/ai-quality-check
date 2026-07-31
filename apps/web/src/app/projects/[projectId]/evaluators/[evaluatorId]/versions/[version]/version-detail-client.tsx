@@ -4,6 +4,8 @@ import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { ErrorState, LoadingState } from "@/src/components/AsyncStates";
+import { Breadcrumb } from "@/src/components/Breadcrumb";
+import { PageHeader } from "@/src/components/PageHeader";
 import {
   configInput,
   getEvaluator,
@@ -103,11 +105,27 @@ export function EvaluatorVersionDetailClient({
     };
   }, [load]);
 
+  const breadcrumb = (
+    <Breadcrumb
+      items={[
+        { label: "Projects", href: "/projects" },
+        { label: "Project Overview", href: `/projects/${projectId}` },
+        {
+          label: evaluator?.name ?? "Evaluator",
+          href: `/projects/${projectId}/evaluators/${evaluatorId}`,
+        },
+        { label: item ? `Version ${item.version}` : "Version" },
+      ]}
+    />
+  );
+
   if (error) {
     const isNotFound = error.status === 404 || error.code === "EVALUATOR_VERSION_NOT_FOUND";
 
     return (
       <main className="app-shell">
+        {breadcrumb}
+        <PageHeader title="Evaluator Version" />
         <ErrorState
           message={isNotFound ? "Evaluator Version을 찾을 수 없습니다." : error.message}
           retryable={!isNotFound && Boolean(error.retryable)}
@@ -130,6 +148,8 @@ export function EvaluatorVersionDetailClient({
   if (loading || isInitialLoad) {
     return (
       <main className="app-shell">
+        {breadcrumb}
+        <PageHeader title="Evaluator Version" />
         <LoadingState />
       </main>
     );
@@ -137,6 +157,8 @@ export function EvaluatorVersionDetailClient({
   if (!item || !evaluator) {
     return (
       <main className="app-shell">
+        {breadcrumb}
+        <PageHeader title="Evaluator Version" />
         <ErrorState message="목표 데이터를 로드하지 못했습니다." retryable={false} />
       </main>
     );
@@ -146,18 +168,12 @@ export function EvaluatorVersionDetailClient({
 
   return (
     <main className="app-shell">
-      <nav className="breadcrumb">
-        <Link href={`/projects/${projectId}/evaluators/${evaluatorId}`}>{evaluator.name}</Link>
-        <span>/</span>
-        <span>Version {item.version}</span>
-      </nav>
-      <header className="detail-header">
-        <div>
-          <p className="eyebrow">Immutable Evaluator Snapshot</p>
-          <h1>Evaluator Version {item.version}</h1>
-          <p>원본 Evaluator가 변경되거나 비활성화돼도 이 Snapshot은 유지됩니다.</p>
-        </div>
-      </header>
+      {breadcrumb}
+      <PageHeader
+        eyebrow="Immutable Evaluator Snapshot"
+        title={`Evaluator Version ${item.version}`}
+        description="원본 Evaluator가 변경되거나 비활성화돼도 이 Snapshot은 유지됩니다."
+      />
       <section className="detail-panel">
         <dl className="detail-list">
           <div>

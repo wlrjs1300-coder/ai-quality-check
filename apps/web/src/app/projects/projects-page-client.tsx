@@ -10,6 +10,7 @@ import {
   LoadingState,
 } from "@/src/components/AsyncStates";
 import { ProjectCreateForm } from "@/src/components/ProjectCreateForm";
+import { PageHeader } from "@/src/components/PageHeader";
 import { StatusBadge } from "@/src/components/StatusBadge";
 import { toApiError, type ApiError } from "@/src/lib/api/errors";
 import { listProjects, type Project } from "@/src/lib/api/projects";
@@ -101,16 +102,16 @@ export function ProjectsPageClient() {
 
   return (
     <main className="app-shell">
-      <header className="page-header">
-        <div>
-          <p className="eyebrow">Evaluation workspace</p>
-          <h1>Projects</h1>
-          <p className="page-description">새로운 EvalOps 프로젝트를 빠르게 시작하세요.</p>
-        </div>
-        <button className="button" type="button" onClick={() => setCreateOpen(true)}>
-          + Project
-        </button>
-      </header>
+      <PageHeader
+        eyebrow="Evaluation workspace"
+        title="Projects"
+        description="새로운 EvalOps 프로젝트를 빠르게 시작하세요."
+        actions={(
+          <button className="button" type="button" onClick={() => setCreateOpen(true)}>
+            + Project
+          </button>
+        )}
+      />
 
       <ProjectCreateForm
         open={createOpen}

@@ -11,6 +11,8 @@ import {
 } from "react";
 
 import { ErrorState, LoadingState } from "@/src/components/AsyncStates";
+import { Breadcrumb } from "@/src/components/Breadcrumb";
+import { PageHeader } from "@/src/components/PageHeader";
 import {
   listDatasets,
   listDatasetVersions,
@@ -367,21 +369,42 @@ export function ExperimentCreateClient({ projectId }: { projectId: string }) {
   }
 
   const notFound = projectError?.status === 404 || projectError?.code === "PROJECT_NOT_FOUND";
+  const breadcrumb = (
+    <Breadcrumb
+      items={[
+        { label: "Projects", href: "/projects" },
+        { label: "Project Overview", href: `/projects/${encodeURIComponent(projectId)}` },
+        { label: "New Experiment" },
+      ]}
+    />
+  );
   if (projectLoading && !project && !projectError) {
-    return <main className="app-shell"><LoadingState title="Experiment 생성 화면을 준비하고 있습니다" /></main>;
+    return (
+      <main className="app-shell">
+        {breadcrumb}
+        <PageHeader title="New Experiment" />
+        <LoadingState title="Experiment 생성 화면을 준비하고 있습니다" />
+      </main>
+    );
   }
   if (projectError && !project) {
     return (
       <main className="app-shell">
+        {breadcrumb}
+        <PageHeader
+          title="New Experiment"
+          actions={(
+            <Link className="button button-secondary" href="/projects">
+              Projects로 돌아가기
+            </Link>
+          )}
+        />
         <ErrorState
           title={projectError.kind === "network" ? "서버에 연결할 수 없습니다" : undefined}
           message={notFound ? "Project를 찾을 수 없습니다." : projectError.message}
           retryable={!notFound && projectError.retryable}
           onRetry={() => void loadProject()}
         />
-        <Link className="button button-secondary back-action" href="/projects">
-          Projects로 돌아가기
-        </Link>
       </main>
     );
   }
@@ -396,20 +419,12 @@ export function ExperimentCreateClient({ projectId }: { projectId: string }) {
 
   return (
     <main className="app-shell">
-      <nav className="breadcrumb" aria-label="Breadcrumb">
-        <Link href={`/projects/${encodeURIComponent(projectId)}`}>Project Overview</Link>
-        <span aria-hidden="true">/</span>
-        <span>New Experiment</span>
-      </nav>
-      <header className="detail-header">
-        <div>
-          <p className="eyebrow">Inline Experiment</p>
-          <h1>Experiment 생성</h1>
-          <p className="page-description">
-            같은 Project의 불변 Dataset·Target·Evaluator Version을 선택합니다.
-          </p>
-        </div>
-      </header>
+      {breadcrumb}
+      <PageHeader
+        eyebrow="Inline Experiment"
+        title="Experiment 생성"
+        description="같은 Project의 불변 Dataset·Target·Evaluator Version을 선택합니다."
+      />
 
       {!project?.isActive ? (
         <p className="form-error" role="alert">

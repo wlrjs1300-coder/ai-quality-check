@@ -224,6 +224,20 @@ Phase A3는 Focus 계약 결정부터 시작했습니다.
 - 완료 조건: 목적지와 heading 단계가 일관됨
 - 독립 Merge: 가능
 
+2026-07-31 `feat/v0.32.0-phase-b1-breadcrumb-pageheader`에서 B1을 구현하고 자동 Browser 회귀를 완료했습니다.
+
+- 12개 제품 Route에 공통 `Breadcrumb`와 `PageHeader`를 적용했습니다. `/projects`는 최상위 Route라 Breadcrumb를 표시하지 않으며, Runtime Validation fixture는 제품 Breadcrumb 계층에서 분리한 채 공통 PageHeader만 사용합니다.
+- 각 제품 Route의 정상·loading·error·resource 404 상태에서 하나의 `h1`을 유지하고, 본문 section과 state heading은 `h2` 이하로 구분했습니다. 전역 not-found에는 `/projects` 복귀 Action을 추가했습니다.
+- Breadcrumb는 현재 항목을 비-Link `aria-current="page"`로 표시하고 내부 separator를 접근성 트리에서 제외합니다. PageHeader는 제목·설명·metadata와 Action·status 영역의 일관된 DOM 순서를 제공합니다.
+- B1 Playwright는 API에서 Demo Seed Route ID를 발견해 12개 제품 Route, resource 404, 전역 404, 비활성 Runtime Validation을 검증합니다. 1440×900, 720×900, 390×900에서 heading, Breadcrumb 목적지, Tab·Shift+Tab, Header Action의 href 또는 동작, 가로 overflow, visible error overlay, Console·Network 오류를 확인합니다.
+- 390px에서는 API 응답을 Test Harness에서만 대체한 긴 unbroken Project 제목의 wrapping과 clipping 부재를 별도로 검증했습니다.
+- `npm run test:browser:b1`과 `npm run test:browser:b1:headed`는 각각 49 passed, 2 skipped입니다. 두 skip은 390px 전용 긴 제목 Test를 1440px·720px project에서 의도적으로 제외한 결과입니다.
+- 기존 Product Focus Test는 headless·headed 각각 21 passed, Runtime Focus Smoke는 headless·headed 각각 1 passed로 유지됐습니다. typecheck, lint, production build와 Repository Policy도 통과했습니다.
+- 첫 headed 전수 실행에서 Chrome page/context/browser가 assertion 전 종료된 일시적 Harness 실행 실패 1건이 있었으나, 같은 desktop Route 단독 재실행과 이후 headed 전수 재실행은 모두 통과했습니다.
+- forced-colors, screen reader 실사용, WCAG 전체 준수 판정과 본문 Layout 재배치는 이번 범위에서 검증하거나 구현하지 않았습니다.
+- Phase B1: `COMPLETE`
+- Phase B2: `NOT_STARTED`
+
 ### B2 Pagination
 
 - 목표: 이미 검증된 pagination 구현의 공통 계약 정리

@@ -5,6 +5,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 import { SemanticBadge } from "@/src/components/AnalyticsUi";
 import { ErrorState, LoadingState } from "@/src/components/AsyncStates";
+import { Breadcrumb } from "@/src/components/Breadcrumb";
+import { PageHeader } from "@/src/components/PageHeader";
 import {
   getBaselineComparison,
   listBaselineComparisonCases,
@@ -167,10 +169,35 @@ export function ComparisonDetailClient({
   const notFound = detailError?.status === 404
     || detailError?.code === "BASELINE_COMPARISON_NOT_FOUND";
   const totalPages = caseTotal === 0 ? 0 : Math.ceil(caseTotal / CASE_SIZE);
+  const breadcrumb = (
+    <Breadcrumb
+      items={[
+        { label: "Projects", href: "/projects" },
+        { label: "Project Overview", href: `/projects/${encodeURIComponent(projectId)}` },
+        {
+          label: "History",
+          href: `/projects/${encodeURIComponent(projectId)}/history`,
+        },
+        { label: "Comparison" },
+      ]}
+    />
+  );
+  const backActions = (
+    <>
+      <Link className="button button-secondary" href={`/projects/${encodeURIComponent(projectId)}/history`}>
+        History로 돌아가기
+      </Link>
+      <Link className="button button-secondary" href={`/projects/${encodeURIComponent(projectId)}`}>
+        Project Overview로 돌아가기
+      </Link>
+    </>
+  );
 
   if (detailLoading && !comparison && !detailError) {
     return (
       <main className="app-shell">
+        {breadcrumb}
+        <PageHeader title="Comparison" />
         <LoadingState title="Comparison 상세를 불러오고 있습니다" />
       </main>
     );
@@ -179,20 +206,14 @@ export function ComparisonDetailClient({
   if (detailError && !comparison) {
     return (
       <main className="app-shell">
+        {breadcrumb}
+        <PageHeader title="Comparison" actions={backActions} />
         <ErrorState
           title={detailError.kind === "network" ? "서버에 연결할 수 없습니다" : undefined}
           message={notFound ? "Comparison을 찾을 수 없습니다." : detailError.message}
           retryable={!notFound && detailError.retryable}
           onRetry={() => void loadDetail()}
         />
-        <div className="header-actions">
-          <Link className="button button-secondary" href={`/projects/${encodeURIComponent(projectId)}/history`}>
-            History로 돌아가기
-          </Link>
-          <Link className="button button-secondary" href={`/projects/${encodeURIComponent(projectId)}`}>
-            Project Overview로 돌아가기
-          </Link>
-        </div>
       </main>
     );
   }
@@ -201,30 +222,15 @@ export function ComparisonDetailClient({
     <main className="app-shell">
       {comparison && scopeVerified ? (
         <>
-          <nav className="breadcrumb" aria-label="Breadcrumb">
-            <Link href={`/projects/${encodeURIComponent(projectId)}`}>Project Overview</Link>
-            <span aria-hidden="true">/</span>
-            <Link href={`/projects/${encodeURIComponent(projectId)}/history`}>History</Link>
-            <span aria-hidden="true">/</span>
-            <span>Comparison</span>
-          </nav>
+          {breadcrumb}
 
-          <header className="detail-header">
-            <div>
-              <p className="eyebrow">Baseline Comparison</p>
-              <h1>Comparison 상세</h1>
-              <code>{comparison.id}</code>
-              <div className="header-actions">
-                <Link className="button button-secondary" href={`/projects/${encodeURIComponent(projectId)}/history`}>
-                  History로 돌아가기
-                </Link>
-                <Link className="button button-secondary" href={`/projects/${encodeURIComponent(projectId)}`}>
-                  Project Overview로 돌아가기
-                </Link>
-              </div>
-            </div>
-            <SemanticBadge status={comparison.status} />
-          </header>
+          <PageHeader
+            eyebrow="Baseline Comparison"
+            title="Comparison 상세"
+            metadata={<code>{comparison.id}</code>}
+            actions={backActions}
+            status={<SemanticBadge status={comparison.status} />}
+          />
 
           <section className="detail-panel">
             <dl className="detail-list">

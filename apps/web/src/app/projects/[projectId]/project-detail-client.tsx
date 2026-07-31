@@ -16,6 +16,8 @@ import { DatasetRegistry } from "@/src/components/DatasetRegistry";
 import { EvaluatorRegistry } from "@/src/components/EvaluatorRegistry";
 import { TargetRegistry } from "@/src/components/TargetRegistry";
 import { ErrorState, LoadingState } from "@/src/components/AsyncStates";
+import { Breadcrumb } from "@/src/components/Breadcrumb";
+import { PageHeader } from "@/src/components/PageHeader";
 import { StatusBadge } from "@/src/components/StatusBadge";
 import {
   getDashboard,
@@ -136,18 +138,31 @@ export function ProjectDetailClient({
   }
 
   const notFound = projectError?.status === 404 || projectError?.code === "PROJECT_NOT_FOUND";
+  const breadcrumb = (
+    <Breadcrumb
+      items={[
+        { label: "Projects", href: "/projects" },
+        { label: "Project Overview" },
+      ]}
+    />
+  );
   if (loading && !project && !projectError) {
-    return <main className="app-shell"><LoadingState title="Project Overview를 불러오고 있습니다" /></main>;
+    return (
+      <main className="app-shell">
+        {breadcrumb}
+        <PageHeader title="Project Overview" />
+        <LoadingState title="Project Overview를 불러오고 있습니다" />
+      </main>
+    );
   }
 
   return (
     <main className="app-shell">
-      <nav className="breadcrumb" aria-label="Breadcrumb">
-        <Link href="/projects">Projects</Link><span aria-hidden="true">/</span><span>Overview</span>
-      </nav>
+      {breadcrumb}
 
       {projectError ? (
         <>
+          <PageHeader title="Project Overview" />
           <ErrorState
             title={projectError.kind === "network" ? "서버에 연결할 수 없습니다" : undefined}
             message={notFound ? "Project를 찾을 수 없습니다." : projectError.message}
@@ -160,19 +175,19 @@ export function ProjectDetailClient({
 
       {project ? (
         <>
-          <header className="detail-header">
-            <div>
-              <p className="eyebrow">{project.slug}</p>
-              <h1>{project.name}</h1>
-              <p className="page-description">{project.description || "설명이 없습니다."}</p>
-              <div className="header-actions">
+          <PageHeader
+            eyebrow={project.slug}
+            title={project.name}
+            description={project.description || "설명이 없습니다."}
+            actions={(
+              <>
                 <Link className="button button-secondary" href="/projects">Projects</Link>
                 <Link className="button" href={`/projects/${encodeURIComponent(projectId)}/history`}>전체 History</Link>
                 <Link className="button" href={`/projects/${encodeURIComponent(projectId)}/experiments/new`}>Experiment 생성</Link>
-              </div>
-            </div>
-            <StatusBadge active={project.isActive} />
-          </header>
+              </>
+            )}
+            status={<StatusBadge active={project.isActive} />}
+          />
 
           <DateRangeFilter
             from={from}
