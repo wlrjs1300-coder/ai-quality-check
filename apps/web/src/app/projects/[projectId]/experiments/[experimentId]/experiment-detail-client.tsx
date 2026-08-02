@@ -476,7 +476,7 @@ export function ExperimentDetailClient({
           <PageHeader
             eyebrow="Inline Experiment"
             title="Experiment 상세"
-            metadata={<code title={experiment.id}>{experiment.id}</code>}
+            metadata={<code title={experiment.id}>Experiment ID {shortId(experiment.id)}</code>}
             actions={(
               <Link className="button button-secondary" href={`/projects/${encodeURIComponent(projectId)}/history`}>
                 History로 돌아가기
@@ -495,27 +495,33 @@ export function ExperimentDetailClient({
             />
           ) : null}
 
-          <section className="detail-panel">
+          <section className="detail-panel experiment-result-summary" aria-labelledby="execution-result-title">
             <div className="section-heading">
-              <h2>실행 상태</h2>
+              <div><p className="eyebrow">Execution</p><h2 id="execution-result-title">실행 결과</h2></div>
               <div className="header-actions">
                 {experiment.status === "RUNNING" ? (
                   <button className="button button-secondary" type="button" disabled={refreshing} onClick={() => void loadExperiment(true, true)}>
                     상태 다시 확인
                   </button>
                 ) : null}
-                <button className="button" type="button" disabled={!canRun} onClick={() => void execute()}>
-                  {running ? "Inline 실행 중…" : "Inline 실행"}
-                </button>
+                {experiment.status === "CREATED" ? (
+                  <button className="button" type="button" disabled={!canRun} onClick={() => void execute()}>
+                    {running ? "Inline 실행 중…" : "Inline 실행"}
+                  </button>
+                ) : null}
               </div>
             </div>
-            <dl className="detail-list">
+            <dl className="experiment-summary-grid">
+              <div className="experiment-summary-status"><dt>Experiment 상태</dt><dd><ExperimentBadge status={experiment.status} /></dd></div>
               <div><dt>전체 Case</dt><dd>{experiment.totalCases}</dd></div>
-              <div><dt>PASS</dt><dd>{experiment.passCount}</dd></div>
-              <div><dt>FAIL</dt><dd>{experiment.failCount}</dd></div>
-              <div><dt>ERROR</dt><dd>{experiment.errorCount}</dd></div>
-              <div><dt>완료 시각</dt><dd>{formatLocalDateTime(experiment.completedAt)}</dd></div>
+              <div className="experiment-summary-pass"><dt>PASS</dt><dd>{experiment.passCount}</dd></div>
+              <div className={experiment.failCount > 0 ? "experiment-summary-problem" : undefined}><dt>FAIL</dt><dd>{experiment.failCount}</dd></div>
+              <div className={experiment.errorCount > 0 ? "experiment-summary-problem" : undefined}><dt>ERROR</dt><dd>{experiment.errorCount}</dd></div>
+              <div className="experiment-summary-completed"><dt>완료 시각</dt><dd>{formatLocalDateTime(experiment.completedAt)}</dd></div>
             </dl>
+            {experiment.failCount > 0 || experiment.errorCount > 0 ? (
+              <p className="experiment-result-warning">실패 또는 실행 오류가 포함된 결과입니다. FAIL과 ERROR Case를 우선 확인해 주세요.</p>
+            ) : null}
             {experiment.status === "FAILED" ? (
               <p className="form-error" role="alert">
                 {experiment.errorCode ?? "EXECUTION_FAILED"}: {experiment.errorMessage ?? "실행을 완료하지 못했습니다."}
@@ -534,47 +540,6 @@ export function ExperimentDetailClient({
               onRetry={() => void loadExperiment(true, true)}
             />
           ) : null}
-
-          <section className="overview-section">
-            <div className="section-heading">
-              <div><p className="eyebrow">Snapshots</p><h2>선택 Version</h2></div>
-              {metadataLoading ? <span className="count-label">확인 중…</span> : null}
-            </div>
-            <dl className="detail-list detail-panel">
-              <div>
-                <dt>Dataset Version</dt>
-                <dd>{metadata.dataset}</dd>
-              </div>
-              <div>
-                <dt>Target Version</dt>
-                <dd>
-                  {metadata.target ?? <>Target Version 정보 확인 불가<br />ID: <code>{experiment.targetVersionId}</code></>}
-                  {metadataErrors.target ? (
-                    <span className="metadata-error" role="alert">
-                      {metadataErrors.target.message}
-                      <button className="text-button" type="button" onClick={() => void resolveMetadata(experiment)}>
-                        다시 시도
-                      </button>
-                    </span>
-                  ) : null}
-                </dd>
-              </div>
-              <div>
-                <dt>Evaluator Version</dt>
-                <dd>
-                  {metadata.evaluator ?? <>Evaluator Version 정보 확인 불가<br />ID: <code>{experiment.evaluatorVersionId}</code></>}
-                  {metadataErrors.evaluator ? (
-                    <span className="metadata-error" role="alert">
-                      {metadataErrors.evaluator.message}
-                      <button className="text-button" type="button" onClick={() => void resolveMetadata(experiment)}>
-                        다시 시도
-                      </button>
-                    </span>
-                  ) : null}
-                </dd>
-              </div>
-            </dl>
-          </section>
 
           <QualityGatePanel
             projectId={projectId}
@@ -612,7 +577,7 @@ export function ExperimentDetailClient({
 
             <div className="result-list">
               {results.map((result, index) => (
-                <article className="result-card" key={result.id}>
+                <article className={`result-card result-card-${result.status.toLowerCase()}`} key={result.id}>
                   <header>
                     <div>
                       <p className="eyebrow">Case {(resultPage - 1) * RESULT_SIZE + index + 1}</p>
@@ -620,9 +585,14 @@ export function ExperimentDetailClient({
                     </div>
                     <ResultBadge status={result.status} />
                   </header>
-                  <dl className="compact-list">
-                    <div><dt>Reason Code</dt><dd>{result.reasonCode ?? "없음"}</dd></div>
-                    <div><dt>Reason</dt><dd>{result.reason ?? "없음"}</dd></div>
+                  <div className="result-card-outcome">
+                    <h3>{result.status} 결과</h3>
+                    <dl className="compact-list">
+                      <div><dt>Reason Code</dt><dd>{result.reasonCode ?? "없음"}</dd></div>
+                      <div><dt>Reason</dt><dd>{result.reason ?? "없음"}</dd></div>
+                    </dl>
+                  </div>
+                  <dl className="compact-list result-card-meta">
                     <div><dt>생성</dt><dd>{formatLocalDateTime(result.createdAt)}</dd></div>
                   </dl>
                   <details>
@@ -658,6 +628,47 @@ export function ExperimentDetailClient({
                 </button>
               </nav>
             ) : null}
+          </section>
+
+          <section className="overview-section experiment-configuration" aria-labelledby="experiment-configuration-title">
+            <div className="section-heading">
+              <div><p className="eyebrow">Version Metadata</p><h2 id="experiment-configuration-title">실행 구성</h2></div>
+              {metadataLoading ? <span className="count-label">확인 중…</span> : null}
+            </div>
+            <dl className="detail-list detail-panel">
+              <div>
+                <dt>Dataset Version</dt>
+                <dd>{metadata.dataset}</dd>
+              </div>
+              <div>
+                <dt>Target Version</dt>
+                <dd>
+                  {metadata.target ?? <>Target Version 정보 확인 불가<br />ID: <code>{experiment.targetVersionId}</code></>}
+                  {metadataErrors.target ? (
+                    <span className="metadata-error" role="alert">
+                      {metadataErrors.target.message}
+                      <button className="text-button" type="button" onClick={() => void resolveMetadata(experiment)}>
+                        다시 시도
+                      </button>
+                    </span>
+                  ) : null}
+                </dd>
+              </div>
+              <div>
+                <dt>Evaluator Version</dt>
+                <dd>
+                  {metadata.evaluator ?? <>Evaluator Version 정보 확인 불가<br />ID: <code>{experiment.evaluatorVersionId}</code></>}
+                  {metadataErrors.evaluator ? (
+                    <span className="metadata-error" role="alert">
+                      {metadataErrors.evaluator.message}
+                      <button className="text-button" type="button" onClick={() => void resolveMetadata(experiment)}>
+                        다시 시도
+                      </button>
+                    </span>
+                  ) : null}
+                </dd>
+              </div>
+            </dl>
           </section>
         </>
       ) : null}

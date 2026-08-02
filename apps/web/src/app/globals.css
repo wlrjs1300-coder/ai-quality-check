@@ -257,6 +257,19 @@ code { font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size
 .result-list { display: grid; gap: 16px; }
 .result-card { min-width: 0; padding: var(--space-card-padding); border: 1px solid var(--border); border-radius: var(--radius-card); background: var(--surface); }
 .result-card header { display: flex; justify-content: space-between; gap: 16px; }
+.experiment-result-summary { margin-top: var(--space-5); }
+.experiment-summary-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: var(--space-3); margin: var(--space-5) 0 0; }
+.experiment-summary-grid > div { min-width: 0; padding: var(--space-4); border: 1px solid var(--border); border-radius: var(--radius-control); background: var(--surface-muted); }
+.experiment-summary-grid dt { margin-bottom: var(--space-2); }
+.experiment-summary-grid dd { font-size: var(--font-size-heading-sm); font-weight: 800; }
+.experiment-summary-completed { grid-column: span 2; }
+.experiment-summary-grid > .experiment-summary-problem { border-color: var(--color-danger-border); background: var(--danger-soft); }
+.experiment-result-warning { margin: var(--space-4) 0 0; padding: var(--space-3) var(--space-4); border-radius: var(--radius-control); background: var(--danger-soft); color: var(--danger); font-weight: 700; line-height: var(--line-height-body); }
+.result-card-fail, .result-card-error { border-color: var(--color-danger-border); }
+.result-card-outcome { margin-top: var(--space-4); padding: var(--space-4); border-radius: var(--radius-control); background: var(--surface-muted); }
+.result-card-fail .result-card-outcome, .result-card-error .result-card-outcome { background: var(--danger-soft); }
+.result-card-outcome h3 { margin-bottom: var(--space-3); }
+.result-card-meta { margin-top: var(--space-3); color: var(--muted); }
 .result-card details { margin-top: 16px; }
 .result-card summary { cursor: pointer; font-weight: 700; }
 .snapshot-value { max-width: 100%; margin: 10px 0 0; padding: 14px; overflow: auto; border-radius: 8px; background: #111827; color: #f8fafc; white-space: pre-wrap; overflow-wrap: anywhere; }
@@ -270,6 +283,8 @@ code { font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size
   .page-header-aside .header-actions { justify-content: flex-start; }
   .form-grid, .project-grid { grid-template-columns: 1fr; }
   .metric-grid, .project-overview-kpi-grid, .overview-grid, .release-decision-grid, .history-grid, .summary-panel, .history-filter-grid, .filter-fields, .dataset-grid, .case-grid, .version-card, .registry-grid { grid-template-columns: 1fr; }
+  .experiment-summary-grid { grid-template-columns: 1fr; }
+  .experiment-summary-completed { grid-column: auto; }
   .release-decision-latest { padding-top: var(--space-5); padding-left: 0; border-top: 1px solid var(--color-divider); border-left: 0; }
   .analysis-metric-grid { grid-template-columns: 1fr; }
   .state-panel { align-items: flex-start; flex-direction: column; }
