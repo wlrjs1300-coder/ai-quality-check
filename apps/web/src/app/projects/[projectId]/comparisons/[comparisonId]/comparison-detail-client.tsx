@@ -15,7 +15,8 @@ import {
   type ComparisonCaseStatus,
 } from "@/src/lib/api/comparisons";
 import { ApiError, toApiError, type ApiErrorKind } from "@/src/lib/api/errors";
-import { formatLocalDateTime, formatRateDelta } from "@/src/lib/formatters";
+import { getExperiment, type Experiment } from "@/src/lib/api/experiments";
+import { formatLocalDateTime, formatRateDelta, shortId } from "@/src/lib/formatters";
 
 const CASE_SIZE = 20;
 
@@ -58,11 +59,34 @@ export function ComparisonDetailClient({
   const [caseLoading, setCaseLoading] = useState(false);
   const [caseRefreshing, setCaseRefreshing] = useState(false);
   const [caseError, setCaseError] = useState<ApiError | null>(null);
+  const [experimentDetails, setExperimentDetails] = useState<{ baseline: Experiment | null; current: Experiment | null }>({ baseline: null, current: null });
+  const [experimentDetailErrors, setExperimentDetailErrors] = useState<{ baseline: ApiError | null; current: ApiError | null }>({ baseline: null, current: null });
 
   const detailControllerRef = useRef<AbortController | null>(null);
   const detailRequestIdRef = useRef(0);
   const caseControllerRef = useRef<AbortController | null>(null);
   const caseRequestIdRef = useRef(0);
+  const experimentDetailControllerRef = useRef<AbortController | null>(null);
+
+  const loadExperimentDetails = useCallback(async (baselineId: string, currentId: string) => {
+    experimentDetailControllerRef.current?.abort();
+    const controller = new AbortController();
+    experimentDetailControllerRef.current = controller;
+    const [baseline, current] = await Promise.allSettled([
+      getExperiment(baselineId, controller.signal),
+      getExperiment(currentId, controller.signal),
+    ]);
+    if (experimentDetailControllerRef.current !== controller) return;
+    setExperimentDetails({
+      baseline: baseline.status === "fulfilled" ? baseline.value.data : null,
+      current: current.status === "fulfilled" ? current.value.data : null,
+    });
+    setExperimentDetailErrors({
+      baseline: baseline.status === "rejected" && !isAbortError(baseline.reason) ? toApiError(baseline.reason) : null,
+      current: current.status === "rejected" && !isAbortError(current.reason) ? toApiError(current.reason) : null,
+    });
+    experimentDetailControllerRef.current = null;
+  }, []);
 
   const loadCases = useCallback(async (page = 1, retainData = false) => {
     const requestId = ++caseRequestIdRef.current;
@@ -142,6 +166,7 @@ export function ComparisonDetailClient({
       }
       setComparison(response.data);
       setScopeVerified(true);
+      void loadExperimentDetails(response.data.baselineExperimentId, response.data.currentExperimentId);
       void loadCases(1, false);
     } catch (error) {
       if (detailControllerRef.current !== controller || isAbortError(error)) return;
@@ -156,13 +181,14 @@ export function ComparisonDetailClient({
         detailControllerRef.current = null;
       }
     }
-  }, [comparisonId, loadCases, projectId]);
+  }, [comparisonId, loadCases, loadExperimentDetails, projectId]);
 
   useEffect(() => {
     void loadDetail();
     return () => {
       detailControllerRef.current?.abort();
       caseControllerRef.current?.abort();
+      experimentDetailControllerRef.current?.abort();
     };
   }, [loadDetail]);
 
@@ -227,34 +253,22 @@ export function ComparisonDetailClient({
           <PageHeader
             eyebrow="Baseline Comparison"
             title="Comparison 상세"
-            metadata={<code>{comparison.id}</code>}
+            metadata={<code title={comparison.id}>Comparison ID {shortId(comparison.id)}</code>}
             actions={backActions}
             status={<SemanticBadge status={comparison.status} />}
           />
 
-          <section className="detail-panel">
-            <dl className="detail-list">
-              <div><dt>Status</dt><dd><SemanticBadge status={comparison.status} /></dd></div>
-              <div><dt>전체 Case</dt><dd>{comparison.totalCaseCount}</dd></div>
-              <div><dt>IMPROVED</dt><dd>{comparison.improvedCaseCount}</dd></div>
-              <div><dt>UNCHANGED</dt><dd>{comparison.unchangedCaseCount}</dd></div>
-              <div><dt>REGRESSED</dt><dd>{comparison.regressedCaseCount}</dd></div>
-              <div><dt>Baseline PASS</dt><dd>{comparison.baselinePassedCaseCount}</dd></div>
-              <div><dt>Current PASS</dt><dd>{comparison.currentPassedCaseCount}</dd></div>
-              <div><dt>Pass Rate Delta</dt><dd>{formatRateDelta(comparison.passRateDelta)}</dd></div>
-              <div>
-                <dt>Reason Codes</dt>
-                <dd className="comparison-reasons">
-                  {comparison.reasonCodes.length > 0
-                    ? comparison.reasonCodes.map((code) => (
-                      <span className="semantic-badge semantic-neutral" key={code}>{code}</span>
-                    ))
-                    : "없음"}
-                </dd>
-              </div>
-              <div><dt>Reason Summary</dt><dd>{comparison.reasonSummary ?? "없음"}</dd></div>
-              <div><dt>생성</dt><dd>{formatLocalDateTime(comparison.createdAt)}</dd></div>
-            </dl>
+          <section className={`detail-panel comparison-decision comparison-decision-${comparison.status.toLowerCase()}`} aria-labelledby="comparison-decision-title">
+            <div className="section-heading"><div><p className="eyebrow">Release Decision</p><h2 id="comparison-decision-title">Comparison 결과</h2></div><SemanticBadge status={comparison.status} /></div>
+            <div className="comparison-decision-grid">
+              <div className="comparison-delta"><span>Pass Rate Delta</span><strong>{formatRateDelta(comparison.passRateDelta)}</strong></div>
+              <dl className="compact-list">
+                <div><dt>Baseline Experiment</dt><dd><code title={comparison.baselineExperimentId}>{shortId(comparison.baselineExperimentId)}</code></dd></div>
+                <div><dt>Current Experiment</dt><dd><code title={comparison.currentExperimentId}>{shortId(comparison.currentExperimentId)}</code></dd></div>
+                <div><dt>생성 시각</dt><dd>{formatLocalDateTime(comparison.createdAt)}</dd></div>
+              </dl>
+            </div>
+            <div className="comparison-reason-summary"><h3>Reason Codes</h3><div className="comparison-reasons">{comparison.reasonCodes.length > 0 ? comparison.reasonCodes.map((code) => <span className="semantic-badge semantic-neutral" key={code}>{code}</span>) : <span className="muted">Reason Code가 없습니다.</span>}</div>{comparison.reasonSummary ? <p>{comparison.reasonSummary}</p> : null}</div>
           </section>
 
           <section className="overview-section" aria-labelledby="comparison-experiments-title">
@@ -262,9 +276,17 @@ export function ComparisonDetailClient({
               <h2 id="comparison-experiments-title">비교 Experiment</h2>
             </div>
             <div className="overview-grid">
-              <article className="detail-panel">
+              <article className="detail-panel comparison-experiment-card">
                 <p className="eyebrow">Baseline</p>
-                <code>{comparison.baselineExperimentId}</code>
+                <h3>Baseline Experiment</h3>
+                <code title={comparison.baselineExperimentId}>{shortId(comparison.baselineExperimentId)}</code>
+                <dl className="compact-list">
+                  <div><dt>상태</dt><dd>{experimentDetails.baseline ? <SemanticBadge status={experimentDetails.baseline.status} /> : "확인 불가"}</dd></div>
+                  <div><dt>PASS / FAIL / ERROR</dt><dd>{experimentDetails.baseline ? `${experimentDetails.baseline.passCount} / ${experimentDetails.baseline.failCount} / ${experimentDetails.baseline.errorCount}` : `${comparison.baselinePassedCaseCount} / 확인 불가 / 확인 불가`}</dd></div>
+                  <div><dt>Pass Rate</dt><dd>API 제공 없음</dd></div>
+                  <div><dt>완료 시각</dt><dd>{formatLocalDateTime(experimentDetails.baseline?.completedAt ?? null)}</dd></div>
+                </dl>
+                {experimentDetailErrors.baseline ? <p className="metadata-error" role="alert">{experimentDetailErrors.baseline.message}</p> : null}
                 <Link
                   className="card-link"
                   href={`/projects/${encodeURIComponent(projectId)}/experiments/${encodeURIComponent(comparison.baselineExperimentId)}`}
@@ -272,9 +294,17 @@ export function ComparisonDetailClient({
                   Baseline Experiment 상세 <span aria-hidden="true">→</span>
                 </Link>
               </article>
-              <article className="detail-panel">
+              <article className="detail-panel comparison-experiment-card">
                 <p className="eyebrow">Current</p>
-                <code>{comparison.currentExperimentId}</code>
+                <h3>Current Experiment</h3>
+                <code title={comparison.currentExperimentId}>{shortId(comparison.currentExperimentId)}</code>
+                <dl className="compact-list">
+                  <div><dt>상태</dt><dd>{experimentDetails.current ? <SemanticBadge status={experimentDetails.current.status} /> : "확인 불가"}</dd></div>
+                  <div><dt>PASS / FAIL / ERROR</dt><dd>{experimentDetails.current ? `${experimentDetails.current.passCount} / ${experimentDetails.current.failCount} / ${experimentDetails.current.errorCount}` : `${comparison.currentPassedCaseCount} / 확인 불가 / 확인 불가`}</dd></div>
+                  <div><dt>Pass Rate</dt><dd>API 제공 없음</dd></div>
+                  <div><dt>완료 시각</dt><dd>{formatLocalDateTime(experimentDetails.current?.completedAt ?? null)}</dd></div>
+                </dl>
+                {experimentDetailErrors.current ? <p className="metadata-error" role="alert">{experimentDetailErrors.current.message}</p> : null}
                 <Link
                   className="card-link"
                   href={`/projects/${encodeURIComponent(projectId)}/experiments/${encodeURIComponent(comparison.currentExperimentId)}`}
