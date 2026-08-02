@@ -6,6 +6,7 @@ import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
 import { ErrorState, LoadingState } from "@/src/components/AsyncStates";
 import { Breadcrumb } from "@/src/components/Breadcrumb";
 import { PageHeader } from "@/src/components/PageHeader";
+import { Pagination } from "@/src/components/Pagination";
 import { StatusBadge } from "@/src/components/StatusBadge";
 import {
   configInput,
@@ -56,7 +57,7 @@ export function EvaluatorDetailClient({
   const [versionRefreshing, setVersionRefreshing] = useState(false);
   const [versionPage, setVersionPage] = useState(1);
   const [versionTotal, setVersionTotal] = useState(0);
-  const [versionSize] = useState(20);
+  const [versionSize, setVersionSize] = useState(20);
   const versionControllerRef = useRef<AbortController | null>(null);
   const versionRequestIdRef = useRef(0);
 
@@ -95,7 +96,11 @@ export function EvaluatorDetailClient({
           return;
         }
 
-        const totalPages = result.pagination.total === 0 ? 0 : Math.ceil(result.pagination.total / versionSize);
+        const responseSize = Math.max(1, result.pagination.size);
+        const totalPages = result.pagination.total === 0
+          ? 0
+          : Math.ceil(result.pagination.total / responseSize);
+        setVersionSize(responseSize);
         if (result.pagination.total > 0 && requestPage > totalPages) {
           setVersionTotal(result.pagination.total);
           const clampedPage = Math.max(1, totalPages);
@@ -124,7 +129,7 @@ export function EvaluatorDetailClient({
         }
       }
     },
-    [evaluatorId, versionSize],
+    [evaluatorId],
   );
 
   useEffect(() => {
@@ -181,7 +186,8 @@ export function EvaluatorDetailClient({
     setVersionError(null);
     try {
       await createEvaluatorVersion(evaluatorId);
-      await loadVersions(versionPage, true);
+      setVersionPage(1);
+      await loadVersions(1, true);
     } catch (snapshotError) {
       setVersionError(toApiError(snapshotError));
     } finally {
@@ -193,7 +199,6 @@ export function EvaluatorDetailClient({
     void loadVersions(nextPage, true);
   }
 
-  const totalPages = versionTotal === 0 ? 0 : Math.ceil(versionTotal / versionSize);
   const breadcrumb = (
     <Breadcrumb
       items={[
@@ -378,26 +383,15 @@ export function EvaluatorDetailClient({
               ))}
             </div>
 
-            {totalPages > 0 ? (
-              <nav className="pagination" aria-label="Evaluator Version 페이지 이동">
-                <button
-                  className="button button-secondary"
-                  type="button"
-                  disabled={versionPage <= 1 || versionRefreshing}
-                  onClick={() => void loadVersionPage(versionPage - 1)}
-                >
-                  이전
-                </button>
-                <span>{`전체 ${versionTotal}건 · ${versionPage} / ${totalPages || 0} 페이지`}</span>
-                <button
-                  className="button button-secondary"
-                  type="button"
-                  disabled={totalPages === 0 || versionPage >= totalPages || versionRefreshing}
-                  onClick={() => void loadVersionPage(versionPage + 1)}
-                >
-                  다음
-                </button>
-              </nav>
+            {versionTotal > 0 ? (
+              <Pagination
+                page={versionPage}
+                pageSize={versionSize}
+                total={versionTotal}
+                onPageChange={loadVersionPage}
+                isLoading={versionRefreshing}
+                ariaLabel="Evaluator versions pagination"
+              />
             ) : null}
 
             <p className="immutable-note">Version은 생성 당시 Type과 Config를 보존합니다.</p>

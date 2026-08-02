@@ -7,6 +7,7 @@ import { SemanticBadge } from "@/src/components/AnalyticsUi";
 import { ErrorState, LoadingState } from "@/src/components/AsyncStates";
 import { Breadcrumb } from "@/src/components/Breadcrumb";
 import { PageHeader } from "@/src/components/PageHeader";
+import { Pagination } from "@/src/components/Pagination";
 import { StatusBadge } from "@/src/components/StatusBadge";
 import {
   createDatasetVersion,
@@ -90,6 +91,8 @@ export function DatasetDetailClient({ projectId, datasetId }: Props) {
   const [versionPage, setVersionPage] = useState(1);
   const [caseTotal, setCaseTotal] = useState(0);
   const [versionTotal, setVersionTotal] = useState(0);
+  const [caseSize, setCaseSize] = useState(20);
+  const [versionSize, setVersionSize] = useState(20);
   const [form, setForm] = useState<FormState>(emptyForm);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [actionId, setActionId] = useState<string | null>(null);
@@ -120,12 +123,25 @@ export function DatasetDetailClient({ projectId, datasetId }: Props) {
   }, [datasetId, projectId]);
   const loadCases = useCallback(async (page: number, signal?: AbortSignal) => {
     const requestId = ++caseRequestIdRef.current;
+    const requestedPage = Math.max(1, page);
     setCaseRefreshing(true);
     try {
       setCaseError(null);
-      const result = await listEvaluationCases(datasetId, page, signal);
+      const result = await listEvaluationCases(datasetId, requestedPage, signal);
       if (requestId !== caseRequestIdRef.current) return;
-      setCases(result.data); setCaseTotal(result.pagination.total);
+      const responseSize = Math.max(1, result.pagination.size);
+      const totalPages = result.pagination.total === 0
+        ? 0
+        : Math.ceil(result.pagination.total / responseSize);
+      setCaseTotal(result.pagination.total);
+      setCaseSize(responseSize);
+      if (result.pagination.total > 0 && requestedPage > totalPages) {
+        setCases([]);
+        setCasePage(totalPages);
+        return;
+      }
+      setCases(result.data);
+      setCasePage(result.pagination.total === 0 ? 1 : result.pagination.page);
     } catch (error) {
       if (requestId === caseRequestIdRef.current && !(error instanceof DOMException && error.name === "AbortError")) {
         setCaseError(toApiError(error));
@@ -136,12 +152,25 @@ export function DatasetDetailClient({ projectId, datasetId }: Props) {
   }, [datasetId]);
   const loadVersions = useCallback(async (page: number, signal?: AbortSignal) => {
     const requestId = ++versionRequestIdRef.current;
+    const requestedPage = Math.max(1, page);
     setVersionRefreshing(true);
     try {
       setVersionError(null);
-      const result = await listDatasetVersions(datasetId, page, signal);
+      const result = await listDatasetVersions(datasetId, requestedPage, signal);
       if (requestId !== versionRequestIdRef.current) return;
-      setVersions(result.data); setVersionTotal(result.pagination.total);
+      const responseSize = Math.max(1, result.pagination.size);
+      const totalPages = result.pagination.total === 0
+        ? 0
+        : Math.ceil(result.pagination.total / responseSize);
+      setVersionTotal(result.pagination.total);
+      setVersionSize(responseSize);
+      if (result.pagination.total > 0 && requestedPage > totalPages) {
+        setVersions([]);
+        setVersionPage(totalPages);
+        return;
+      }
+      setVersions(result.data);
+      setVersionPage(result.pagination.total === 0 ? 1 : result.pagination.page);
     } catch (error) {
       if (requestId === versionRequestIdRef.current && !(error instanceof DOMException && error.name === "AbortError")) {
         setVersionError(toApiError(error));
@@ -328,13 +357,16 @@ export function DatasetDetailClient({ projectId, datasetId }: Props) {
                 </article>
               ))}
             </div>
-            <Pagination
-              page={casePage}
-              total={caseTotal}
-              isLoading={caseRefreshing}
-              ariaLabel="Evaluation cases pagination"
-              onChange={setCasePage}
-            />
+            {caseTotal > 0 ? (
+              <Pagination
+                page={casePage}
+                pageSize={caseSize}
+                total={caseTotal}
+                isLoading={caseRefreshing}
+                ariaLabel="Evaluation cases pagination"
+                onPageChange={setCasePage}
+              />
+            ) : null}
           </section>
 
           <section className="overview-section" aria-labelledby="version-title">
@@ -354,34 +386,19 @@ export function DatasetDetailClient({ projectId, datasetId }: Props) {
               ))}
             </div>
             <p className="immutable-note">Dataset Version은 생성 후 수정하거나 삭제할 수 없습니다.</p>
-            <Pagination
-              page={versionPage}
-              total={versionTotal}
-              isLoading={versionRefreshing}
-              ariaLabel="Dataset versions pagination"
-              onChange={setVersionPage}
-            />
+            {versionTotal > 0 ? (
+              <Pagination
+                page={versionPage}
+                pageSize={versionSize}
+                total={versionTotal}
+                isLoading={versionRefreshing}
+                ariaLabel="Dataset versions pagination"
+                onPageChange={setVersionPage}
+              />
+            ) : null}
           </section>
         </>
       ) : null}
     </main>
   );
-}
-
-function Pagination({
-  page,
-  total,
-  isLoading,
-  ariaLabel,
-  onChange,
-}: {
-  page: number;
-  total: number;
-  isLoading: boolean;
-  ariaLabel: string;
-  onChange: (page: number) => void;
-}) {
-  const totalPages = total === 0 ? 0 : Math.ceil(total / 20);
-  if (totalPages <= 1) return null;
-  return <nav className="pagination" aria-label={ariaLabel}><button className="button button-secondary" disabled={page <= 1 || isLoading} onClick={() => onChange(page - 1)}>이전</button><span>{page} / {totalPages}</span><button className="button button-secondary" disabled={page >= totalPages || isLoading} onClick={() => onChange(page + 1)}>다음</button></nav>;
 }
