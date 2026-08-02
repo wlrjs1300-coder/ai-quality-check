@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-import { ExperimentCard } from "@/src/components/AnalyticsUi";
+import { SemanticBadge } from "@/src/components/AnalyticsUi";
 import { ErrorState, InlineActionError, LoadingState } from "@/src/components/AsyncStates";
 import { Breadcrumb } from "@/src/components/Breadcrumb";
 import { PageHeader } from "@/src/components/PageHeader";
@@ -22,6 +22,7 @@ import {
 import { downloadCsv } from "@/src/lib/api/client";
 import { toApiError, type ApiError } from "@/src/lib/api/errors";
 import type { Pagination as ApiPagination } from "@/src/lib/api/types";
+import { formatLocalDateTime, formatRate, shortId } from "@/src/lib/formatters";
 
 type InitialValues = {
   from: string;
@@ -65,6 +66,22 @@ function initialQuery(initial: InitialValues): HistoryQuery {
     createdTo: localBoundary(initial.to, true),
     sort: initial.sort === "created_at_asc" ? "created_at_asc" : "created_at_desc",
   };
+}
+
+function HistoryResultCard({ projectId, item }: { projectId: string; item: ExperimentHistoryItem }) {
+  return (
+    <article className="history-card history-result-card">
+      <header><div><p className="eyebrow">Experiment</p><code title={item.experimentId}>{shortId(item.experimentId)}</code></div><SemanticBadge status={item.experimentStatus} /></header>
+      <div className="history-decision-row">
+        <span>Quality Gate {item.qualityGateResult ? <SemanticBadge status={item.qualityGateResult.status} /> : <strong>없음</strong>}</span>
+        <span>Comparison {item.baselineComparison ? <SemanticBadge status={item.baselineComparison.status} /> : <strong>없음</strong>}</span>
+      </div>
+      <div className="history-result-summary"><strong>{formatRate(item.passRate)}</strong><span>PASS {item.passedCaseCount} · FAIL {item.failedCaseCount} · ERROR {item.errorCaseCount}</span><small>생성 {formatLocalDateTime(item.createdAt)}</small></div>
+      <details className="history-version-details"><summary>실행 Version 정보</summary><dl className="compact-list"><div><dt>Dataset Version</dt><dd><code title={item.datasetVersionId}>{shortId(item.datasetVersionId)}</code></dd></div><div><dt>Target Version</dt><dd><code title={item.targetVersionId}>{shortId(item.targetVersionId)}</code></dd></div><div><dt>Evaluator Version</dt><dd><code title={item.evaluatorVersionId}>{shortId(item.evaluatorVersionId)}</code></dd></div></dl></details>
+      <Link className="card-link" href={`/projects/${encodeURIComponent(projectId)}/experiments/${encodeURIComponent(item.experimentId)}`}>Experiment 상세 <span aria-hidden="true">→</span></Link>
+      {item.baselineComparison ? <Link className="card-link" href={`/projects/${encodeURIComponent(projectId)}/comparisons/${encodeURIComponent(item.baselineComparison.comparisonId)}`}>Comparison 상세 <span aria-hidden="true">→</span></Link> : null}
+    </article>
+  );
 }
 
 export function ProjectHistoryClient({ projectId, initial }: ProjectHistoryClientProps) {
@@ -291,13 +308,15 @@ export function ProjectHistoryClient({ projectId, initial }: ProjectHistoryClien
             Projects로 돌아가기
           </Link>
         ) : (
-          <button className="button" type="button" disabled={downloading || loading} onClick={() => void exportCsv()}>
+          <button className="button button-secondary" type="button" disabled={downloading || loading} onClick={() => void exportCsv()}>
             {downloading ? "다운로드 중…" : "CSV 다운로드"}
           </button>
         )}
       />
 
-      <fieldset className="filter-panel">
+      <p className="history-filter-note">선택한 조건은 History 목록과 CSV 다운로드에 함께 적용됩니다.</p>
+
+      <fieldset className="filter-panel history-filter-panel">
         <legend>History 필터</legend>
         <div className="history-filter-grid">
           <label>시작일<input type="date" value={from} onChange={(event) => setFrom(event.target.value)} /></label>
@@ -348,10 +367,10 @@ export function ProjectHistoryClient({ projectId, initial }: ProjectHistoryClien
       {items.length > 0 ? (
         <div className="history-grid">
           {items.map((item) => (
-            <ExperimentCard
+            <HistoryResultCard
               key={item.experimentId}
               projectId={projectId}
-              experiment={item}
+              item={item}
             />
           ))}
         </div>
