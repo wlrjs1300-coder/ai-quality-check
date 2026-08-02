@@ -36,6 +36,40 @@ Project 생성
 
 ---
 
+## 주요 화면
+
+### Project Overview
+
+Release 판단과 최신 Quality Gate·Comparison을 Project 단위로 확인합니다.
+
+![Project Overview](docs/portfolio/screenshots/project-overview.png)
+
+### Experiment Detail
+
+Experiment 실행 상태와 PASS·FAIL·ERROR 집계, Quality Gate 판정을 우선 확인합니다.
+
+![Experiment Detail](docs/portfolio/screenshots/experiment-detail.png)
+
+### Comparison Detail
+
+Baseline 대비 Pass Rate 변화와 회귀 사유, 비교한 두 Experiment를 함께 확인합니다.
+
+![Comparison Detail](docs/portfolio/screenshots/comparison-detail.png)
+
+### Dataset Detail
+
+Dataset 상태와 Case·Version 현황을 확인하고 Evaluation Case를 관리합니다.
+
+![Dataset Detail](docs/portfolio/screenshots/dataset-detail.png)
+
+### History
+
+Experiment·Quality Gate·Comparison 상태를 같은 목록에서 조회하고 조건에 맞는 CSV를 내려받습니다.
+
+![History](docs/portfolio/screenshots/history.png)
+
+---
+
 ## 주요 기능
 
 ### Project 관리
@@ -254,6 +288,10 @@ npm run build
 
 ```powershell
 npm run test:browser:product-focus
+npm run test:browser:project-overview
+npm run test:browser:experiment-detail
+npm run test:browser:comparison-history
+npm run test:browser:dataset-detail
 npm run test:browser:b1
 npm run test:browser:b2-0
 npm run test:browser:b2-1
