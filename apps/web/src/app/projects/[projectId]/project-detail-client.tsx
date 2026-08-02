@@ -181,30 +181,32 @@ export function ProjectDetailClient({
             description={project.description || "설명이 없습니다."}
             actions={(
               <>
-                <Link className="button button-secondary" href="/projects">Projects</Link>
-                <Link className="button" href={`/projects/${encodeURIComponent(projectId)}/history`}>전체 History</Link>
                 <Link className="button" href={`/projects/${encodeURIComponent(projectId)}/experiments/new`}>Experiment 생성</Link>
+                <Link className="button button-secondary" href={`/projects/${encodeURIComponent(projectId)}/history`}>전체 History</Link>
+                <Link className="button button-secondary" href="/projects">Projects로 돌아가기</Link>
               </>
             )}
             status={<StatusBadge active={project.isActive} />}
           />
 
-          <DateRangeFilter
-            from={from}
-            to={to}
-            error={filterError}
-            disabled={refreshing}
-            onFromChange={setFrom}
-            onToChange={setTo}
-            onApply={applyFilter}
-            onReset={resetFilter}
-          />
+          <div className="project-overview-filter">
+            <p className="project-overview-filter-note">선택한 기간은 Release Decision과 Dashboard 전체에 적용됩니다.</p>
+            <DateRangeFilter
+              from={from}
+              to={to}
+              error={filterError}
+              disabled={refreshing}
+              onFromChange={setFrom}
+              onToChange={setTo}
+              onApply={applyFilter}
+              onReset={resetFilter}
+            />
+          </div>
           {refreshing ? <p className="refreshing" aria-live="polite">기존 데이터를 유지하며 기간 결과를 갱신하고 있습니다.</p> : null}
 
-          <section className="overview-section" aria-labelledby="dashboard-title">
+          <section className="overview-section" aria-labelledby="release-decision-title">
             <div className="section-heading">
-              <div><p className="eyebrow">Dashboard</p><h2 id="dashboard-title">Release Overview</h2></div>
-              {dashboard ? <SemanticBadge status={dashboard.readiness.status} /> : null}
+              <div><p className="eyebrow">Release</p><h2 id="release-decision-title">Release Decision</h2></div>
             </div>
             {dashboardError ? (
               <ErrorState
@@ -215,92 +217,107 @@ export function ProjectDetailClient({
               />
             ) : null}
             {!dashboard && !dashboardError ? <LoadingState title="Dashboard를 불러오고 있습니다" /> : null}
-            {dashboard ? (
-              <>
-                <div className="metric-grid">
-                  <MetricCard label="Experiment" value={dashboard.kpis.experimentCount} />
-                  <MetricCard label="완료" value={dashboard.kpis.completedExperimentCount} />
-                  <MetricCard label="실패" value={dashboard.kpis.failedExperimentCount} />
-                  <MetricCard label="실행 중" value={dashboard.kpis.runningExperimentCount} />
-                  <MetricCard label="최신 Pass Rate" value={formatRate(dashboard.kpis.latestPassRate)} />
-                  <MetricCard label="평균 Pass Rate" value={formatRate(dashboard.kpis.averagePassRate)} />
-                  <MetricCard label="Pass Rate Delta" value={formatRateDelta(dashboard.kpis.passRateDelta)} />
-                  <MetricCard label="Gate PASS / BLOCK" value={`${dashboard.kpis.gatePassCount} / ${dashboard.kpis.gateBlockCount}`} />
-                  <MetricCard label="Regression" value={dashboard.kpis.comparisonRegressedCount} />
-                </div>
-                <div className="overview-grid">
-                  <article className="detail-panel">
-                    <h3>Trend <SemanticBadge status={dashboard.trend.direction} /></h3>
-                    <p>{dashboard.trend.summary}</p>
-                    <TrendValues first={dashboard.trend.firstPassRate} latest={dashboard.trend.latestPassRate} delta={dashboard.trend.passRateDelta} />
-                  </article>
-                  <article className="detail-panel">
-                    <h3>최신 판정</h3>
-                    <p>Quality Gate <SemanticBadge status={dashboard.latestQualityGateResult?.status ?? null} /></p>
-                    <p>Comparison <SemanticBadge status={dashboard.latestBaselineComparison?.status ?? null} /></p>
-                    {dashboard.latestBaselineComparison ? (
-                      <Link
-                        className="card-link"
-                        href={`/projects/${encodeURIComponent(projectId)}/comparisons/${encodeURIComponent(dashboard.latestBaselineComparison.comparisonId)}`}
-                      >
-                        최신 Comparison 상세 <span aria-hidden="true">→</span>
-                      </Link>
-                    ) : null}
-                  </article>
-                </div>
-                <div className="detail-panel"><h3>Warning</h3><WarningList codes={dashboard.warningCodes} /></div>
-                <section aria-labelledby="recent-title">
-                  <div className="section-heading"><h3 id="recent-title">최근 Experiment</h3><span className="count-label">최대 5건</span></div>
-                  {dashboard.recentExperiments.length === 0 ? (
-                    <p className="empty-inline">기간에 해당하는 Experiment가 없습니다.</p>
-                  ) : (
-                    <div className="history-grid">
-                      {dashboard.recentExperiments.slice(0, 5).map((item) => (
-                        <RecentExperimentCard
-                          key={item.experimentId}
-                          projectId={projectId}
-                          experiment={item}
-                        />
-                      ))}
-                    </div>
-                  )}
-                </section>
-              </>
-            ) : null}
-          </section>
-
-          <section className="overview-section" aria-labelledby="summary-title">
-            <div className="section-heading"><div><p className="eyebrow">Summary</p><h2 id="summary-title">판정 요약</h2></div></div>
             {summaryError ? (
               <ErrorState title="Summary를 불러오지 못했습니다" message={summaryError.message} retryable={summaryError.retryable} onRetry={() => void load(period, true)} />
             ) : null}
             {!summary && !summaryError ? <LoadingState title="Summary를 불러오고 있습니다" /> : null}
-            {summary ? (
-              <div className="summary-panel">
-                <div>
-                  <SemanticBadge status={summary.readiness.status} />
-                  <p className="summary-copy">{summary.summary}</p>
-                  <p>{summary.readiness.reasonSummary}</p>
+            {dashboard || summary ? (
+              <div className="release-decision-panel">
+                <div className="release-decision-grid">
+                  <div className="release-decision-summary">
+                    <div className="release-decision-status">
+                      <h3>배포 준비 상태</h3>
+                      <SemanticBadge status={(dashboard ?? summary)?.readiness.status ?? null} />
+                    </div>
+                    {summary ? <p className="summary-copy">{summary.summary}</p> : null}
+                    <p>{(dashboard ?? summary)?.readiness.reasonSummary}</p>
+                  </div>
+                  <div className="release-decision-latest">
+                    <h3>최신 품질 판정</h3>
+                    <p><span>Quality Gate</span><SemanticBadge status={dashboard?.latestQualityGateResult?.status ?? summary?.latestQualityGateResult?.status ?? null} /></p>
+                    <p><span>Comparison</span><SemanticBadge status={dashboard?.latestBaselineComparison?.status ?? summary?.latestBaselineComparison?.status ?? null} /></p>
+                    {(dashboard?.latestBaselineComparison ?? summary?.latestBaselineComparison) ? (
+                      <Link
+                        className="card-link"
+                        href={`/projects/${encodeURIComponent(projectId)}/comparisons/${encodeURIComponent((dashboard?.latestBaselineComparison ?? summary?.latestBaselineComparison)!.comparisonId)}`}
+                      >
+                        최신 Comparison 상세 <span aria-hidden="true">→</span>
+                      </Link>
+                    ) : null}
+                  </div>
                 </div>
-                <TrendValues first={summary.metrics.firstPassRate} latest={summary.metrics.latestPassRate} delta={summary.metrics.passRateDelta} />
-                <WarningList codes={summary.warningCodes} />
+                <div className="release-decision-warnings"><h3>Warning</h3><WarningList codes={(dashboard ?? summary)?.warningCodes ?? []} /></div>
               </div>
             ) : null}
           </section>
 
-          <section className="overview-section" aria-labelledby="trend-title">
-            <div className="section-heading"><div><p className="eyebrow">Trend</p><h2 id="trend-title">기간 추세</h2></div></div>
+          {dashboard ? (
+            <section className="overview-section" aria-labelledby="kpi-title">
+              <div className="section-heading"><div><p className="eyebrow">Dashboard</p><h2 id="kpi-title">핵심 KPI</h2></div></div>
+              <div className="project-overview-kpi-grid">
+                <MetricCard label="전체 Experiment" value={dashboard.kpis.experimentCount} />
+                <MetricCard label="최신 Pass Rate" value={formatRate(dashboard.kpis.latestPassRate)} />
+                <MetricCard label="Gate PASS / BLOCK" value={`${dashboard.kpis.gatePassCount} / ${dashboard.kpis.gateBlockCount}`} />
+                <MetricCard label="Regression" value={dashboard.kpis.comparisonRegressedCount} />
+              </div>
+
+              <section className="recent-experiments" aria-labelledby="recent-title">
+                <div className="section-heading"><h2 id="recent-title">최근 Experiment</h2><span className="count-label">최대 5건</span></div>
+                {dashboard.recentExperiments.length === 0 ? (
+                  <p className="empty-inline">선택한 기간에 해당하는 Experiment가 없습니다.</p>
+                ) : (
+                  <div className="history-grid">
+                    {dashboard.recentExperiments.slice(0, 5).map((item) => (
+                      <RecentExperimentCard key={item.experimentId} projectId={projectId} experiment={item} />
+                    ))}
+                  </div>
+                )}
+              </section>
+            </section>
+          ) : null}
+
+          <section className="overview-section" aria-labelledby="detail-analysis-title">
+            <div className="section-heading"><div><p className="eyebrow">Analytics</p><h2 id="detail-analysis-title">상세 분석</h2></div></div>
+            {dashboard ? (
+              <div className="overview-grid">
+                <article className="detail-panel">
+                  <h3>실행 상태</h3>
+                  <div className="analysis-metric-grid">
+                    <MetricCard label="완료" value={dashboard.kpis.completedExperimentCount} />
+                    <MetricCard label="실패" value={dashboard.kpis.failedExperimentCount} />
+                    <MetricCard label="실행 중" value={dashboard.kpis.runningExperimentCount} />
+                  </div>
+                </article>
+                <article className="detail-panel">
+                  <h3>품질 추세 <SemanticBadge status={dashboard.trend.direction} /></h3>
+                  <p>{dashboard.trend.summary}</p>
+                  <div className="analysis-metric-grid analysis-metric-grid-two">
+                    <MetricCard label="평균 Pass Rate" value={formatRate(dashboard.kpis.averagePassRate)} />
+                    <MetricCard label="Pass Rate Delta" value={formatRateDelta(dashboard.kpis.passRateDelta)} />
+                  </div>
+                  <TrendValues first={dashboard.trend.firstPassRate} latest={dashboard.trend.latestPassRate} delta={dashboard.trend.passRateDelta} />
+                </article>
+              </div>
+            ) : null}
             {trendError ? (
               <ErrorState title="Trend를 불러오지 못했습니다" message={trendError.message} retryable={trendError.retryable} onRetry={() => void load(period, true)} />
             ) : null}
             {trend ? (
-              <div className="metric-grid">
-                <MetricCard label="전체 Experiment" value={trend.experimentCount} />
-                <MetricCard label="평균 Pass Rate" value={formatRate(trend.averagePassRate)} />
-                <MetricCard label="Pass Rate Delta" value={formatRateDelta(trend.passRateDelta)} />
-                <MetricCard label="Comparison 개선 / 유지 / 회귀" value={`${trend.comparisonImprovedCount} / ${trend.comparisonUnchangedCount} / ${trend.comparisonRegressedCount}`} />
-              </div>
+              <article className="detail-panel comparison-analysis">
+                <h3>Comparison</h3>
+                <div className="analysis-metric-grid">
+                  <MetricCard label="개선" value={trend.comparisonImprovedCount} />
+                  <MetricCard label="유지" value={trend.comparisonUnchangedCount} />
+                  <MetricCard label="회귀" value={trend.comparisonRegressedCount} />
+                </div>
+                {!dashboard ? <TrendValues first={trend.firstPassRate} latest={trend.latestPassRate} delta={trend.passRateDelta} /> : null}
+              </article>
             ) : !trendError ? <LoadingState title="Trend를 불러오고 있습니다" /> : null}
+          </section>
+
+          <section className="overview-section registry-introduction" aria-labelledby="evaluation-configuration-title">
+            <div className="section-heading"><div><p className="eyebrow">Registry</p><h2 id="evaluation-configuration-title">평가 구성</h2></div></div>
+            <p>Dataset, Target, Evaluator의 버전과 실행 구성을 관리합니다.</p>
           </section>
           <DatasetRegistry projectId={projectId} projectActive={project.isActive} />
           <TargetRegistry projectId={projectId} projectActive={project.isActive} />
