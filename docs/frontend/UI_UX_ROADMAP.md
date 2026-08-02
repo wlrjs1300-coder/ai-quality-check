@@ -273,6 +273,17 @@ Phase A3는 Focus 계약 결정부터 시작했습니다.
 - `npm run test:browser:b2-1`과 `npm run test:browser:b2-1:headed`는 각각 6 passed입니다. B2-0은 headless·headed 각각 15 passed, B1은 각각 49 passed/2 skipped, Product Focus는 각각 21 passed, Runtime Focus Smoke는 각각 1 passed로 유지됐습니다.
 - Frontend typecheck, lint, production build와 Repository Policy가 통과했습니다.
 - Dataset Detail, Dataset Version과 나머지 pagination 화면의 공통 Component 적용은 B2-2로 남깁니다. 따라서 Phase B2 전체 상태는 `IN_PROGRESS`입니다.
+- Phase B2-2A Dataset Detail + Target/Evaluator Version Pagination: `COMPLETE`
+- Phase B2-2B Project Overview Registries: `NOT_STARTED`
+
+2026-07-31 `feat/v0.33.2-phase-b2-2-pagination-adoption`에서 Dataset Detail의 Evaluation Cases·Dataset Versions와 Target/Evaluator Detail의 Version 목록을 공통 Pagination Component로 교체했습니다.
+
+- Dataset Case와 Dataset Version은 응답의 pagination page·size를 상태에 반영하고, total이 존재하는 범위 초과 page를 받으면 마지막 유효 page를 다시 조회합니다. 두 목록은 독립 page·loading 상태와 기존 request ID·Abort·Error 계약을 유지하며, 생성 후 Case와 Dataset Version은 page 1 계약을 유지합니다.
+- Target/Evaluator Version은 응답 page·size와 범위 초과 clamp를 유지하면서 공통 Component를 사용합니다. version 내림차순 정렬에 맞춰 새 Version 생성 성공 후 page 1을 다시 조회해 생성 결과를 즉시 노출합니다.
+- B2-2A Playwright는 DB를 변경하지 않는 API interception으로 네 목록 각각의 0·1·20·21·41건, first·middle·last page, response page 반영, 범위 초과 clamp, loading 중 중복 Enter·Space 차단, 실제 Tab·Shift+Tab, Dataset 두 목록의 독립 상태, Version 생성 후 page 1과 신규 항목 노출을 검증합니다.
+- 1440×900, 720×900, 390×900에서 `npm run test:browser:b2-2a`와 headed 실행은 각각 12 passed입니다. B2-1은 각각 6 passed, B2-0은 각각 15 passed, B1은 각각 49 passed/2 skipped, Product Focus는 각각 21 passed, Runtime Focus Smoke는 각각 1 passed로 유지됐습니다.
+- Frontend typecheck, lint, production build와 Repository Policy가 통과했으며 CSS, 공통 Pagination Props, Backend/API/DB 계약은 변경하지 않았습니다.
+- Project Overview Registry와 이후 화면 적용은 B2-2B 이후 Slice로 남아 있으므로 Phase B2 전체 상태는 `IN_PROGRESS`입니다.
 
 Phase 0 Pagination은 실제 접근 불가 결함을 해결하고, B2는 검증된 화면별 구현을 공통 계약으로 정리합니다.
 
