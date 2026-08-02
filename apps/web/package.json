@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
+    "capture:portfolio": "playwright test --config=playwright.portfolio-capture.config.ts",
     "test:browser": "playwright test",
     "test:browser:smoke": "playwright test runtime-focus-smoke.spec.ts",
     "test:browser:smoke:headed": "playwright test runtime-focus-smoke.spec.ts --headed",
