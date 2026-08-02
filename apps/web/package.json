@@ -15,6 +15,8 @@
     "test:browser:product-focus:headed": "playwright test --config=playwright.product.config.ts --headed",
     "test:browser:comparison-history": "playwright test --config=playwright.comparison-history.config.ts",
     "test:browser:comparison-history:headed": "playwright test --config=playwright.comparison-history.config.ts --headed",
+    "test:browser:dataset-detail": "playwright test --config=playwright.dataset-detail.config.ts",
+    "test:browser:dataset-detail:headed": "playwright test --config=playwright.dataset-detail.config.ts --headed",
     "test:browser:experiment-detail": "playwright test --config=playwright.experiment-detail.config.ts",
     "test:browser:experiment-detail:headed": "playwright test --config=playwright.experiment-detail.config.ts --headed",
     "test:browser:project-overview": "playwright test --config=playwright.project-overview.config.ts",
