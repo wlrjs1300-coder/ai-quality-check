@@ -368,6 +368,7 @@ Pull Request와 `develop` 브랜치 Push 시 GitHub Actions에서 다음 항목�
 - [전체 API 명세](docs/api/API_REFERENCE.md)
 - [오류 코드](docs/api/ERROR_REFERENCE.md)
 - [Demo Workflow](docs/api/DEMO_WORKFLOW.md)
+- [Frontend API Contract](docs/frontend/README.md)
 - [Frontend 화면 계약](docs/frontend/SCREEN_API_CONTRACT.md)
 - [Frontend 상태와 오류 계약](docs/frontend/STATE_AND_ERROR_CONTRACT.md)
 - [회귀 테스트 기준](docs/frontend/REGRESSION_TEST_MATRIX.md)
