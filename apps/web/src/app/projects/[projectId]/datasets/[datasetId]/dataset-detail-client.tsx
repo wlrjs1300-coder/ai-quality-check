@@ -87,6 +87,7 @@ export function DatasetDetailClient({ projectId, datasetId }: Props) {
   const [dataset, setDataset] = useState<Dataset | null>(null);
   const [cases, setCases] = useState<EvaluationCase[]>([]);
   const [versions, setVersions] = useState<DatasetVersion[]>([]);
+  const [latestVersion, setLatestVersion] = useState<DatasetVersion | null>(null);
   const [casePage, setCasePage] = useState(1);
   const [versionPage, setVersionPage] = useState(1);
   const [caseTotal, setCaseTotal] = useState(0);
@@ -170,6 +171,7 @@ export function DatasetDetailClient({ projectId, datasetId }: Props) {
         return;
       }
       setVersions(result.data);
+      if (requestedPage === 1) setLatestVersion(result.data[0] ?? null);
       setVersionPage(result.pagination.total === 0 ? 1 : result.pagination.page);
     } catch (error) {
       if (requestId === versionRequestIdRef.current && !(error instanceof DOMException && error.name === "AbortError")) {
@@ -307,46 +309,84 @@ export function DatasetDetailClient({ projectId, datasetId }: Props) {
             eyebrow="Dataset"
             title={dataset.name}
             description={dataset.description || "설명이 없습니다."}
-            metadata={<code>{dataset.id}</code>}
+            metadata={<code title={dataset.id}>Dataset ID {shortId(dataset.id)}</code>}
             status={<StatusBadge active={dataset.isActive} />}
+            actions={<Link className="button button-secondary" href={`/projects/${projectId}`}>Project Overview로 돌아가기</Link>}
           />
-          <p className="notice">생성·수정 시각은 현재 Dataset API가 제공하지 않습니다. 이름·설명 수정과 비활성화 UI는 이번 Slice에서 제외했습니다.</p>
 
-          <section className="overview-section" aria-labelledby="case-title">
-            <div className="section-heading"><div><p className="eyebrow">Evaluation</p><h2 id="case-title">Evaluation Cases</h2></div><span>{caseTotal}건</span></div>
-            <form className="form-panel case-form" onSubmit={(event) => void submitCase(event)}>
+          <section className="detail-panel dataset-detail-summary" aria-labelledby="dataset-summary-title">
+            <div className="section-heading"><div><p className="eyebrow">Dataset Overview</p><h2 id="dataset-summary-title">Dataset 요약</h2></div><StatusBadge active={dataset.isActive} /></div>
+            <div className="dataset-summary-grid">
+              <div className="dataset-summary-copy"><h3>{dataset.name}</h3><p>{dataset.description || "설명이 없습니다."}</p></div>
+              <dl className="compact-list">
+                <div><dt>Case</dt><dd>{caseTotal}건</dd></div>
+                <div><dt>Version</dt><dd>{versionTotal}건</dd></div>
+                <div><dt>최신 Version</dt><dd>{latestVersion ? `Version ${latestVersion.version}` : "없음"}</dd></div>
+              </dl>
+            </div>
+            <p className="notice">생성·수정 시각은 현재 Dataset API가 제공하지 않습니다. 이름·설명 수정과 비활성화 UI는 이번 Slice에서 제외했습니다.</p>
+          </section>
+
+          <section className="overview-section dataset-case-create" aria-labelledby="case-create-title">
+            <div className="section-heading"><div><p className="eyebrow">Case Management</p><h2 id="case-create-title">Case 생성</h2></div></div>
+            <form
+              className="form-panel case-form dataset-case-form"
+              onFocusCapture={(event) => { if (event.target instanceof HTMLTextAreaElement) event.target.scrollIntoView({ block: "center" }); }}
+              onSubmit={(event) => void submitCase(event)}
+            >
               <h3>{editingId ? "DRAFT Case 수정" : "Case 생성"}</h3>
-              <div className="form-grid">
-                <label>Case key<input value={form.caseKey} disabled={Boolean(editingId) || inactive || submitting} maxLength={120} onChange={(event) => setField("caseKey", event.target.value)} required /></label>
-                <label>Severity<select value={form.severity} disabled={inactive || submitting} onChange={(event) => setField("severity", event.target.value as CaseSeverity)}><option>CRITICAL</option><option>HIGH</option><option>MEDIUM</option><option>LOW</option></select></label>
+              <div className="dataset-form-group">
+                <h4>기본 정보</h4>
+                <div className="form-grid">
+                  <label>Case key<input value={form.caseKey} disabled={Boolean(editingId) || inactive || submitting} maxLength={120} onChange={(event) => setField("caseKey", event.target.value)} required /></label>
+                  <label>Severity<select value={form.severity} disabled={inactive || submitting} onChange={(event) => setField("severity", event.target.value as CaseSeverity)}><option>CRITICAL</option><option>HIGH</option><option>MEDIUM</option><option>LOW</option></select></label>
+                </div>
+                <label>질문<textarea value={form.question} disabled={inactive || submitting} onChange={(event) => setField("question", event.target.value)} required /></label>
+                <label className="checkbox-label"><input type="checkbox" checked={form.requiredForRelease} disabled={inactive || submitting} onChange={(event) => setField("requiredForRelease", event.target.checked)} />Release 필수 Case</label>
               </div>
-              <label>질문<textarea value={form.question} disabled={inactive || submitting} onChange={(event) => setField("question", event.target.value)} required /></label>
-              <label>예상 요약<textarea value={form.expectedSummary} disabled={inactive || submitting} onChange={(event) => setField("expectedSummary", event.target.value)} /></label>
-              <div className="form-grid">
-                <label>Evidence source ID<input value={form.evidenceSource} disabled={inactive || submitting} onChange={(event) => setField("evidenceSource", event.target.value)} /></label>
-                <label>Evidence 내용<textarea value={form.evidenceContent} disabled={inactive || submitting} onChange={(event) => setField("evidenceContent", event.target.value)} /></label>
+              <div className="dataset-form-group">
+                <h4>기대 결과와 근거</h4>
+                <label>예상 요약<textarea value={form.expectedSummary} disabled={inactive || submitting} onChange={(event) => setField("expectedSummary", event.target.value)} /></label>
+                <div className="form-grid">
+                  <label>Evidence source ID<input value={form.evidenceSource} disabled={inactive || submitting} onChange={(event) => setField("evidenceSource", event.target.value)} /></label>
+                  <label>Evidence 내용<textarea value={form.evidenceContent} disabled={inactive || submitting} onChange={(event) => setField("evidenceContent", event.target.value)} /></label>
+                </div>
               </div>
-              <div className="form-grid">
-                <label>필수 요소 <small>한 줄에 하나</small><textarea value={form.required} disabled={inactive || submitting} onChange={(event) => setField("required", event.target.value)} /></label>
-                <label>금지 요소 <small>한 줄에 하나</small><textarea value={form.forbidden} disabled={inactive || submitting} onChange={(event) => setField("forbidden", event.target.value)} /></label>
+              <div className="dataset-form-group">
+                <h4>평가 Metadata</h4>
+                <div className="form-grid">
+                  <label>필수 요소 <small>한 줄에 하나</small><textarea value={form.required} disabled={inactive || submitting} onChange={(event) => setField("required", event.target.value)} /></label>
+                  <label>금지 요소 <small>한 줄에 하나</small><textarea value={form.forbidden} disabled={inactive || submitting} onChange={(event) => setField("forbidden", event.target.value)} /></label>
+                </div>
+                <label>태그 <small>한 줄에 하나</small><textarea value={form.tags} disabled={inactive || submitting} onChange={(event) => setField("tags", event.target.value)} /></label>
               </div>
-              <label>태그 <small>한 줄에 하나</small><textarea value={form.tags} disabled={inactive || submitting} onChange={(event) => setField("tags", event.target.value)} /></label>
-              <label className="checkbox-label"><input type="checkbox" checked={form.requiredForRelease} disabled={inactive || submitting} onChange={(event) => setField("requiredForRelease", event.target.checked)} />Release 필수 Case</label>
               {formErrorMessage ? <p className="form-error" role="alert">{formErrorMessage}</p> : null}
-              <div className="form-actions">
+              <div className="form-actions dataset-form-actions">
                 {editingId ? <button className="button button-secondary" type="button" disabled={submitting} onClick={() => { setEditingId(null); setForm(emptyForm()); }}>취소</button> : null}
                 <button className="button" disabled={inactive || submitting}>{submitting ? "저장 중…" : editingId ? "수정 저장" : "Case 생성"}</button>
               </div>
             </form>
+          </section>
+
+          <section className="overview-section dataset-case-list" aria-labelledby="case-list-title">
+            <div className="section-heading"><div><p className="eyebrow">Evaluation</p><h2 id="case-list-title">Case 목록</h2></div><span>{caseTotal}건</span></div>
             {caseError ? <ErrorState message={caseErrorMessage ?? "Case 작업을 완료하지 못했습니다."} retryable onRetry={() => void loadCases(casePage)} /> : null}
             {!caseError && cases.length === 0 ? <p className="empty-inline">등록된 Case가 없습니다.</p> : null}
             <div className="case-grid">
               {cases.map((item) => (
                 <article className="case-card" key={item.id}>
                   <header><div><p className="eyebrow">{item.caseKey}</p><h3>{item.question}</h3></div><SemanticBadge status={item.status} /></header>
-                  <p>{item.expectedSummary || "예상 요약 없음"}</p>
                   <div className="badge-row"><span>Severity <strong>{item.severity}</strong></span><span>{item.requiredForRelease ? "Release 필수" : "일반 Case"}</span></div>
-                  <p className="muted">필수 {item.requiredElements.length} · 금지 {item.forbiddenElements.length} · 태그 {item.tags.length}</p>
+                  <details className="dataset-case-details">
+                    <summary>기대 결과와 Metadata</summary>
+                    <div className="dataset-case-detail-content">
+                      <div><strong>예상 요약</strong><p>{item.expectedSummary || "예상 요약 없음"}</p></div>
+                      <div><strong>Evidence</strong><pre>{item.evidence.length > 0 ? JSON.stringify(item.evidence, null, 2) : "없음"}</pre></div>
+                      <div><strong>필수 요소</strong><p>{item.requiredElements.join(", ") || "없음"}</p></div>
+                      <div><strong>금지 요소</strong><p>{item.forbiddenElements.join(", ") || "없음"}</p></div>
+                      <div><strong>태그</strong><p>{item.tags.join(", ") || "없음"}</p></div>
+                    </div>
+                  </details>
                   <div className="case-actions">
                     <button className="button button-secondary" disabled={item.status !== "DRAFT" || inactive || Boolean(actionId)} title={item.status !== "DRAFT" ? "DRAFT Case만 수정할 수 있습니다." : undefined} onClick={() => { setEditingId(item.id); setForm(formFromCase(item)); }}>수정</button>
                     <button className="button" disabled={item.status !== "DRAFT" || inactive || Boolean(actionId)} title={item.status !== "DRAFT" ? "DRAFT Case만 승인할 수 있습니다." : undefined} onClick={() => void transition(item, "approve")}>{actionId === item.id ? "처리 중…" : "승인"}</button>
@@ -369,19 +409,26 @@ export function DatasetDetailClient({ projectId, datasetId }: Props) {
             ) : null}
           </section>
 
-          <section className="overview-section" aria-labelledby="version-title">
-            <div className="section-heading"><div><p className="eyebrow">Snapshot</p><h2 id="version-title">Dataset Versions</h2></div><button className="button" disabled={inactive || approvedKnownAbsent || creatingVersion} onClick={() => void createVersion()}>{creatingVersion ? "생성 중…" : "Version 생성"}</button></div>
+          <section className="overview-section dataset-version-create" aria-labelledby="version-create-title">
+            <div className="section-heading"><div><p className="eyebrow">Snapshot</p><h2 id="version-create-title">Version 생성</h2></div><button className="button" disabled={inactive || approvedKnownAbsent || creatingVersion} onClick={() => void createVersion()}>{creatingVersion ? "생성 중…" : "Version 생성"}</button></div>
             <p className="page-description">현재 APPROVED Case만 불변 Snapshot에 포함됩니다. 현재 페이지에서 확인한 승인 Case는 {approvedCount}건입니다. 최종 검증은 서버가 수행합니다.</p>
             {approvedKnownAbsent ? <p className="notice">승인된 Case가 없어 Version 생성이 비활성화됐습니다.</p> : null}
             {versionError ? <ErrorState message={versionErrorMessage ?? "Version 작업을 완료하지 못했습니다."} retryable onRetry={() => void loadVersions(versionPage)} /> : null}
+          </section>
+
+          <section className="overview-section dataset-version-list" aria-labelledby="version-list-title">
+            <div className="section-heading"><div><p className="eyebrow">Snapshots</p><h2 id="version-list-title">Version 목록</h2></div><span>{versionTotal}건</span></div>
             {versions.length === 0 && !versionError ? <p className="empty-inline">생성된 Version이 없습니다.</p> : null}
             <div className="version-list">
               {versions.map((version) => (
                 <article className="version-card" key={version.id}>
-                  <div><p className="eyebrow">Version {version.version}</p><strong>{version.caseCount} Cases</strong></div>
-                  <code title={version.contentHash}>{shortId(version.contentHash)}</code>
-                  <span>{formatLocalDateTime(version.createdAt)}</span>
-                  <Link className="button button-secondary" href={`/projects/${projectId}/datasets/${datasetId}/versions/${version.version}`}>상세</Link>
+                  <div><p className="eyebrow">Dataset Snapshot</p><h3>Version {version.version}</h3></div>
+                  <dl className="dataset-version-meta">
+                    <div><dt>Case</dt><dd>{version.caseCount}건</dd></div>
+                    <div><dt>생성 시각</dt><dd>{formatLocalDateTime(version.createdAt)}</dd></div>
+                    <div><dt>Content Hash</dt><dd><code title={version.contentHash}>{shortId(version.contentHash)}</code></dd></div>
+                  </dl>
+                  <Link className="button button-secondary" href={`/projects/${projectId}/datasets/${datasetId}/versions/${version.version}`}>Version 상세</Link>
                 </article>
               ))}
             </div>

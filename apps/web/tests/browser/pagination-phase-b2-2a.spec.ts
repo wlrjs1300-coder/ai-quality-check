@@ -341,7 +341,7 @@ test("Dataset Versions clamp independently and creation returns to page 1", asyn
   await expect(pagination).toContainText("2 / 3 페이지");
   await page.getByRole("button", { name: "Version 생성" }).click();
   await expect(pagination).toContainText("1 / 3 페이지");
-  await expect(page.getByText("Version 999", { exact: false })).toBeVisible();
+  await expect(page.getByRole("heading", { level: 3, name: "Version 999" })).toBeVisible();
   expect(requested.at(-1)).toBe(1);
 
   created = false;
