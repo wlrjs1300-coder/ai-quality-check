@@ -77,3 +77,9 @@ temp/
 # --- Project specific ---
 coverage/
 !.github/workflows/
+
+# TypeScript build cache
+*.tsbuildinfo
+apps/web/playwright-report/
+apps/web/test-results/
+apps/web/blob-report/

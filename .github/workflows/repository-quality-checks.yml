@@ -1,0 +1,105 @@
+name: Repository Quality Checks
+
+permissions:
+  contents: read
+
+on:
+  pull_request:
+    branches:
+      - develop
+      - main
+  push:
+    branches:
+      - develop
+
+jobs:
+  policy:
+    name: policy
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run repository policy check
+        shell: bash
+        run: |
+          pwsh -NoProfile -NoLogo -Command "Set-Location '${{ github.workspace }}'; & './scripts/check-repo-policy.ps1'"
+
+      - name: Run git author policy check
+        shell: bash
+        run: |
+          pwsh -NoProfile -NoLogo -Command "Set-Location '${{ github.workspace }}'; & './scripts/check-git-author.ps1'"
+
+  frontend:
+    name: frontend
+    runs-on: ubuntu-latest
+    needs: policy
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+
+      - name: Install frontend dependencies with npm ci
+        working-directory: apps/web
+        run: npm ci
+
+      - name: Run frontend typecheck
+        working-directory: apps/web
+        run: npm run typecheck
+
+      - name: Run frontend build
+        working-directory: apps/web
+        run: npm run build
+
+  backend:
+    name: backend
+    runs-on: ubuntu-latest
+    needs: policy
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+
+      - name: Sync backend dependencies with uv
+        working-directory: backend
+        run: uv sync --locked --all-groups
+
+      - name: Run backend Ruff check
+        working-directory: backend
+        run: uv run ruff check .
+
+      - name: Run backend pytest
+        working-directory: backend
+        run: uv run pytest
+
+  infrastructure:
+    name: infrastructure
+    runs-on: ubuntu-latest
+    needs: [frontend, backend]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Validate docker compose syntax
+        run: docker compose config

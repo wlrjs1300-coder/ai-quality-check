@@ -1,0 +1,451 @@
+"use client";
+
+import Link from "next/link";
+import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
+
+import { SemanticBadge } from "@/src/components/AnalyticsUi";
+import { ErrorState, LoadingState } from "@/src/components/AsyncStates";
+import { Breadcrumb } from "@/src/components/Breadcrumb";
+import { PageHeader } from "@/src/components/PageHeader";
+import { Pagination } from "@/src/components/Pagination";
+import { StatusBadge } from "@/src/components/StatusBadge";
+import {
+  createDatasetVersion,
+  createEvaluationCase,
+  getDataset,
+  listDatasetVersions,
+  listEvaluationCases,
+  transitionEvaluationCase,
+  updateEvaluationCase,
+  type CaseSeverity,
+  type Dataset,
+  type DatasetVersion,
+  type EvaluationCase,
+  type EvaluationCaseInput,
+} from "@/src/lib/api/datasets";
+import { ApiError, toApiError } from "@/src/lib/api/errors";
+import { formatLocalDateTime, shortId } from "@/src/lib/formatters";
+
+type Props = { projectId: string; datasetId: string };
+
+function datasetNotFoundError(): ApiError {
+  return new ApiError({
+    kind: "application",
+    status: 404,
+    code: "DATASET_NOT_FOUND",
+    message: "Dataset을 찾을 수 없습니다.",
+    retryable: false,
+  });
+}
+type FormState = {
+  caseKey: string; question: string; expectedSummary: string; evidenceSource: string;
+  evidenceContent: string; required: string; forbidden: string; tags: string;
+  severity: CaseSeverity; requiredForRelease: boolean;
+};
+
+const emptyForm = (): FormState => ({
+  caseKey: "", question: "", expectedSummary: "", evidenceSource: "", evidenceContent: "",
+  required: "", forbidden: "", tags: "", severity: "MEDIUM", requiredForRelease: false,
+});
+const lines = (value: string) => value.split(/\r?\n/).map((item) => item.trim()).filter(Boolean);
+const stringLines = (items: string[]) => items.filter(Boolean).join("\n");
+
+function payload(form: FormState): EvaluationCaseInput {
+  const evidence = form.evidenceContent.trim()
+    ? [{ source_id: form.evidenceSource.trim() || "frontend-verification", content: form.evidenceContent.trim() }]
+    : [];
+  return {
+    case_key: form.caseKey.trim(),
+    question: form.question.trim(),
+    expected_summary: form.expectedSummary.trim() || null,
+    evidence,
+    required_elements: lines(form.required).map((text) => ({ text })),
+    forbidden_elements: lines(form.forbidden).map((text) => ({ text })),
+    tags: lines(form.tags).map((name) => ({ name })),
+    severity: form.severity,
+    required_for_release: form.requiredForRelease,
+  };
+}
+
+function formFromCase(item: EvaluationCase): FormState {
+  const firstEvidence = item.evidence[0] ?? {};
+  return {
+    caseKey: item.caseKey,
+    question: item.question,
+    expectedSummary: item.expectedSummary ?? "",
+    evidenceSource: typeof firstEvidence.source_id === "string" ? firstEvidence.source_id : "",
+    evidenceContent: typeof firstEvidence.content === "string" ? firstEvidence.content : "",
+    required: stringLines(item.requiredElements),
+    forbidden: stringLines(item.forbiddenElements),
+    tags: stringLines(item.tags),
+    severity: item.severity,
+    requiredForRelease: item.requiredForRelease,
+  };
+}
+
+export function DatasetDetailClient({ projectId, datasetId }: Props) {
+  const [dataset, setDataset] = useState<Dataset | null>(null);
+  const [cases, setCases] = useState<EvaluationCase[]>([]);
+  const [versions, setVersions] = useState<DatasetVersion[]>([]);
+  const [latestVersion, setLatestVersion] = useState<DatasetVersion | null>(null);
+  const [casePage, setCasePage] = useState(1);
+  const [versionPage, setVersionPage] = useState(1);
+  const [caseTotal, setCaseTotal] = useState(0);
+  const [versionTotal, setVersionTotal] = useState(0);
+  const [caseSize, setCaseSize] = useState(20);
+  const [versionSize, setVersionSize] = useState(20);
+  const [form, setForm] = useState<FormState>(emptyForm);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [actionId, setActionId] = useState<string | null>(null);
+  const [datasetError, setDatasetError] = useState<ApiError | null>(null);
+  const [caseError, setCaseError] = useState<ApiError | null>(null);
+  const [versionError, setVersionError] = useState<ApiError | null>(null);
+  const [formError, setFormError] = useState<ApiError | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [caseRefreshing, setCaseRefreshing] = useState(false);
+  const [versionRefreshing, setVersionRefreshing] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [creatingVersion, setCreatingVersion] = useState(false);
+  const controllerRef = useRef<AbortController | null>(null);
+  const caseRequestIdRef = useRef(0);
+  const versionRequestIdRef = useRef(0);
+
+  const loadDataset = useCallback(async (signal?: AbortSignal) => {
+    try {
+      setDatasetError(null);
+      const data = (await getDataset(datasetId, signal)).data;
+      if (data.projectId !== projectId) {
+        setDatasetError(datasetNotFoundError());
+        return;
+      }
+      setDataset(data);
+    }
+    catch (error) { if (!(error instanceof DOMException && error.name === "AbortError")) setDatasetError(toApiError(error)); }
+  }, [datasetId, projectId]);
+  const loadCases = useCallback(async (page: number, signal?: AbortSignal) => {
+    const requestId = ++caseRequestIdRef.current;
+    const requestedPage = Math.max(1, page);
+    setCaseRefreshing(true);
+    try {
+      setCaseError(null);
+      const result = await listEvaluationCases(datasetId, requestedPage, signal);
+      if (requestId !== caseRequestIdRef.current) return;
+      const responseSize = Math.max(1, result.pagination.size);
+      const totalPages = result.pagination.total === 0
+        ? 0
+        : Math.ceil(result.pagination.total / responseSize);
+      setCaseTotal(result.pagination.total);
+      setCaseSize(responseSize);
+      if (result.pagination.total > 0 && requestedPage > totalPages) {
+        setCases([]);
+        setCasePage(totalPages);
+        return;
+      }
+      setCases(result.data);
+      setCasePage(result.pagination.total === 0 ? 1 : result.pagination.page);
+    } catch (error) {
+      if (requestId === caseRequestIdRef.current && !(error instanceof DOMException && error.name === "AbortError")) {
+        setCaseError(toApiError(error));
+      }
+    } finally {
+      if (requestId === caseRequestIdRef.current) setCaseRefreshing(false);
+    }
+  }, [datasetId]);
+  const loadVersions = useCallback(async (page: number, signal?: AbortSignal) => {
+    const requestId = ++versionRequestIdRef.current;
+    const requestedPage = Math.max(1, page);
+    setVersionRefreshing(true);
+    try {
+      setVersionError(null);
+      const result = await listDatasetVersions(datasetId, requestedPage, signal);
+      if (requestId !== versionRequestIdRef.current) return;
+      const responseSize = Math.max(1, result.pagination.size);
+      const totalPages = result.pagination.total === 0
+        ? 0
+        : Math.ceil(result.pagination.total / responseSize);
+      setVersionTotal(result.pagination.total);
+      setVersionSize(responseSize);
+      if (result.pagination.total > 0 && requestedPage > totalPages) {
+        setVersions([]);
+        setVersionPage(totalPages);
+        return;
+      }
+      setVersions(result.data);
+      if (requestedPage === 1) setLatestVersion(result.data[0] ?? null);
+      setVersionPage(result.pagination.total === 0 ? 1 : result.pagination.page);
+    } catch (error) {
+      if (requestId === versionRequestIdRef.current && !(error instanceof DOMException && error.name === "AbortError")) {
+        setVersionError(toApiError(error));
+      }
+    } finally {
+      if (requestId === versionRequestIdRef.current) setVersionRefreshing(false);
+    }
+  }, [datasetId]);
+
+  useEffect(() => {
+    controllerRef.current?.abort();
+    const controller = new AbortController();
+    controllerRef.current = controller;
+    setLoading(true);
+    void Promise.allSettled([loadDataset(controller.signal), loadCases(casePage, controller.signal), loadVersions(versionPage, controller.signal)])
+      .finally(() => { if (controllerRef.current === controller) setLoading(false); });
+    return () => controller.abort();
+  }, [casePage, loadCases, loadDataset, loadVersions, versionPage]);
+
+  function setField<K extends keyof FormState>(key: K, value: FormState[K]) {
+    setForm((current) => ({ ...current, [key]: value }));
+  }
+
+  async function submitCase(event: FormEvent) {
+    event.preventDefault();
+    if (!form.question.trim() || (!editingId && !form.caseKey.trim()) || submitting) return;
+    setSubmitting(true); setFormError(null);
+    try {
+      const input = payload(form);
+      if (editingId) {
+        const { case_key: _, ...update } = input;
+        await updateEvaluationCase(editingId, update);
+      } else {
+        await createEvaluationCase(datasetId, input);
+      }
+      setForm(emptyForm()); setEditingId(null); setCasePage(1); await loadCases(1);
+    } catch (error) { setFormError(toApiError(error)); }
+    finally { setSubmitting(false); }
+  }
+
+  async function transition(item: EvaluationCase, action: "approve" | "deprecate") {
+    if (actionId) return;
+    if (action === "deprecate" && !window.confirm(`Case ${item.caseKey}를 폐기하시겠습니까?`)) return;
+    setActionId(item.id); setCaseError(null);
+    try { await transitionEvaluationCase(item.id, action); await loadCases(casePage); }
+    catch (error) {
+      const apiError = toApiError(error);
+      await loadCases(casePage);
+      setCaseError(apiError);
+    }
+    finally { setActionId(null); }
+  }
+
+  async function createVersion() {
+    if (creatingVersion) return;
+    setCreatingVersion(true); setVersionError(null);
+    try { await createDatasetVersion(datasetId); setVersionPage(1); await loadVersions(1); }
+    catch (error) { setVersionError(toApiError(error)); }
+    finally { setCreatingVersion(false); }
+  }
+
+  const approvedCount = cases.filter((item) => item.status === "APPROVED").length;
+  const approvedKnownAbsent = caseTotal === 0 || (caseTotal <= 20 && approvedCount === 0);
+  const inactive = dataset ? !dataset.isActive : true;
+  const formErrorMessage = formError?.code === "DUPLICATE_CASE_KEY_IN_DATASET"
+    ? "같은 case_key가 이미 있습니다."
+    : formError?.code === "RESOURCE_IMMUTABLE" ? "승인 또는 폐기된 Case는 수정할 수 없습니다." : formError?.message;
+  const caseErrorMessage = caseError?.code === "INVALID_STATE_TRANSITION"
+    ? "현재 Case 상태에서는 이 작업을 수행할 수 없습니다."
+    : caseError?.code === "RESOURCE_IMMUTABLE"
+      ? "승인 또는 폐기된 Case는 수정할 수 없습니다."
+      : caseError?.message;
+  const versionErrorMessage = versionError?.code === "DUPLICATE_DATASET_VERSION"
+    ? "같은 Snapshot Version이 이미 있습니다."
+    : versionError?.code === "NO_APPROVED_CASES"
+      ? "승인된 Case가 없어 Version을 생성할 수 없습니다."
+      : versionError?.code === "VERSION_NUMBER_CONFLICT"
+        ? "Version 번호 충돌이 발생했습니다. 목록을 갱신한 뒤 다시 시도해 주세요."
+        : versionError?.code === "DATASET_INACTIVE" || versionError?.code === "PROJECT_INACTIVE"
+          ? "비활성 리소스에서는 Version을 생성할 수 없습니다."
+          : versionError?.message;
+
+  const breadcrumb = (
+    <Breadcrumb
+      items={[
+        { label: "Projects", href: "/projects" },
+        { label: "Project Overview", href: `/projects/${projectId}` },
+        { label: dataset?.name ?? "Dataset" },
+      ]}
+    />
+  );
+  const isDatasetNotFound = datasetError?.status === 404 || datasetError?.code === "DATASET_NOT_FOUND";
+
+  if (loading && !dataset && !datasetError) {
+    return (
+      <main className="app-shell">
+        {breadcrumb}
+        <PageHeader title="Dataset" />
+        <LoadingState title="Dataset을 불러오고 있습니다" />
+      </main>
+    );
+  }
+  if (datasetError && !dataset) {
+    return (
+      <main className="app-shell">
+        {breadcrumb}
+        <PageHeader title="Dataset" />
+        <ErrorState
+          title={datasetError.kind === "network" ? "서버에 연결할 수 없습니다" : undefined}
+          message={isDatasetNotFound ? "Dataset을 찾을 수 없습니다." : datasetError.message}
+          retryable={!isDatasetNotFound && datasetError.retryable}
+          onRetry={isDatasetNotFound ? undefined : () => void loadDataset()}
+        />
+        {isDatasetNotFound ? (
+          <div className="header-actions">
+            <Link className="button button-secondary" href={`/projects/${projectId}`}>
+              Project Overview로 돌아가기
+            </Link>
+            <Link className="button button-secondary" href="/projects">
+              Project 목록으로 이동
+            </Link>
+          </div>
+        ) : null}
+      </main>
+    );
+  }
+
+  return (
+    <main className="app-shell">
+      {breadcrumb}
+      {dataset ? (
+        <>
+          <PageHeader
+            eyebrow="Dataset"
+            title={dataset.name}
+            description={dataset.description || "설명이 없습니다."}
+            metadata={<code title={dataset.id}>Dataset ID {shortId(dataset.id)}</code>}
+            status={<StatusBadge active={dataset.isActive} />}
+            actions={<Link className="button button-secondary" href={`/projects/${projectId}`}>Project Overview로 돌아가기</Link>}
+          />
+
+          <section className="detail-panel dataset-detail-summary" aria-labelledby="dataset-summary-title">
+            <div className="section-heading"><div><p className="eyebrow">Dataset Overview</p><h2 id="dataset-summary-title">Dataset 요약</h2></div><StatusBadge active={dataset.isActive} /></div>
+            <div className="dataset-summary-grid">
+              <div className="dataset-summary-copy"><h3>{dataset.name}</h3><p>{dataset.description || "설명이 없습니다."}</p></div>
+              <dl className="compact-list">
+                <div><dt>Case</dt><dd>{caseTotal}건</dd></div>
+                <div><dt>Version</dt><dd>{versionTotal}건</dd></div>
+                <div><dt>최신 Version</dt><dd>{latestVersion ? `Version ${latestVersion.version}` : "없음"}</dd></div>
+              </dl>
+            </div>
+            <p className="notice">생성·수정 시각은 현재 Dataset API가 제공하지 않습니다. 이름·설명 수정과 비활성화 UI는 이번 Slice에서 제외했습니다.</p>
+          </section>
+
+          <section className="overview-section dataset-case-create" aria-labelledby="case-create-title">
+            <div className="section-heading"><div><p className="eyebrow">Case Management</p><h2 id="case-create-title">Case 생성</h2></div></div>
+            <form
+              className="form-panel case-form dataset-case-form"
+              onFocusCapture={(event) => { if (event.target instanceof HTMLTextAreaElement) event.target.scrollIntoView({ block: "center" }); }}
+              onSubmit={(event) => void submitCase(event)}
+            >
+              <h3>{editingId ? "DRAFT Case 수정" : "Case 생성"}</h3>
+              <div className="dataset-form-group">
+                <h4>기본 정보</h4>
+                <div className="form-grid">
+                  <label>Case key<input value={form.caseKey} disabled={Boolean(editingId) || inactive || submitting} maxLength={120} onChange={(event) => setField("caseKey", event.target.value)} required /></label>
+                  <label>Severity<select value={form.severity} disabled={inactive || submitting} onChange={(event) => setField("severity", event.target.value as CaseSeverity)}><option>CRITICAL</option><option>HIGH</option><option>MEDIUM</option><option>LOW</option></select></label>
+                </div>
+                <label>질문<textarea value={form.question} disabled={inactive || submitting} onChange={(event) => setField("question", event.target.value)} required /></label>
+                <label className="checkbox-label"><input type="checkbox" checked={form.requiredForRelease} disabled={inactive || submitting} onChange={(event) => setField("requiredForRelease", event.target.checked)} />Release 필수 Case</label>
+              </div>
+              <div className="dataset-form-group">
+                <h4>기대 결과와 근거</h4>
+                <label>예상 요약<textarea value={form.expectedSummary} disabled={inactive || submitting} onChange={(event) => setField("expectedSummary", event.target.value)} /></label>
+                <div className="form-grid">
+                  <label>Evidence source ID<input value={form.evidenceSource} disabled={inactive || submitting} onChange={(event) => setField("evidenceSource", event.target.value)} /></label>
+                  <label>Evidence 내용<textarea value={form.evidenceContent} disabled={inactive || submitting} onChange={(event) => setField("evidenceContent", event.target.value)} /></label>
+                </div>
+              </div>
+              <div className="dataset-form-group">
+                <h4>평가 Metadata</h4>
+                <div className="form-grid">
+                  <label>필수 요소 <small>한 줄에 하나</small><textarea value={form.required} disabled={inactive || submitting} onChange={(event) => setField("required", event.target.value)} /></label>
+                  <label>금지 요소 <small>한 줄에 하나</small><textarea value={form.forbidden} disabled={inactive || submitting} onChange={(event) => setField("forbidden", event.target.value)} /></label>
+                </div>
+                <label>태그 <small>한 줄에 하나</small><textarea value={form.tags} disabled={inactive || submitting} onChange={(event) => setField("tags", event.target.value)} /></label>
+              </div>
+              {formErrorMessage ? <p className="form-error" role="alert">{formErrorMessage}</p> : null}
+              <div className="form-actions dataset-form-actions">
+                {editingId ? <button className="button button-secondary" type="button" disabled={submitting} onClick={() => { setEditingId(null); setForm(emptyForm()); }}>취소</button> : null}
+                <button className="button" disabled={inactive || submitting}>{submitting ? "저장 중…" : editingId ? "수정 저장" : "Case 생성"}</button>
+              </div>
+            </form>
+          </section>
+
+          <section className="overview-section dataset-case-list" aria-labelledby="case-list-title">
+            <div className="section-heading"><div><p className="eyebrow">Evaluation</p><h2 id="case-list-title">Case 목록</h2></div><span>{caseTotal}건</span></div>
+            {caseError ? <ErrorState message={caseErrorMessage ?? "Case 작업을 완료하지 못했습니다."} retryable onRetry={() => void loadCases(casePage)} /> : null}
+            {!caseError && cases.length === 0 ? <p className="empty-inline">등록된 Case가 없습니다.</p> : null}
+            <div className="case-grid">
+              {cases.map((item) => (
+                <article className="case-card" key={item.id}>
+                  <header><div><p className="eyebrow">{item.caseKey}</p><h3>{item.question}</h3></div><SemanticBadge status={item.status} /></header>
+                  <div className="badge-row"><span>Severity <strong>{item.severity}</strong></span><span>{item.requiredForRelease ? "Release 필수" : "일반 Case"}</span></div>
+                  <details className="dataset-case-details">
+                    <summary>기대 결과와 Metadata</summary>
+                    <div className="dataset-case-detail-content">
+                      <div><strong>예상 요약</strong><p>{item.expectedSummary || "예상 요약 없음"}</p></div>
+                      <div><strong>Evidence</strong><pre>{item.evidence.length > 0 ? JSON.stringify(item.evidence, null, 2) : "없음"}</pre></div>
+                      <div><strong>필수 요소</strong><p>{item.requiredElements.join(", ") || "없음"}</p></div>
+                      <div><strong>금지 요소</strong><p>{item.forbiddenElements.join(", ") || "없음"}</p></div>
+                      <div><strong>태그</strong><p>{item.tags.join(", ") || "없음"}</p></div>
+                    </div>
+                  </details>
+                  <div className="case-actions">
+                    <button className="button button-secondary" disabled={item.status !== "DRAFT" || inactive || Boolean(actionId)} title={item.status !== "DRAFT" ? "DRAFT Case만 수정할 수 있습니다." : undefined} onClick={() => { setEditingId(item.id); setForm(formFromCase(item)); }}>수정</button>
+                    <button className="button" disabled={item.status !== "DRAFT" || inactive || Boolean(actionId)} title={item.status !== "DRAFT" ? "DRAFT Case만 승인할 수 있습니다." : undefined} onClick={() => void transition(item, "approve")}>{actionId === item.id ? "처리 중…" : "승인"}</button>
+                    <button className="button button-danger" disabled={item.status === "DEPRECATED" || inactive || Boolean(actionId)} title={item.status === "DEPRECATED" ? "폐기된 Case는 추가 전이가 불가능합니다." : undefined} onClick={() => void transition(item, "deprecate")}>폐기</button>
+                  </div>
+                  {item.status === "APPROVED" ? <p className="immutable-note">승인된 내용은 불변이며 폐기만 가능합니다.</p> : null}
+                  {item.status === "DEPRECATED" ? <p className="immutable-note">폐기된 Case는 조회만 가능합니다.</p> : null}
+                </article>
+              ))}
+            </div>
+            {caseTotal > 0 ? (
+              <Pagination
+                page={casePage}
+                pageSize={caseSize}
+                total={caseTotal}
+                isLoading={caseRefreshing}
+                ariaLabel="Evaluation cases pagination"
+                onPageChange={setCasePage}
+              />
+            ) : null}
+          </section>
+
+          <section className="overview-section dataset-version-create" aria-labelledby="version-create-title">
+            <div className="section-heading"><div><p className="eyebrow">Snapshot</p><h2 id="version-create-title">Version 생성</h2></div><button className="button" disabled={inactive || approvedKnownAbsent || creatingVersion} onClick={() => void createVersion()}>{creatingVersion ? "생성 중…" : "Version 생성"}</button></div>
+            <p className="page-description">현재 APPROVED Case만 불변 Snapshot에 포함됩니다. 현재 페이지에서 확인한 승인 Case는 {approvedCount}건입니다. 최종 검증은 서버가 수행합니다.</p>
+            {approvedKnownAbsent ? <p className="notice">승인된 Case가 없어 Version 생성이 비활성화됐습니다.</p> : null}
+            {versionError ? <ErrorState message={versionErrorMessage ?? "Version 작업을 완료하지 못했습니다."} retryable onRetry={() => void loadVersions(versionPage)} /> : null}
+          </section>
+
+          <section className="overview-section dataset-version-list" aria-labelledby="version-list-title">
+            <div className="section-heading"><div><p className="eyebrow">Snapshots</p><h2 id="version-list-title">Version 목록</h2></div><span>{versionTotal}건</span></div>
+            {versions.length === 0 && !versionError ? <p className="empty-inline">생성된 Version이 없습니다.</p> : null}
+            <div className="version-list">
+              {versions.map((version) => (
+                <article className="version-card" key={version.id}>
+                  <div><p className="eyebrow">Dataset Snapshot</p><h3>Version {version.version}</h3></div>
+                  <dl className="dataset-version-meta">
+                    <div><dt>Case</dt><dd>{version.caseCount}건</dd></div>
+                    <div><dt>생성 시각</dt><dd>{formatLocalDateTime(version.createdAt)}</dd></div>
+                    <div><dt>Content Hash</dt><dd><code title={version.contentHash}>{shortId(version.contentHash)}</code></dd></div>
+                  </dl>
+                  <Link className="button button-secondary" href={`/projects/${projectId}/datasets/${datasetId}/versions/${version.version}`}>Version 상세</Link>
+                </article>
+              ))}
+            </div>
+            <p className="immutable-note">Dataset Version은 생성 후 수정하거나 삭제할 수 없습니다.</p>
+            {versionTotal > 0 ? (
+              <Pagination
+                page={versionPage}
+                pageSize={versionSize}
+                total={versionTotal}
+                isLoading={versionRefreshing}
+                ariaLabel="Dataset versions pagination"
+                onPageChange={setVersionPage}
+              />
+            ) : null}
+          </section>
+        </>
+      ) : null}
+    </main>
+  );
+}
